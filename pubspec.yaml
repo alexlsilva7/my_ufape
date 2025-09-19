@@ -12,6 +12,7 @@ dependencies:
   webview_flutter: ^4.13.0
   flutter_secure_storage: ^9.2.4
   html: ^0.15.6
+  fl_chart: ^1.1.1
   
 
 dev_dependencies:

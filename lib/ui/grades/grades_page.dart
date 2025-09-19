@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../domain/entities/grades_model.dart';
+import '../charts/charts_page.dart';
 
 class GradesPage extends StatefulWidget {
   final List<Periodo> periodos;
@@ -20,9 +21,37 @@ class _GradesPageState extends State<GradesPage> {
   String _sortBy = 'recente'; // recente | antigo | disciplina
   final bool _groupByStatus = false;
   final Set<String> _expandedPeriods = {};
+  String _filterBySituacao = 'todos'; // todos | aprovado | cursando | reprovado
 
   List<Periodo> get _preparedPeriodos {
     List<Periodo> base = List<Periodo>.from(widget.periodos);
+
+    // Aplicar filtro por situação
+    if (_filterBySituacao != 'todos') {
+      base = base
+          .map((p) {
+            final disciplinasFiltradas = p.disciplinas.where((d) {
+              final situacao = d.situacao.toUpperCase();
+              switch (_filterBySituacao) {
+                case 'aprovado':
+                  return situacao.contains('APROVADO');
+                case 'cursando':
+                  return !situacao.contains('APROVADO') &&
+                      !situacao.contains('REPROVADO');
+                case 'reprovado':
+                  return situacao.contains('REPROVADO');
+                default:
+                  return true;
+              }
+            }).toList();
+            return disciplinasFiltradas.isNotEmpty
+                ? Periodo(nome: p.nome, disciplinas: disciplinasFiltradas)
+                : null;
+          })
+          .where((p) => p != null)
+          .cast<Periodo>()
+          .toList();
+    }
 
     if (_sortBy == 'recente') {
       base.sort((a, b) => b.nome.compareTo(a.nome));
@@ -141,6 +170,105 @@ class _GradesPageState extends State<GradesPage> {
         elevation: 2,
         toolbarHeight: 80,
         actions: [
+          // Botão de Gráficos
+          IconButton(
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => ChartsPage(periodos: widget.periodos),
+                ),
+              );
+            },
+            icon: const Icon(Icons.bar_chart, color: Colors.white),
+            tooltip: 'Ver Gráficos de Desempenho',
+          ),
+          // Botão de Filtro por Situação
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.filter_list, color: Colors.white),
+            tooltip: 'Filtrar por Situação',
+            onSelected: (value) {
+              setState(() {
+                _filterBySituacao = value;
+              });
+            },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'todos',
+                child: Row(
+                  children: [
+                    Icon(
+                      _filterBySituacao == 'todos'
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                      color:
+                          _filterBySituacao == 'todos' ? _primary : Colors.grey,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text('Todas'),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'aprovado',
+                child: Row(
+                  children: [
+                    Icon(
+                      _filterBySituacao == 'aprovado'
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                      color: _filterBySituacao == 'aprovado'
+                          ? Colors.green.shade700
+                          : Colors.grey,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text('Aprovadas',
+                        style: TextStyle(color: Colors.green.shade700)),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'cursando',
+                child: Row(
+                  children: [
+                    Icon(
+                      _filterBySituacao == 'cursando'
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                      color: _filterBySituacao == 'cursando'
+                          ? Colors.orange.shade700
+                          : Colors.grey,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text('Cursando',
+                        style: TextStyle(color: Colors.orange.shade700)),
+                  ],
+                ),
+              ),
+              PopupMenuItem(
+                value: 'reprovado',
+                child: Row(
+                  children: [
+                    Icon(
+                      _filterBySituacao == 'reprovado'
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_unchecked,
+                      color: _filterBySituacao == 'reprovado'
+                          ? Colors.red.shade700
+                          : Colors.grey,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text('Reprovadas',
+                        style: TextStyle(color: Colors.red.shade700)),
+                  ],
+                ),
+              ),
+            ],
+          ),
           IconButton(
             onPressed: () {
               setState(() {
@@ -240,6 +368,63 @@ class _GradesPageState extends State<GradesPage> {
       ),
       body: Column(
         children: [
+          // Indicador de filtro ativo
+          if (_filterBySituacao != 'todos')
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              color: _getFilterColor(_filterBySituacao).withOpacity(0.1),
+              child: Row(
+                children: [
+                  Icon(
+                    _getFilterIcon(_filterBySituacao),
+                    size: 16,
+                    color: _getFilterColor(_filterBySituacao),
+                  ),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Filtro ativo: ${_getFilterLabel(_filterBySituacao)}',
+                    style: TextStyle(
+                      color: _getFilterColor(_filterBySituacao),
+                      fontWeight: FontWeight.w600,
+                      fontSize: 12,
+                    ),
+                  ),
+                  const Spacer(),
+                  GestureDetector(
+                    onTap: () => setState(() => _filterBySituacao = 'todos'),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color:
+                            _getFilterColor(_filterBySituacao).withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            'Limpar',
+                            style: TextStyle(
+                              color: _getFilterColor(_filterBySituacao),
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          Icon(
+                            Icons.clear,
+                            size: 14,
+                            color: _getFilterColor(_filterBySituacao),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           // Lista de períodos ou disciplinas individuais
           Expanded(
             child: isSearching
@@ -268,7 +453,7 @@ class _GradesPageState extends State<GradesPage> {
                         duration: const Duration(milliseconds: 200),
                         child: ListView.separated(
                           key: ValueKey(
-                              '${_searchQuery}_${_showOnlyCurrentSemester}_${_sortBy}_$_groupByStatus'),
+                              '${_searchQuery}_${_showOnlyCurrentSemester}_${_sortBy}_${_groupByStatus}_$_filterBySituacao'),
                           padding: const EdgeInsets.symmetric(vertical: 8),
                           itemCount: periodos.length,
                           separatorBuilder: (_, __) =>
@@ -285,6 +470,45 @@ class _GradesPageState extends State<GradesPage> {
         ],
       ),
     );
+  }
+
+  Color _getFilterColor(String filter) {
+    switch (filter) {
+      case 'aprovado':
+        return Colors.green.shade700;
+      case 'cursando':
+        return Colors.orange.shade700;
+      case 'reprovado':
+        return Colors.red.shade700;
+      default:
+        return _primary;
+    }
+  }
+
+  IconData _getFilterIcon(String filter) {
+    switch (filter) {
+      case 'aprovado':
+        return Icons.check_circle;
+      case 'cursando':
+        return Icons.hourglass_empty;
+      case 'reprovado':
+        return Icons.cancel;
+      default:
+        return Icons.filter_list;
+    }
+  }
+
+  String _getFilterLabel(String filter) {
+    switch (filter) {
+      case 'aprovado':
+        return 'Disciplinas Aprovadas';
+      case 'cursando':
+        return 'Disciplinas Cursando';
+      case 'reprovado':
+        return 'Disciplinas Reprovadas';
+      default:
+        return 'Todas as Disciplinas';
+    }
   }
 
   Widget _dividerLine() {
