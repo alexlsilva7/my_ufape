@@ -1,7 +1,7 @@
 // lib/grades_page.dart
 
 import 'package:flutter/material.dart';
-import 'grades_model.dart';
+import '../../domain/entities/grades_model.dart';
 
 class GradesPage extends StatelessWidget {
   final List<Periodo> periodos;
