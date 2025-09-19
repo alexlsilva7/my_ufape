@@ -23,14 +23,19 @@ class WebViewPage extends StatefulWidget {
 class _WebViewPageState extends State<WebViewPage> {
   late final WebViewController _controller;
   bool _isLoading = true;
-  bool _hasLoggedIn = false; // Flag para evitar login múltiplo
+  bool _hasLoggedIn = false;
   bool _iframeLoaded = false;
+  bool _isWebViewVisible = false;
+  bool _isProcessingGrades = false;
   Completer<void>? _iframeReadyCompleter;
 
   @override
   void initState() {
     super.initState();
+    _initializeWebView();
+  }
 
+  void _initializeWebView() {
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..addJavaScriptChannel(
@@ -49,73 +54,33 @@ class _WebViewPageState extends State<WebViewPage> {
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (String url) {
-            setState(() {
-              _isLoading = true;
-            });
+            if (mounted) {
+              setState(() {
+                _isLoading = true;
+              });
+            }
           },
           onPageFinished: (String url) {
-            setState(() {
-              _isLoading = false;
-            });
-            // Faz o login apenas na página inicial e apenas uma vez
-            if (url.contains('index.jsp') && !_hasLoggedIn) {
-              _injectLoginScript();
+            if (mounted) {
               setState(() {
-                _hasLoggedIn = true; // Marca que o login foi tentado
+                _isLoading = false;
               });
             }
 
-            // Observa carregamentos de iframes (inclui criação dinâmica) e notifica via JavaScriptChannel
-            _controller.runJavaScript(r"""
-              (function() {
-                if (window.__iframeWatcherInstalled) return;
-                window.__iframeWatcherInstalled = true;
+            if (url.contains('index.jsp') && !_hasLoggedIn) {
+              _injectLoginScript();
+              setState(() {
+                _hasLoggedIn = true;
+              });
+            }
 
-                function notify(tag){ try{ IframeChannel.postMessage((tag||'iframe') + ':load'); }catch(e){} }
-
-                function attach(iframe){
-                  if (!iframe || iframe.__watched) return;
-                  iframe.__watched = true;
-                  iframe.addEventListener('load', function(){
-                    notify(iframe.id || 'iframe');
-                  }, { once: true });
-                }
-
-                function attachAll(){
-                  var ifr = document.getElementsByTagName('iframe');
-                  for (var i=0;i<ifr.length;i++) attach(ifr[i]);
-                }
-
-                var mo = new MutationObserver(function(muts){
-                  muts.forEach(function(m){
-                    if (m.type === 'childList') {
-                      m.addedNodes && m.addedNodes.forEach(function(n){
-                        if (n.tagName === 'IFRAME') { attach(n); }
-                        else if (n.querySelectorAll) { n.querySelectorAll('iframe').forEach(attach); }
-                      });
-                    }
-                  });
-                });
-                try { mo.observe(document.documentElement || document.body, { childList: true, subtree: true }); } catch(e) {}
-
-                attachAll();
-
-                // Sinalização tardia caso o iframe já tenha carregado antes da injeção
-                setTimeout(function(){
-                  if (document.getElementById('Conteudo')) notify('Conteudo');
-                  else if (document.getElementsByTagName('iframe').length) notify('iframe');
-                }, 1200);
-              })();
-            """);
+            _injectIframeWatcher();
           },
           onWebResourceError: (WebResourceError error) {
-            // Lógica para tratar erros
             if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                    content: Text(
-                        'Erro ao carregar a página: ${error.description}')),
-              );
+              _showAlert(
+                  'Erro', 'Erro ao carregar a página: ${error.description}',
+                  isError: true);
             }
           },
         ),
@@ -123,8 +88,63 @@ class _WebViewPageState extends State<WebViewPage> {
       ..loadRequest(Uri.parse('https://siga.ufape.edu.br/ufape/index.jsp'));
   }
 
+  void _injectIframeWatcher() {
+    _controller.runJavaScript(r"""
+      (function() {
+        if (window.__iframeWatcherInstalled) return;
+        window.__iframeWatcherInstalled = true;
+
+        function notify(tag){ 
+          try{ 
+            IframeChannel.postMessage((tag||'iframe') + ':load'); 
+          } catch(e){} 
+        }
+
+        function attach(iframe){
+          if (!iframe || iframe.__watched) return;
+          iframe.__watched = true;
+          iframe.addEventListener('load', function(){
+            notify(iframe.id || 'iframe');
+          }, { once: true });
+        }
+
+        function attachAll(){
+          var ifr = document.getElementsByTagName('iframe');
+          for (var i=0;i<ifr.length;i++) attach(ifr[i]);
+        }
+
+        var mo = new MutationObserver(function(muts){
+          muts.forEach(function(m){
+            if (m.type === 'childList') {
+              m.addedNodes && m.addedNodes.forEach(function(n){
+                if (n.tagName === 'IFRAME') { 
+                  attach(n); 
+                } else if (n.querySelectorAll) { 
+                  n.querySelectorAll('iframe').forEach(attach); 
+                }
+              });
+            }
+          });
+        });
+        
+        try { 
+          mo.observe(document.documentElement || document.body, { 
+            childList: true, 
+            subtree: true 
+          }); 
+        } catch(e) {}
+
+        attachAll();
+
+        setTimeout(function(){
+          if (document.getElementById('Conteudo')) notify('Conteudo');
+          else if (document.getElementsByTagName('iframe').length) notify('iframe');
+        }, 1200);
+      })();
+    """);
+  }
+
   void _injectLoginScript() {
-    // Escapa caracteres especiais que podem quebrar o script JS
     final safeUsername =
         widget.username.replaceAll(r'\', r'\\').replaceAll(r"'", r"\'");
     final safePassword =
@@ -139,7 +159,10 @@ class _WebViewPageState extends State<WebViewPage> {
           if (p) p.value = '$safePassword';
 
           var btn = document.getElementById('btnEntrar');
-          if (btn) { btn.click(); return; }
+          if (btn) { 
+            btn.click(); 
+            return; 
+          }
 
           var form = document.getElementById('formulario') || document.forms[0];
           if (form) form.submit();
@@ -151,17 +174,77 @@ class _WebViewPageState extends State<WebViewPage> {
     _controller.runJavaScript(script);
   }
 
-  // Função para navegar até a página de notas com polling
+  void _showLoadingDialog(String message) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF004D40)),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  message,
+                  style: const TextStyle(fontSize: 16),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _hideLoadingDialog() {
+    if (Navigator.canPop(context)) {
+      Navigator.pop(context);
+    }
+  }
+
+  Future<void> _showAlert(String title, String message,
+      {bool isError = false}) async {
+    if (!mounted) return;
+    return showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              isError ? Icons.error_outline : Icons.info_outline,
+              color: isError ? Colors.red.shade700 : const Color(0xFF004D40),
+            ),
+            const SizedBox(width: 8),
+            Text(title),
+          ],
+        ),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _navigateToGrades() async {
-    // SCRIPT 1: Clica no menu "Consultas".
     const script1 = """
       document.getElementById('menuTopo:repeatAcessoMenu:2:repeatSuperTransacoesSuperMenu:0:linkSuperTransacaoSuperMenu').click();
     """;
 
-    // SCRIPT 2: Procura e clica no link "Notas".
     const script2 = """
       new Promise((resolve, reject) => {
-        const maxTries = 40; // Tenta por 10 segundos (40 * 250ms)
+        const maxTries = 40;
         let tries = 0;
         const interval = setInterval(() => {
           const iframe = document.getElementsByTagName('iframe')[0];
@@ -189,33 +272,15 @@ class _WebViewPageState extends State<WebViewPage> {
 
     try {
       await _controller.runJavaScript(script1);
-
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Navegando para o menu de notas...'),
-            duration: Duration(seconds: 2)),
-      );
-
-      final result = await _controller.runJavaScriptReturningResult(script2);
-      debugPrint(result.toString());
+      await _controller.runJavaScriptReturningResult(script2);
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text(
-                'Não foi possível navegar para as notas: ${e.toString()}')),
-      );
+      _showAlert(
+          'Erro', 'Não foi possível navegar para as notas: ${e.toString()}',
+          isError: true);
     }
   }
 
-  // Função para extrair as notas e navegar para a página de visualização
   Future<void> _extractAndShowGrades() async {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Extraindo dados com JavaScript...')),
-    );
-
     const String script = """
     (function() {
       try {
@@ -295,9 +360,7 @@ class _WebViewPageState extends State<WebViewPage> {
             }
         }
     }
-    console.log('Períodos encontrados:', periodos);
     periodos.sort((a, b) => b.nome.localeCompare(a.nome));
-    console.log('Json final:', JSON.stringify(periodos));
     return JSON.stringify(periodos);
   } catch (e) {
     return JSON.stringify([{ "error": e.toString() }]);
@@ -311,9 +374,8 @@ class _WebViewPageState extends State<WebViewPage> {
       if (!mounted) return;
 
       dynamic decodedData = jsonDecode(jsonResult);
-
       if (decodedData is String) {
-        decodedData = jsonDecode(decodedData); // Decodifica pela segunda vez
+        decodedData = jsonDecode(decodedData);
       }
 
       final List<dynamic> decodedList = jsonDecode(decodedData);
@@ -322,9 +384,8 @@ class _WebViewPageState extends State<WebViewPage> {
           decodedList.first is Map &&
           decodedList.first.containsKey('error')) {
         final errorMessage = decodedList.first['error'];
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro no script: $errorMessage')),
-        );
+        await _showAlert('Erro', 'Erro no script: $errorMessage',
+            isError: true);
         return;
       }
 
@@ -334,10 +395,8 @@ class _WebViewPageState extends State<WebViewPage> {
           .toList();
 
       if (periodos.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('Nenhuma disciplina encontrada para extrair.')),
-        );
+        await _showAlert(
+            'Aviso', 'Nenhuma disciplina encontrada para extrair.');
         return;
       }
 
@@ -349,15 +408,13 @@ class _WebViewPageState extends State<WebViewPage> {
       );
     } catch (e) {
       debugPrint("Erro ao executar/decodificar script: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ocorreu um erro ao extrair as notas: $e')),
-      );
+      await _showAlert('Erro', 'Ocorreu um erro ao extrair as notas: $e',
+          isError: true);
     }
   }
 
   Future<void> _waitForConteudoLoad(
       {Duration timeout = const Duration(seconds: 20)}) async {
-    // Fast-path: conferir se já está pronto
     try {
       final ok = await _controller.runJavaScriptReturningResult(r"""
         (function(){
@@ -393,42 +450,33 @@ class _WebViewPageState extends State<WebViewPage> {
     if (!timedOut) t.cancel();
   }
 
-  /// MÉTODO AUTOMÁTICO CORRIGIDO
   Future<void> _navigateAndExtractGrades() async {
-    // Mostra um indicador de carregamento e desabilita cliques múltiplos
+    if (_isProcessingGrades) return;
+
     setState(() {
+      _isProcessingGrades = true;
       _isLoading = true;
       _iframeLoaded = false;
     });
     _iframeReadyCompleter = null;
 
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Iniciando processo automático...')),
-    );
+    _showLoadingDialog('Iniciando processo automático...');
 
     try {
-      // ETAPA 1: Clica no menu "Consultas"
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Passo 1/4: Abrindo menu de consultas...')),
-      );
+      _hideLoadingDialog();
+      _showLoadingDialog('Abrindo menu de consultas...');
 
       const script1 = """
         document.getElementById('menuTopo:repeatAcessoMenu:2:repeatSuperTransacoesSuperMenu:0:linkSuperTransacaoSuperMenu').click();
       """;
       await _controller.runJavaScript(script1);
 
-      // ETAPA 2: Aguarda e clica no link "Notas" dentro do primeiro iframe
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Passo 2/4: Procurando link de notas...')),
-      );
+      _hideLoadingDialog();
+      _showLoadingDialog('Procurando link de notas...');
 
       const script2 = """
         new Promise((resolve, reject) => {
-          const maxTries = 40; // Tenta por 10 segundos (40 * 250ms)
+          const maxTries = 40;
           let tries = 0;
           const interval = setInterval(() => {
             const iframe = document.getElementsByTagName('iframe')[0];
@@ -455,38 +503,36 @@ class _WebViewPageState extends State<WebViewPage> {
       """;
       await _controller.runJavaScriptReturningResult(script2);
 
-      // ETAPA 3: Aguarda a página de notas carregar completamente no iframe "Conteudo"
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text(
-                'Passo 3/4: Aguardando carregamento da página de notas...')),
-      );
+      _hideLoadingDialog();
+      _showLoadingDialog('Aguardando carregamento da página de notas...');
 
       await _waitForConteudoLoad(timeout: const Duration(seconds: 20));
 
-      // ETAPA 4: Extrai os dados das notas
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text('Passo 4/4: Extraindo dados das notas...')),
-      );
+      _hideLoadingDialog();
+      _showLoadingDialog('Extraindo dados das notas...');
 
-      // Aguarda um tempo adicional para garantir estabilidade
       await Future.delayed(const Duration(milliseconds: 500));
 
+      _hideLoadingDialog();
       await _extractAndShowGrades();
     } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro no processo automático: ${e.toString()}')),
-      );
+      _hideLoadingDialog();
+      await _showAlert('Erro', 'Erro no processo automático: ${e.toString()}',
+          isError: true);
     } finally {
-      // Garante que o indicador de carregamento seja removido no final
       if (mounted) {
-        setState(() => _isLoading = false);
+        setState(() {
+          _isProcessingGrades = false;
+          _isLoading = false;
+        });
       }
     }
+  }
+
+  void _toggleWebViewVisibility() {
+    setState(() {
+      _isWebViewVisible = !_isWebViewVisible;
+    });
   }
 
   @override
@@ -494,42 +540,235 @@ class _WebViewPageState extends State<WebViewPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('SIGA UFAPE'),
+        backgroundColor: const Color(0xFF004D40),
+        foregroundColor: Colors.white,
+        elevation: 2,
         actions: [
-          // NOVO BOTÃO AUTOMÁTICO
-          IconButton(
-            icon: const Icon(Icons.download_for_offline_outlined),
-            tooltip: 'Navegar e Extrair Notas (Automático)',
-            onPressed: _navigateAndExtractGrades,
-          ),
-          // Botões manuais
-          IconButton(
-            icon: const Icon(Icons.school_outlined),
-            tooltip: 'Ir para Notas no SIGA (Manual)',
-            onPressed: _navigateToGrades,
-          ),
-          IconButton(
-            icon: const Icon(Icons.analytics_outlined),
-            tooltip: 'Extrair Notas da Página Atual (Manual)',
-            onPressed: _extractAndShowGrades,
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Recarregar Página',
-            onPressed: () {
-              setState(() {
-                _hasLoggedIn = false;
-              });
-              _controller.reload();
+          // Menu dropdown
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert, color: Colors.white),
+            onSelected: (value) {
+              switch (value) {
+                case 'toggle_webview':
+                  _toggleWebViewVisibility();
+                  break;
+                case 'refresh':
+                  setState(() {
+                    _hasLoggedIn = false;
+                  });
+                  _controller.reload();
+                  break;
+              }
             },
+            itemBuilder: (context) => [
+              PopupMenuItem(
+                value: 'toggle_webview',
+                child: Row(
+                  children: [
+                    Icon(_isWebViewVisible
+                        ? Icons.visibility_off
+                        : Icons.visibility),
+                    const SizedBox(width: 8),
+                    Text(_isWebViewVisible
+                        ? 'Ocultar WebView'
+                        : 'Mostrar WebView'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'refresh',
+                child: Row(
+                  children: [
+                    Icon(Icons.refresh),
+                    SizedBox(width: 8),
+                    Text('Recarregar Página'),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
       body: Stack(
         children: [
-          WebViewWidget(controller: _controller),
-          if (_isLoading)
-            const Center(
-              child: CircularProgressIndicator(),
+          if (_isWebViewVisible) ...[
+            WebViewWidget(controller: _controller),
+            if (_isLoading && !_isProcessingGrades)
+              Container(
+                color: Colors.black54,
+                child: const Center(
+                  child: CircularProgressIndicator(
+                    valueColor:
+                        AlwaysStoppedAnimation<Color>(Color(0xFF004D40)),
+                  ),
+                ),
+              ),
+          ] else ...[
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    const Color(0xFF004D40).withOpacity(0.1),
+                    const Color(0xFF00695C).withOpacity(0.05),
+                  ],
+                ),
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.school,
+                      size: 80,
+                      color: const Color(0xFF004D40).withOpacity(0.7),
+                    ),
+                    const SizedBox(height: 24),
+                    const Text(
+                      'SIGA UFAPE',
+                      style: TextStyle(
+                        fontSize: 28,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF004D40),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Sistema Acadêmico',
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    const SizedBox(height: 48),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 16),
+                      margin: const EdgeInsets.symmetric(horizontal: 32),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Column(
+                        children: [
+                          const Icon(
+                            Icons.info_outline,
+                            color: Color(0xFF004D40),
+                            size: 32,
+                          ),
+                          const SizedBox(height: 12),
+                          const Text(
+                            'O WebView está executando em segundo plano',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            'Clique em NOTAS para visualizar suas notas ou use o menu para mostrar o WebView',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.grey.shade600,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                          const SizedBox(height: 16),
+                          SizedBox(
+                            width: double.infinity,
+                            child: ElevatedButton.icon(
+                              onPressed: _isProcessingGrades
+                                  ? null
+                                  : _navigateAndExtractGrades,
+                              icon: _isProcessingGrades
+                                  ? const SizedBox(
+                                      width: 18,
+                                      height: 18,
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2, color: Colors.white))
+                                  : const Icon(Icons.school,
+                                      color: Colors.white),
+                              label: const Text('NOTAS',
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.bold)),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF00695C),
+                                padding:
+                                    const EdgeInsets.symmetric(vertical: 12),
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(10)),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+          // Botões manuais - aparecem apenas quando WebView está visível
+          if (_isWebViewVisible)
+            Positioned(
+              bottom: 16,
+              left: 16,
+              right: 16,
+              child: SafeArea(
+                child: ElevatedButton.icon(
+                  onPressed:
+                      _isProcessingGrades ? null : _navigateAndExtractGrades,
+                  icon: _isProcessingGrades
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white))
+                      : const Icon(Icons.school, color: Colors.white),
+                  label: const Text('NOTAS',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF00695C),
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                ),
+              ),
+            ),
+          if (_isWebViewVisible)
+            Positioned(
+              bottom: 16,
+              right: 16,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  FloatingActionButton.small(
+                    heroTag: "navigate",
+                    onPressed: _navigateToGrades,
+                    backgroundColor: const Color(0xFF00695C),
+                    tooltip: 'Navegar para Notas (Manual)',
+                    child: const Icon(Icons.navigate_next, color: Colors.white),
+                  ),
+                  const SizedBox(height: 8),
+                  FloatingActionButton.small(
+                    heroTag: "extract",
+                    onPressed: _extractAndShowGrades,
+                    backgroundColor: const Color(0xFF004D40),
+                    tooltip: 'Extrair Notas (Manual)',
+                    child: const Icon(Icons.download, color: Colors.white),
+                  ),
+                ],
+              ),
             ),
         ],
       ),
