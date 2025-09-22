@@ -23,7 +23,10 @@ class WebViewPage extends StatefulWidget {
 class _WebViewPageState extends State<WebViewPage> {
   late final WebViewController _controller;
   bool _isLoading = true;
-  bool _hasLoggedIn = false;
+  bool _isLoggedIn = false;
+
+  Timer? _statusCheckTimer;
+
   bool _isWebViewVisible = false;
   bool _isProcessingGrades = false;
 
@@ -31,6 +34,16 @@ class _WebViewPageState extends State<WebViewPage> {
   void initState() {
     super.initState();
     _initializeWebView();
+    _statusCheckTimer = Timer.periodic(const Duration(seconds: 3), (timer) {
+      _checkLoginStatus();
+    });
+  }
+
+  @override
+  void dispose() {
+    // Cancela o timer quando a tela for destruída
+    _statusCheckTimer?.cancel();
+    super.dispose();
   }
 
   void _initializeWebView() {
@@ -52,12 +65,15 @@ class _WebViewPageState extends State<WebViewPage> {
               });
             }
 
-            if (url.contains('index.jsp') && !_hasLoggedIn) {
+            // Se for a página de login e ainda não tentamos logar
+            if (url.contains('index.jsp') && !_isLoggedIn) {
               _injectLoginScript();
+              // Otimisticamente, consideramos logado. O timer corrigirá se falhar.
               setState(() {
-                _hasLoggedIn = true;
+                _isLoggedIn = true;
               });
             }
+            _checkLoginStatus(); // Verifica o status assim que a página carrega
           },
           onWebResourceError: (WebResourceError error) {
             if (mounted) {
@@ -428,11 +444,96 @@ class _WebViewPageState extends State<WebViewPage> {
     });
   }
 
+  Future<void> _checkLoginStatus() async {
+    if (!mounted) return;
+
+    try {
+      // Este script verifica a presença do label com o nome do usuário.
+      // Se existir, o usuário está logado. Caso contrário, não está.
+      const script = "document.getElementById('lblNomePessoa') != null;";
+      final result = await _controller.runJavaScriptReturningResult(script);
+
+      final bool currentlyLoggedIn =
+          result == true || result.toString() == 'true';
+
+      // Atualiza o estado APENAS se houver uma mudança, para evitar rebuilds desnecessários.
+      if (currentlyLoggedIn != _isLoggedIn) {
+        setState(() {
+          _isLoggedIn = currentlyLoggedIn;
+        });
+      }
+    } catch (e) {
+      // Se houver um erro (ex: a página ainda está carregando),
+      // consideramos como deslogado por segurança.
+      if (_isLoggedIn) {
+        setState(() {
+          _isLoggedIn = false;
+        });
+      }
+    }
+  }
+
+  Widget _buildStatusIndicator() {
+    if (_isLoggedIn) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.green.shade100,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.check_circle, color: Colors.green, size: 14),
+            SizedBox(width: 4),
+            Text(
+              'Conectado',
+              style: TextStyle(
+                color: Colors.green,
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      );
+    } else {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.red.shade100,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.error, color: Colors.red, size: 14),
+            SizedBox(width: 4),
+            Text(
+              'Desconectado',
+              style: TextStyle(
+                color: Colors.red,
+                fontWeight: FontWeight.bold,
+                fontSize: 12,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('SIGA UFAPE'),
+        title: Row(
+          children: [
+            const Text('SIGA UFAPE'),
+            const Spacer(),
+            _buildStatusIndicator(),
+          ],
+        ),
         backgroundColor: const Color(0xFF004D40),
         foregroundColor: Colors.white,
         elevation: 2,
@@ -445,9 +546,6 @@ class _WebViewPageState extends State<WebViewPage> {
                   _toggleWebViewVisibility();
                   break;
                 case 'refresh':
-                  setState(() {
-                    _hasLoggedIn = false;
-                  });
                   _controller.reload();
                   break;
               }
