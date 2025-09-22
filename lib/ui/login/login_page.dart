@@ -43,10 +43,7 @@ class _LoginPageState extends State<LoginPage> {
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => WebViewPage(
-                username: savedUser,
-                password: savedPass,
-              ),
+              builder: (context) => WebViewPage(),
             ),
           );
         });
@@ -76,10 +73,7 @@ class _LoginPageState extends State<LoginPage> {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
-          builder: (context) => WebViewPage(
-            username: username,
-            password: password,
-          ),
+          builder: (context) => WebViewPage(),
         ),
       );
     }

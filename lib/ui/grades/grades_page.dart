@@ -3,15 +3,14 @@ import '../../domain/entities/grades_model.dart';
 import '../charts/charts_page.dart';
 
 class GradesPage extends StatefulWidget {
-  final List<Periodo> periodos;
-
-  const GradesPage({super.key, required this.periodos});
+  const GradesPage({super.key});
 
   @override
   State<GradesPage> createState() => _GradesPageState();
 }
 
 class _GradesPageState extends State<GradesPage> {
+  List<Periodo> periodos = [];
   static const Color _primary = Color(0xFF004D40);
   static const Color _secondary = Color(0xFF00695C);
 
@@ -24,7 +23,7 @@ class _GradesPageState extends State<GradesPage> {
   String _filterBySituacao = 'todos'; // todos | aprovado | cursando | reprovado
 
   List<Periodo> get _preparedPeriodos {
-    List<Periodo> base = List<Periodo>.from(widget.periodos);
+    List<Periodo> base = List<Periodo>.from(periodos);
 
     // Aplicar filtro por situação
     if (_filterBySituacao != 'todos') {
@@ -137,18 +136,17 @@ class _GradesPageState extends State<GradesPage> {
   Widget build(BuildContext context) {
     final periodos = _preparedPeriodos;
 
-    final totalDisciplinas =
-        widget.periodos.expand((p) => p.disciplinas).length;
-    final totalAprovadas = widget.periodos
+    final totalDisciplinas = periodos.expand((p) => p.disciplinas).length;
+    final totalAprovadas = periodos
         .expand((p) => p.disciplinas)
         .where((d) => d.situacao.toUpperCase().contains('APROVADO'))
         .length;
-    final totalReprovadas = widget.periodos
+    final totalReprovadas = periodos
         .expand((p) => p.disciplinas)
         .where((d) => d.situacao.toUpperCase().contains('REPROVADO'))
         .length;
     final totalCursando = totalDisciplinas - totalAprovadas - totalReprovadas;
-    final overallMedia = _computeOverallAverage(widget.periodos);
+    final overallMedia = _computeOverallAverage(periodos);
 
     // Quando há busca, mostra disciplinas individualmente
     final isSearching = _searchQuery.isNotEmpty;
@@ -176,7 +174,7 @@ class _GradesPageState extends State<GradesPage> {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => ChartsPage(periodos: widget.periodos),
+                  builder: (context) => ChartsPage(),
                 ),
               );
             },
@@ -308,9 +306,7 @@ class _GradesPageState extends State<GradesPage> {
                     _buildStatItem('Aprovadas', totalAprovadas.toString(),
                         Icons.check_circle),
                     _dividerLine(),
-                    _buildStatItem(
-                        'Períodos',
-                        widget.periodos.length.toString(),
+                    _buildStatItem('Períodos', periodos.length.toString(),
                         Icons.calendar_today),
                     _dividerLine(),
                     _buildStatItem('Média', overallMedia.toStringAsFixed(2),

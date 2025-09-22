@@ -7,13 +7,8 @@ import 'package:webview_flutter/webview_flutter.dart';
 import '../../domain/entities/grades_model.dart';
 
 class WebViewPage extends StatefulWidget {
-  final String username;
-  final String password;
-
   const WebViewPage({
     super.key,
-    required this.username,
-    required this.password,
   });
 
   @override
@@ -22,6 +17,8 @@ class WebViewPage extends StatefulWidget {
 
 class _WebViewPageState extends State<WebViewPage> {
   late final WebViewController _controller;
+  String username = '';
+  String password = '';
   bool _isLoading = true;
   bool _isLoggedIn = false;
 
@@ -89,9 +86,9 @@ class _WebViewPageState extends State<WebViewPage> {
 
   void _injectLoginScript() {
     final safeUsername =
-        widget.username.replaceAll(r'\', r'\\').replaceAll(r"'", r"\'");
+        username.replaceAll(r'\', r'\\').replaceAll(r"'", r"\'");
     final safePassword =
-        widget.password.replaceAll(r'\', r'\\').replaceAll(r"'", r"\'");
+        password.replaceAll(r'\', r'\\').replaceAll(r"'", r"\'");
 
     final script = """
       (function() {
@@ -303,7 +300,7 @@ class _WebViewPageState extends State<WebViewPage> {
       Navigator.push(
         context,
         MaterialPageRoute(
-          builder: (context) => GradesPage(periodos: periodos),
+          builder: (context) => GradesPage(),
         ),
       );
     } catch (e) {
@@ -529,7 +526,15 @@ class _WebViewPageState extends State<WebViewPage> {
       appBar: AppBar(
         title: Row(
           children: [
-            const Text('SIGA UFAPE'),
+            Image.asset('assets/images/logo_ufape_25.png', height: 60),
+            const Text(
+              'SIGA UFAPE',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
+            ),
             const Spacer(),
             _buildStatusIndicator(),
           ],
@@ -609,20 +614,8 @@ class _WebViewPageState extends State<WebViewPage> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Icon(
-                      Icons.school,
-                      size: 80,
-                      color: const Color(0xFF004D40).withOpacity(0.7),
-                    ),
-                    const SizedBox(height: 24),
-                    const Text(
-                      'SIGA UFAPE',
-                      style: TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF004D40),
-                      ),
-                    ),
+                    Image.asset('assets/images/logo_ufape_100.png',
+                        height: 200),
                     const SizedBox(height: 8),
                     Text(
                       'Sistema Acadêmico',
@@ -726,6 +719,7 @@ class _WebViewPageState extends State<WebViewPage> {
                   label: const Text('Extrair Notas Automaticamente',
                       style: TextStyle(fontWeight: FontWeight.bold)),
                   backgroundColor: const Color(0xFF00695C),
+                  foregroundColor: Colors.white,
                 ),
               ),
             ),

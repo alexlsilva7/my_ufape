@@ -3,9 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import '../../domain/entities/grades_model.dart';
 
 class ChartsPage extends StatefulWidget {
-  final List<Periodo> periodos;
-
-  const ChartsPage({super.key, required this.periodos});
+  const ChartsPage({super.key});
 
   @override
   State<ChartsPage> createState() => _ChartsPageState();
@@ -15,15 +13,16 @@ class _ChartsPageState extends State<ChartsPage> {
   static const Color _primary = Color(0xFF004D40);
   static const Color _secondary = Color(0xFF00695C);
 
+  List<Periodo> periodos = [];
+
   @override
   Widget build(BuildContext context) {
-    final totalDisciplinas =
-        widget.periodos.expand((p) => p.disciplinas).length;
-    final totalAprovadas = widget.periodos
+    final totalDisciplinas = periodos.expand((p) => p.disciplinas).length;
+    final totalAprovadas = periodos
         .expand((p) => p.disciplinas)
         .where((d) => d.situacao.toUpperCase().contains('APROVADO'))
         .length;
-    final totalReprovadas = widget.periodos
+    final totalReprovadas = periodos
         .expand((p) => p.disciplinas)
         .where((d) => d.situacao.toUpperCase().contains('REPROVADO'))
         .length;
@@ -345,7 +344,7 @@ class _ChartsPageState extends State<ChartsPage> {
                         Expanded(
                           child: _buildStatCard(
                             'Total Períodos',
-                            widget.periodos.length.toString(),
+                            periodos.length.toString(),
                             Icons.calendar_today,
                             Colors.blue.shade600,
                           ),
@@ -433,7 +432,7 @@ class _ChartsPageState extends State<ChartsPage> {
   List<Map<String, dynamic>> _computePeriodAverages() {
     final List<Map<String, dynamic>> periodMedias = [];
 
-    for (final periodo in widget.periodos) {
+    for (final periodo in periodos) {
       final medias = <double>[];
 
       for (final disciplina in periodo.disciplinas) {
@@ -464,7 +463,7 @@ class _ChartsPageState extends State<ChartsPage> {
   double _computeOverallAverage() {
     final allMedias = <double>[];
 
-    for (final periodo in widget.periodos) {
+    for (final periodo in periodos) {
       for (final disciplina in periodo.disciplinas) {
         for (final entry in disciplina.notas.entries) {
           if (_isMediaKey(entry.key)) {
