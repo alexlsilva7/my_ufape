@@ -1,0 +1,746 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html lang="pt-BR" xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+<link class="component" href="/ufape/a4j/s/3_3_3.Finalorg/richfaces/renderkit/html/css/basic_classes.xcss/DATB/eAHj27nnFx8QAwATpgT7.jsf" rel="stylesheet" type="text/css" /><link class="component" href="/ufape/a4j/s/3_3_3.Finalorg/richfaces/renderkit/html/css/extended_classes.xcss/DATB/eAHj27nnFx8QAwATpgT7.jsf" media="rich-extended-skinning" rel="stylesheet" type="text/css" /><script src="/ufape/a4j/g/3_3_3.Finalorg.ajax4jsf.javascript.AjaxScript.jsf" type="text/javascript"></script><script src="/ufape/a4j/g/3_3_3.Finalorg/ajax4jsf/javascript/scripts/form.js.jsf" type="text/javascript"></script><script src="/ufape/a4j/g/3_3_3.Finalorg.ajax4jsf.javascript.PrototypeScript.jsf" type="text/javascript"></script><script src="/ufape/a4j/g/3_3_3.Finalorg/richfaces/renderkit/html/scripts/utils.js.jsf" type="text/javascript"></script><script src="/ufape/a4j/g/3_3_3.Finalorg/richfaces/renderkit/html/scripts/browser_info.js.jsf" type="text/javascript"></script><script src="/ufape/a4j/g/3_3_3.Finalorg/richfaces/renderkit/html/scripts/modalPanel.js.jsf" type="text/javascript"></script><script src="/ufape/a4j/g/3_3_3.Finalorg/richfaces/renderkit/html/scripts/modalPanelBorders.js.jsf" type="text/javascript"></script><link class="component" href="/ufape/a4j/s/3_3_3.Finalorg/richfaces/renderkit/html/css/modalPanel.xcss/DATB/eAHj27nnFx8QAwATpgT7.jsf" rel="stylesheet" type="text/css" /><script type="text/javascript">window.RICH_FACES_EXTENDED_SKINNING_ON=true;</script><script src="/ufape/a4j/g/3_3_3.Finalorg/richfaces/renderkit/html/scripts/skinning.js.jsf" type="text/javascript"></script><link rel="shortcut icon" href="imagens/verde/favicon.ico" type="image/x-icon" />
+<link rel="icon" href="imagens/verde/favicon.ico" type="image/x-icon" />
+<title>SIG@UFAPE</title>
+
+<style type="text/css">
+#logConsole {
+	display: none;
+}
+
+html body #baseMenu #cabecalhoMenuLateral {
+	-webkit-border-top-left-radius: 5px;
+	-webkit-border-top-right-radius: 5px;
+	-moz-border-radius-topleft: 5px;
+	-moz-border-radius-topright: 5px;
+	border-top-left-radius: 5px;
+	border-top-right-radius: 5px;	
+	background-color: #DDDDDB; 
+	color: black; 
+	padding: 8px;
+}
+
+</style>
+
+<script type="text/javascript" src="/ufape/javascript/jquery-1.6.3.min.js"></script>
+<script type="text/javascript" src="/ufape/javascript/jquery.sizes.min.js"></script>
+<script type="text/javascript" src="/ufape/javascript/jquery-ui.custom.min.js"></script>
+
+<!-- Vari&#225;veis din&#226;micas utilizadas pelo logado.js (carregado abaixo) -->
+<script type="text/javascript">
+	var caminhoServlet = '/ufape/servlet/';
+	var urlServidorLogin = 'http://siga.ufape.edu.br/ufape';
+	var instituicaoEnsino = 'UFAPE';
+	var caminhoJSP = '/ufape/jsp/';
+	var emailContato = '';
+	var acessoEmailUsuario = 'acesso';
+	var preferenciaContraste = false;
+	var destinoPesquisa = '';
+	if(destinoPesquisa.length > 0){
+		var dadosDestinoPesquisa=''+
+			'&amp;menu='+
+			'&amp;superMenu='+
+			'&amp;superTransacao='+
+			'&amp;transacao='+
+			'&amp;codigoSuperTransacao=';
+		var dadosDestinoPesquisa_codSt = '';
+		var dadosDestinoPesquisa_codT = '';
+	}
+	
+</script>
+
+<script type="text/javascript" 
+	src="/ufape/javascript/logado.js"></script>
+	
+<link rel="stylesheet" type="text/css" href="/ufape/css/index.css" />
+<link rel="stylesheet" type="text/css" href="/ufape/css/verde.css" />
+<link rel="stylesheet" type="text/css" href="/ufape/css/siga.css" />
+<link rel="stylesheet" type="text/css" href="/ufape/css/menuLateral.css" />
+<link rel="stylesheet" type="text/css" href="/ufape/css/autocompletar.css" />
+<link rel="stylesheet" type="text/css" href="/ufape/css/padrao.css" />
+<link rel="stylesheet" type="text/css" href="/ufape/css/scroll.css" />
+<link rel="stylesheet" type="text/css" href="/ufape/css/acessibilidade.css" />
+<!--  Verifica&#231;&#227;o de cores da institui&#231;&#227;o e carrega o azul como cor padr&#227;o -->
+
+
+<script type="text/javascript" src="javascript/script.js"></script>
+<script type="text/javascript" src="javascript/modalPerfil.js"></script>
+<script type="text/javascript" src="javascript/autocompletar.js"></script>
+<script type="text/javascript" src="javascript/navigation_menu.js"></script>
+<script type="text/javascript" src="javascript/capturaAcaoSessao.js"></script>
+
+</head>
+<body class="logado" style="overflow: hidden" onload="limparMenuLateral();decrementarRelogio('output_relogio');checarDestinoPesquisa();preferenciaAltoContraste();">
+
+	<!-- Carrega o bean. -->
+	<span id="carregarTrocaPerfil"></span>
+	
+	<div id="BackgroundAreaTopo" class="background-area-topo">	
+	<div id="AreaTopo">
+		
+		<div id="dialogSessaoExpirada" title="Sess&#227;o Expirada!" class="dialog-sair" style="display:none">
+			<!-- &#193;rea para enquetes com o usu&#225;rio quando sess&#227;o expira. 
+			<div class="info-sair" style="margin: 15px 0 10px 4px">
+				Participe da nossa pesquisa de satisfa&#231;&#227;o do usu&#225;rio! A sua opini&#227;o &#233; de fundamental import&#226;ncia para a constante melhoria do SIG@. 
+				<b><a href="" target="_blank">Clique aqui</a></b>.
+			</div>
+			-->
+			<p>A sua sess&#227;o expirou! Voc&#234; ser&#225; redirecionado para a tela de login.</p>
+			<div class="container-botoes-sair">
+				<input type="button" value="OK" onclick="window.SIGA.fecharDialogSessaoExpirada(true);" class="botao" />
+			</div>
+		</div>
+		
+		<div id="dialogSair" class="dialog-sair" style="display:none">
+			Deseja realmente sair do SIG@UFAPE?			
+			<div class="container-botoes-sair">
+				<input type="button" value="Sim" onclick="window.SIGA.fecharDialogSair(true);" class="botao" />
+				<input type="button" value="N&#227;o" onclick="window.SIGA.fecharDialogSair(false);" class="botao" />
+			</div>
+		</div>
+
+		<div id="dialogAjudaGeral" class="dialogAjudaGeral textoAjuda" style="display:none">
+			<h3> Acesso &#224;s funcionalidades </h3>
+			<p>O sistema oferece estas formas de acesso para suas funcionalidades:</p>
+			<ul>
+				<li><b>Menus:</b> Dispon&#237;veis na barra superior. Como primeiro item h&#225; a figura de uma casa, 
+				que redireciona o usu&#225;rio para p&#225;gina principal a partir de qualquer tela do sistema. 
+				O logotipo da institui&#231;&#227;o de ensino tamb&#233;m redireciona para p&#225;gina principal.</li>
+				<li><b>Pesquisa por funcionalidade: </b> No topo da p&#225;gina este campo permite que o usu&#225;rio
+				digite qualquer palavra contida no nome da funcionalidade que deseja acessar, ou em suas <i>tags</i>. 
+				A pesquisa abrange todos os perfis que o usu&#225;rio possui.</li>
+				<li><b>Atalhos: </b> Ao acessar uma funcionalidade o usu&#225;rio pode adicion&#225;-la a seus atalhos,
+				que ficam dispon&#237;veis na tela principal do sistema, facilitando os futuros acessos das 
+				funcionalidades mais utilizadas. Os atalhos tamb&#233;m s&#227;o dispon&#237;veis por perfil, ou seja, caso 
+				o usu&#225;rio troque de um perfil A para B, seus atalhos do perfil A n&#227;o ser&#227;o exibidos.</li>
+			</ul>
+			<h3>Troca de Perfil </h3>
+			<p>Cada perfil atribu&#237;do ao usu&#225;rio possui um conjunto de funcionalidades associadas. O usu&#225;rio
+			pode ver seu perfil em uso na barra de informa&#231;&#245;es do usu&#225;rio, logo abaixo dos menus. Para Trocar
+			seu perfil, deve clicar no bot&#227;o "Trocar perfil" tamb&#233;m localizado na barra de informa&#231;&#245;es.</p>
+			<h3>Acessibilidade </h3>
+			<p>Para verificar os recursos dispon&#237;veis, acesse as op&#231;&#245;es na barra de acessibilidade localizada
+			no topo da p&#225;gina.</p> 
+		</div>
+
+		<div id="dialogAdicionarAtalho" title="Atalho" class="dialogPadrao">
+			<p id="mensagem"></p>
+			<div class="container-botoes-sair">
+				<input type="button" value="OK" onclick="window.SIGA.fecharDialogAtalho();" class="botao" />
+			</div> 
+		</div>
+		
+		<div id="dialogPerfilPadrao" title="Perfil Padr&atilde;o" class="dialogPadrao">
+			<p><span id="mensagemPerfilPadrao"></span></p>
+			<div class="container-botoes-sair">
+				<input type="button" value="OK" onclick="window.SIGA.fecharDialogPerfilPadrao();" class="botao" />
+			</div> 
+		</div>
+
+		<div id="dialogTrocarPerfil" class="dialogPadrao" style="display:none">			
+			<p>Deseja realmente trocar de perfil para acessar a funcionalidade pesquisada?</p>			
+			<div class="container-botoes-sair">
+				<input type="button" value="Sim" onclick="window.SIGA.fecharDialogTrocarPerfil(true);" class="botao" />
+				<input type="button" value="N&#227;o" onclick="window.SIGA.fecharDialogTrocarPerfil(false);" class="botao" />
+			</div>
+		</div>
+
+		<div id="dialogContraste" title="Contraste" class="dialogPadrao">
+			<p>Ocorreu um erro no sistema. N&#227;o foi poss&#237;vel salvar sua prefer&#234;ncia.</p>
+			<div class="container-botoes-sair">
+				<input type="button" value="OK" onclick="window.SIGA.fecharDialogContraste();" class="botao" />
+			</div> 
+		</div>
+		
+		<div id="dialog_padrao" class="dialogPadrao">
+			<p id="mensagem_padrao"></p>
+			<div class="container-botoes-sair">
+				<input type="button" value="OK" onclick="window.SIGA.fecharDialogPadrao();" class="botao" />
+			</div> 
+		</div>
+			
+		<div id="Topo" class="topo conteiner" style="layout:block;"><a id="Logo_Siga" name="Logo_Siga" href="javascript:paginaInicial();" accesskey="0" title="Ir para a p&aacute;gina inicial" class="logo"></a><a href="http://ufape.edu.br/" title="Site da Institui&ccedil;&atilde;o" target="_blank" class="link-ies"><img id="Logo_IES" src="imagens/logosInstituicoes/ufape.png" alt="Site da Institui&ccedil;&atilde;o" width="" class="logo-ies" /></a><div id="Topo_direita" class="funcoes-topo">
+
+				<div class="auto-complete" id="auto_complete2">
+					<input type="text" id="complete2" autocomplete="off" value="Pesquisar funcionalidade"
+					class="busca buscaTeste busca-input default-value" size="30" accesskey="3" maxlength="50" 
+					title="Digite palavras que fa&#231;am parte do nome da funcionalidade ou do menu que voc&#234; deseja acessar." />	
+					<div class="auto-complete-box" id="box2" style="margin-left: 29px;" ></div>	
+				</div>
+					
+				<form id="form_topo" name="form_topo" method="post" action="/ufape/logado.jsf"><table id="id_panelGrid_MenuAcoes" class="botoes">
+<tbody>
+<tr>
+<td>
+									<input type="button" id="botao_ajuda" title="Ajuda geral do sistema" class="botoes-li botoes-li-a ajuda-geral" onclick="window.SIGA.abrirDialogAjudaGeral();"/>
+								</td>
+<td><a id="botao_processo" name="botao_processo" href="/ufape/jsp/servico/sigaProcesso.jsp" onclick="window.manterSessao();" title="SIG@ Processo" class="botoes-li botoes-li-a acesso-processo"></a></td>
+<td>
+									<input type="button" id="botao_senha" title="Alterar Senha"
+										class="botoes-li botoes-li-a senha"
+										onclick="selecionarAtalho(1438, true, 5659); recarregarConteudo('siga/controleAcesso/usuario/HandlerTelaAlterarSenhaSIGA.jsp');limparMenuLateral();" />
+								</td>
+<td>
+									<input type="button" id="botao_sair" title="Encerrar Sess&#227;o" class="botoes-li botoes-li-a logout" onclick="window.SIGA.abrirDialogSair();"/>
+								</td>
+</tr>
+</tbody>
+</table>
+<div id="id_panelGrid_tempoRestante" class="tempoRestante"><span style="display:none;" id="poll"><script type="text/javascript">
+A4J.AJAX.Poll('form_topo',{'pollId':'poll','oncomplete':function(request,event,data){window.houveAcao = false;verificarSessaoExpirada();},'similarityGroupingId':'poll','parameters':{'houveAcao':window.houveAcao,'poll':'poll'} ,'pollinterval':10000,'containerId':'region_MenuAcoes'} );
+</script></span><span class="cor textTempoRestante">Tempo restante:</span><span id="output_relogio" class="contagemRelogio">19:59</span></div><input type="hidden" autocomplete="off" name="form_topo" value="form_topo" /><input type="hidden" autocomplete="off" name="autoScroll" value="" /><input type="hidden" autocomplete="off" name="form_topo:j_idcl" value="" /><input type="hidden" autocomplete="off" name="form_topo:_link_hidden_" value="" /><script type="text/javascript">function clear_form_topo() {
+_clearJSFFormParameters('form_topo','',['form_topo:j_idcl','form_topo:_link_hidden_']);
+}
+function clearFormHiddenParams_form_topo(){clear_form_topo();}
+function clearFormHiddenParams_form_topo(){clear_form_topo();}
+clear_form_topo();</script><input type="hidden" name="javax.faces.ViewState" id="javax.faces.ViewState" value="j_id8" autocomplete="off" /></form></div>
+
+			
+
+			
+			
+			
+						
+			<!-- BARRA DE ACESSIBILIDADE -->
+			<div id="barra_de_acessibilidade">	
+				<ul>
+					<li class='text-bar'>Acessibilidade</li>
+					<li style="margin-right: 4px;"><a id="Acessibilidade" name="Acessibilidade" href="jsp/HandlerCarregando.jsp?jsp=TelaAcessibilidade.jsf" accesskey="1" title="Acessibilidade" class="acessibilidade" target="Conteudo">Acessibilidade</a></li>
+					<li><form id="j_id_jsp_772644165_25" name="j_id_jsp_772644165_25" method="post" action="/ufape/logado.jsf"><a class="contraste" href="#" id="j_id_jsp_772644165_25:Contraste" name="j_id_jsp_772644165_25:Contraste" onclick="A4J.AJAX.Submit('j_id_jsp_772644165_25',event,{'oncomplete':function(request,event,data){altocontraste();window.SIGA.abrirDialogContraste(false);},'similarityGroupingId':'j_id_jsp_772644165_25:Contraste','parameters':{'j_id_jsp_772644165_25:Contraste':'j_id_jsp_772644165_25:Contraste'} ,'containerId':'j_id_jsp_772644165_0'} );return false;" title="Contraste">Contraste</a><input type="hidden" autocomplete="off" name="j_id_jsp_772644165_25" value="j_id_jsp_772644165_25" /><input type="hidden" autocomplete="off" name="autoScroll" value="" /><input type="hidden" autocomplete="off" name="j_id_jsp_772644165_25:j_idcl" value="" /><input type="hidden" autocomplete="off" name="j_id_jsp_772644165_25:_link_hidden_" value="" /><script type="text/javascript">function clear_j_id_jsp_772644165_25() {
+_clearJSFFormParameters('j_id_jsp_772644165_25','',['j_id_jsp_772644165_25:j_idcl','j_id_jsp_772644165_25:_link_hidden_']);
+}
+function clearFormHiddenParams_j_id_jsp_772644165_25(){clear_j_id_jsp_772644165_25();}
+function clearFormHiddenParams_j_id_jsp_772644165_25(){clear_j_id_jsp_772644165_25();}
+clear_j_id_jsp_772644165_25();</script><input type="hidden" name="javax.faces.ViewState" id="javax.faces.ViewState" value="j_id8" autocomplete="off" /></form>
+					</li>
+				</ul>
+			</div>
+		</div><span id="idCarregar"></span><div id="run">
+		  <div class="conteiner">
+			<form id="menuTopo" name="menuTopo" method="post" action="/ufape/logado.jsf"><ul id='menu' class='menu-layout'><li><a id="menuTopo:imageHome" name="menuTopo:imageHome" href="javascript: paginaInicial();" title="Ir para a p&aacute;gina inicial" class="botaoHome">In&#237;cio</a></li><li class='menu-link'><a id="menuTopo:repeatAcessoMenu:0:linkDescricaoMenu" name="menuTopo:repeatAcessoMenu:0:linkDescricaoMenu" href="javascript: void(0);" accesskey="4">Curr&iacute;culo</a><div id="menuTopo:repeatAcessoMenu:0:j_id_jsp_772644165_39" class="menu-sub"><ul><li class='li-final'><a href="#" id="menuTopo:repeatAcessoMenu:0:repeatSuperTransacoesSuperMenu:0:linkSuperTransacaoSuperMenu" name="menuTopo:repeatAcessoMenu:0:repeatSuperTransacoesSuperMenu:0:linkSuperTransacaoSuperMenu" onclick="A4J.AJAX.Submit('menuTopo',event,{'oncomplete':function(request,event,data){verificarTransacoes();},'similarityGroupingId':'menuTopo:repeatAcessoMenu:0:repeatSuperTransacoesSuperMenu:0:linkSuperTransacaoSuperMenu','parameters':{'exibirMenuLateral':'false','codigoSuperTransacaoSelecionada':122,'menuTopo:repeatAcessoMenu:0:repeatSuperTransacoesSuperMenu:0:linkSuperTransacaoSuperMenu':'menuTopo:repeatAcessoMenu:0:repeatSuperTransacoesSuperMenu:0:linkSuperTransacaoSuperMenu'} ,'containerId':'j_id_jsp_772644165_0'} );return false;">Perfis Curriculares do Curso</a></li></ul></div></li><li class='menu-link'><a id="menuTopo:repeatAcessoMenu:1:linkDescricaoMenu" name="menuTopo:repeatAcessoMenu:1:linkDescricaoMenu" href="javascript: void(0);" accesskey="4">Oferta</a><div id="menuTopo:repeatAcessoMenu:1:j_id_jsp_772644165_39" class="menu-sub"><ul><li class='li-final'><a href="#" id="menuTopo:repeatAcessoMenu:1:repeatSuperTransacoesSuperMenu:0:linkSuperTransacaoSuperMenu" name="menuTopo:repeatAcessoMenu:1:repeatSuperTransacoesSuperMenu:0:linkSuperTransacaoSuperMenu" onclick="A4J.AJAX.Submit('menuTopo',event,{'oncomplete':function(request,event,data){verificarTransacoes();},'similarityGroupingId':'menuTopo:repeatAcessoMenu:1:repeatSuperTransacoesSuperMenu:0:linkSuperTransacaoSuperMenu','parameters':{'exibirMenuLateral':'false','codigoSuperTransacaoSelecionada':939,'menuTopo:repeatAcessoMenu:1:repeatSuperTransacoesSuperMenu:0:linkSuperTransacaoSuperMenu':'menuTopo:repeatAcessoMenu:1:repeatSuperTransacoesSuperMenu:0:linkSuperTransacaoSuperMenu'} ,'containerId':'j_id_jsp_772644165_0'} );return false;">Grade de Oferta</a></li></ul></div></li><li class='menu-link'><a id="menuTopo:repeatAcessoMenu:2:linkDescricaoMenu" name="menuTopo:repeatAcessoMenu:2:linkDescricaoMenu" href="javascript: void(0);" accesskey="4">Consultas</a><div id="menuTopo:repeatAcessoMenu:2:j_id_jsp_772644165_39" class="menu-sub"><ul><li class='li-final'><a href="#" id="menuTopo:repeatAcessoMenu:2:repeatSuperTransacoesSuperMenu:0:linkSuperTransacaoSuperMenu" name="menuTopo:repeatAcessoMenu:2:repeatSuperTransacoesSuperMenu:0:linkSuperTransacaoSuperMenu" onclick="A4J.AJAX.Submit('menuTopo',event,{'oncomplete':function(request,event,data){verificarTransacoes();},'similarityGroupingId':'menuTopo:repeatAcessoMenu:2:repeatSuperTransacoesSuperMenu:0:linkSuperTransacaoSuperMenu','parameters':{'menuTopo:repeatAcessoMenu:2:repeatSuperTransacoesSuperMenu:0:linkSuperTransacaoSuperMenu':'menuTopo:repeatAcessoMenu:2:repeatSuperTransacoesSuperMenu:0:linkSuperTransacaoSuperMenu','exibirMenuLateral':'false','codigoSuperTransacaoSelecionada':261} ,'containerId':'j_id_jsp_772644165_0'} );return false;">Detalhamento de Discente</a></li></ul></div></li><li class='menu-link'><a id="menuTopo:repeatAcessoMenu:3:linkDescricaoMenu" name="menuTopo:repeatAcessoMenu:3:linkDescricaoMenu" href="javascript: void(0);" accesskey="4">Servi&ccedil;os</a><div id="menuTopo:repeatAcessoMenu:3:j_id_jsp_772644165_39" class="menu-sub"><ul><li class='li-final'><a href="#" id="menuTopo:repeatAcessoMenu:3:repeatSuperTransacoesSuperMenu:0:linkSuperTransacaoSuperMenu" name="menuTopo:repeatAcessoMenu:3:repeatSuperTransacoesSuperMenu:0:linkSuperTransacaoSuperMenu" onclick="A4J.AJAX.Submit('menuTopo',event,{'oncomplete':function(request,event,data){verificarTransacoes();},'similarityGroupingId':'menuTopo:repeatAcessoMenu:3:repeatSuperTransacoesSuperMenu:0:linkSuperTransacaoSuperMenu','parameters':{'exibirMenuLateral':'false','menuTopo:repeatAcessoMenu:3:repeatSuperTransacoesSuperMenu:0:linkSuperTransacaoSuperMenu':'menuTopo:repeatAcessoMenu:3:repeatSuperTransacoesSuperMenu:0:linkSuperTransacaoSuperMenu','codigoSuperTransacaoSelecionada':1445} ,'containerId':'j_id_jsp_772644165_0'} );return false;">Senhas</a></li><li class='li-final'><a href="#" id="menuTopo:repeatAcessoMenu:3:repeatSuperTransacoesSuperMenu:1:linkSuperTransacaoSuperMenu" name="menuTopo:repeatAcessoMenu:3:repeatSuperTransacoesSuperMenu:1:linkSuperTransacaoSuperMenu" onclick="A4J.AJAX.Submit('menuTopo',event,{'oncomplete':function(request,event,data){verificarTransacoes();},'similarityGroupingId':'menuTopo:repeatAcessoMenu:3:repeatSuperTransacoesSuperMenu:1:linkSuperTransacaoSuperMenu','parameters':{'exibirMenuLateral':'false','codigoSuperTransacaoSelecionada':179,'menuTopo:repeatAcessoMenu:3:repeatSuperTransacoesSuperMenu:1:linkSuperTransacaoSuperMenu':'menuTopo:repeatAcessoMenu:3:repeatSuperTransacoesSuperMenu:1:linkSuperTransacaoSuperMenu'} ,'containerId':'j_id_jsp_772644165_0'} );return false;">Atualizar Dados Pessoais</a></li></ul></div></li></ul><input type="hidden" autocomplete="off" name="menuTopo" value="menuTopo" /><input type="hidden" autocomplete="off" name="autoScroll" value="" /><input type="hidden" autocomplete="off" name="menuTopo:j_idcl" value="" /><input type="hidden" autocomplete="off" name="menuTopo:_link_hidden_" value="" /><script type="text/javascript">function clear_menuTopo() {
+_clearJSFFormParameters('menuTopo','',['menuTopo:j_idcl','menuTopo:_link_hidden_']);
+}
+function clearFormHiddenParams_menuTopo(){clear_menuTopo();}
+function clearFormHiddenParams_menuTopo(){clear_menuTopo();}
+clear_menuTopo();</script><input type="hidden" name="javax.faces.ViewState" id="javax.faces.ViewState" value="j_id8" autocomplete="off" /></form>
+		  </div>
+		</div>
+		
+		
+		</div>
+		</div>
+		<!-- fim AreaTopo -->
+
+		<div id="box-informacoes">
+
+		<ul id='Informacoes'><li><label id="lblNome" class="cor">
+Nome: <label id="lblNomePessoa" title="ALEX SILVA">
+ALEX SILVA</label></label></li><li><label id="lblOrgao" class="cor">
+&Oacute;rg&atilde;o: <label id="lblNomeOrgao" title="COORD. DE BACHARELADO EM CI&Ecirc;NCIA DA COMPUTA&Ccedil;&Atilde;O - UAG">
+COORD. DE BACHAR...</label></label></li><li><label id="lblModulo" class="cor">
+M&oacute;dulo: <label id="lblDescricaoModulo" title="ENSINO - GRADUA&Ccedil;&Atilde;O">
+ENSINO - GRADUA&Ccedil;&Atilde;O</label></label></li><li><label id="lblPerfil" class="cor">
+Perfil: <label id="lblDescricaoTipoPerfilFuncional" title="DISCENTE">
+DISCENTE</label></label></li>
+		
+		
+		
+		
+		
+		
+		
+
+		
+		
+		
+
+		
+		
+		
+		
+		
+			<div id="boxTrocaPerfil" >
+			
+			</div>
+			</li><li id='box-perfil-padrao'><form id="formAtualizarPerfilPadrao" name="formAtualizarPerfilPadrao" method="post" action="/ufape/logado.jsf"><input type="hidden" autocomplete="off" name="formAtualizarPerfilPadrao" value="formAtualizarPerfilPadrao" /><input type="hidden" autocomplete="off" name="autoScroll" value="" /><input type="hidden" autocomplete="off" name="formAtualizarPerfilPadrao:j_idcl" value="" /><input type="hidden" autocomplete="off" name="formAtualizarPerfilPadrao:_link_hidden_" value="" /><script type="text/javascript">function clear_formAtualizarPerfilPadrao() {
+_clearJSFFormParameters('formAtualizarPerfilPadrao','',['formAtualizarPerfilPadrao:j_idcl','formAtualizarPerfilPadrao:_link_hidden_']);
+}
+function clearFormHiddenParams_formAtualizarPerfilPadrao(){clear_formAtualizarPerfilPadrao();}
+function clearFormHiddenParams_formAtualizarPerfilPadrao(){clear_formAtualizarPerfilPadrao();}
+clear_formAtualizarPerfilPadrao();</script><input type="hidden" name="javax.faces.ViewState" id="javax.faces.ViewState" value="j_id8" autocomplete="off" /></form></li></ul>
+		
+		
+		
+		
+		
+		
+
+		</div><!-- Fim informa&#231;&#245;es -->
+	
+	<!--  Fim do Conteiner -->
+	
+	<!-- Inicio AreaDeConteudo -->
+	<div id="AreaDeConteudo">
+	
+	<div id="AreaDoMenuLateral" style="display:none"><div id="cabecalhoMenuLateral" class="cabecalhoMenuLateral"><strong></strong><br></div>
+		
+		
+
+		<div class="box-rolagem" id="menuLateralBox">
+			<div class="rolagem">
+				<div id="menuLateral" class="list">
+				<form id="formLateral" name="formLateral" method="post" action="/ufape/logado.jsf">
+					<ul>
+					
+					</ul>
+					
+					<!-- Fun&#231;&#227;o verificarTransacoes() utilizada quando uma superTransa&#231;&#227;o do
+					menu &#233; selecionada, para redirecionar diretamente caso esta tenha apenas
+					uma transa&#231;&#227;o -->
+					<script id="formLateral:verificarTransacoes" type="text/javascript">//<![CDATA[
+		verificarTransacoes=function(){A4J.AJAX.Submit('formLateral',null,{'oncomplete':function(request,event,data){recarregarConteudo('blank.jsf'+
+						'&menu=&superMenu=&superTransacao='+
+						''+
+						'&transacao=&codigoSuperTransacao='); setTimeout(function(){atualizarMenuLateral();},250);},'similarityGroupingId':'formLateral:verificarTransacoes','parameters':{'formLateral:verificarTransacoes':'formLateral:verificarTransacoes'} ,'containerId':'j_id_jsp_772644165_0'} )};
+		//]]></script><script id="formLateral:adicionarAtalho" type="text/javascript">//<![CDATA[
+		adicionarAtalho=function(){A4J.AJAX.Submit('formLateral',null,{'oncomplete':function(request,event,data){window.SIGA.abrirDialogAtalho('');},'similarityGroupingId':'formLateral:adicionarAtalho','parameters':{'formLateral:adicionarAtalho':'formLateral:adicionarAtalho'} ,'containerId':'j_id_jsp_772644165_0'} )};
+		//]]></script><script id="formLateral:selecionarAtalho" type="text/javascript">//<![CDATA[
+		selecionarAtalho=function(codigoSuperTransacaoSelecionada,exibirMenuLateral,codigoTransacao){A4J.AJAX.Submit('formLateral',null,{'similarityGroupingId':'formLateral:selecionarAtalho','parameters':{'codigoTransacao':codigoTransacao||'undefined','exibirMenuLateral':exibirMenuLateral||'true','codigoSuperTransacaoSelecionada':codigoSuperTransacaoSelecionada,'formLateral:selecionarAtalho':'formLateral:selecionarAtalho'} ,'containerId':'j_id_jsp_772644165_0'} )};
+		//]]></script><script id="formLateral:selecionarSuperTransacao" type="text/javascript">//<![CDATA[
+		selecionarSuperTransacao=function(codigoSuperTransacao,exibirMenuLateral){A4J.AJAX.Submit('formLateral',null,{'oncomplete':function(request,event,data){verificarTransacoes()},'similarityGroupingId':'formLateral:selecionarSuperTransacao','parameters':{'formLateral:selecionarSuperTransacao':'formLateral:selecionarSuperTransacao','exibirMenuLateral':exibirMenuLateral||'false','codigoSuperTransacao':codigoSuperTransacao} ,'containerId':'j_id_jsp_772644165_0'} )};
+		//]]></script><script id="formLateral:atualizarMenuLateral" type="text/javascript">//<![CDATA[
+		atualizarMenuLateral=function(){A4J.AJAX.Submit('formLateral',null,{'similarityGroupingId':'formLateral:atualizarMenuLateral','parameters':{'formLateral:atualizarMenuLateral':'formLateral:atualizarMenuLateral'} ,'containerId':'j_id_jsp_772644165_0'} )};
+		//]]></script><script id="formLateral:atualizaTempoRestante" type="text/javascript">//<![CDATA[
+		atualizaTempoRestante=function(){A4J.AJAX.Submit('formLateral',null,{'similarityGroupingId':'formLateral:atualizaTempoRestante','parameters':{'formLateral:atualizaTempoRestante':'formLateral:atualizaTempoRestante'} ,'containerId':'j_id_jsp_772644165_0'} )};
+		//]]></script><script id="formLateral:alterarOrdemAtalhos" type="text/javascript">//<![CDATA[
+		alterarOrdemAtalhos=function(codigoTransacaoAtalho,posicaoDestino){A4J.AJAX.Submit('formLateral',null,{'similarityGroupingId':'formLateral:alterarOrdemAtalhos','parameters':{'formLateral:alterarOrdemAtalhos':'formLateral:alterarOrdemAtalhos','posicaoDestino':posicaoDestino,'codigoTransacaoAtalho':codigoTransacaoAtalho} ,'containerId':'j_id_jsp_772644165_0'} )};
+		//]]></script><script id="formLateral:excluirAtalho" type="text/javascript">//<![CDATA[
+		excluirAtalho=function(codigoTransacao){A4J.AJAX.Submit('formLateral',null,{'similarityGroupingId':'formLateral:excluirAtalho','parameters':{'formLateral:excluirAtalho':'formLateral:excluirAtalho','codigoTransacao':codigoTransacao} ,'containerId':'j_id_jsp_772644165_0'} )};
+		//]]></script><script id="formLateral:atualizarListaPerfis" type="text/javascript">//<![CDATA[
+		atualizarListaPerfis=function(){A4J.AJAX.Submit('formLateral',null,{'similarityGroupingId':'formLateral:atualizarListaPerfis','parameters':{'formLateral:atualizarListaPerfis':'formLateral:atualizarListaPerfis'} ,'containerId':'j_id_jsp_772644165_0'} )};
+		//]]></script><script id="formLateral:j_id_jsp_772644165_136" type="text/javascript">//<![CDATA[
+		definirDestinoPesquisa=function(codigoTransacaoPesquisa){A4J.AJAX.Submit('formLateral',null,{'similarityGroupingId':'formLateral:j_id_jsp_772644165_136','parameters':{'codigoTransacaoPesquisa':codigoTransacaoPesquisa,'formLateral:j_id_jsp_772644165_136':'formLateral:j_id_jsp_772644165_136'} ,'containerId':'j_id_jsp_772644165_0'} )};
+		//]]></script><input type="hidden" autocomplete="off" name="formLateral" value="formLateral" /><input type="hidden" autocomplete="off" name="autoScroll" value="" /><input type="hidden" autocomplete="off" name="formLateral:j_idcl" value="" /><input type="hidden" autocomplete="off" name="formLateral:_link_hidden_" value="" /><script type="text/javascript">function clear_formLateral() {
+_clearJSFFormParameters('formLateral','',['formLateral:j_idcl','formLateral:_link_hidden_']);
+}
+function clearFormHiddenParams_formLateral(){clear_formLateral();}
+function clearFormHiddenParams_formLateral(){clear_formLateral();}
+clear_formLateral();</script><input type="hidden" name="javax.faces.ViewState" id="javax.faces.ViewState" value="j_id8" autocomplete="off" /></form>
+				</div>
+			</div><!--rolagem-->
+			<div class="rolagem-baixo-box" title="Mover para baixo" >
+				<div class="rolagem-baixo-seta">
+				</div>
+			</div>
+			
+			<div class="rolagem-cima-box" title="Mover para cima" >
+				<div class="rolagem-cima-seta">
+				</div>
+			</div>
+		</div><!--box-rolagem-->	
+		
+		<!-- BANNER PANEL -->
+		<div id="panel-banner" style="display: none;"><input autocomplete="off" id="panel-bannerOpenedState" name="panel-bannerOpenedState" type="hidden" /><div class="rich-modalpanel " id="panel-bannerContainer" style="position: absolute; display: none; z-index: 100; background-color: inherit;"><div class="rich-mpnl-mask-div-opaque rich-mpnl-mask-div" id="panel-bannerDiv" style="z-index: -1;"><button class="rich-mpnl-button" id="panel-bannerFirstHref"></button></div><div class="rich-mpnl-panel"><div class="rich-mp-container" id="panel-bannerCDiv" style="position: absolute; left: 0px; top: 0px; z-index: 9;"><div class="rich-mpnl-shadow" id="panel-bannerShadowDiv"></div><div class=" rich-mpnl-content" id="panel-bannerContentDiv" style="z-index=99999;"><table border="0" cellpadding="0" cellspacing="0" class="rich-mp-content-table" id="panel-bannerContentTable" style="width: 320px;height: 1px;"><tr style="height: 1%;"><td class="rich-mpnl-header-cell"><div class="rich-mpnl-text rich-mpnl-header " id="panel-bannerHeader" style="white-space: nowrap;"><span id="banner"><span id="confirmacaoBanner" class="aviso">Avisos</span></span></div></td></tr><tr style="height: 99%"><td class="rich-mpnl-body" valign="top"><table style="text-align: center;">
+<tbody>
+<tr>
+<td><table id="imagens-banner">
+<tbody>
+<tr>
+<td><a href="https://docs.google.com/forms/d/e/1FAIpQLScKjuX0HCXF9T-VzKEooU0sqyTCLL7rUazBo_EG1OUjNbi9uQ/viewform?usp=sharing&amp;ouid=113098994307378189325" target="_blank"><img id="imagens-banner:0:imgBanner1" src="https://arquivos.ufape.edu.br/siga/formulario_avaliacao_docente_2025_1.jpg" style="margin-bottom: 5px; width: 320px" /></a></td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+<tr>
+<td>
+<form id="j_id_jsp_772644165_146" name="j_id_jsp_772644165_146" method="post" action="/ufape/logado.jsf" enctype="application/x-www-form-urlencoded">
+<input type="hidden" name="j_id_jsp_772644165_146" value="j_id_jsp_772644165_146" />
+<table style="text-align: center" width="100%">
+<tbody>
+<tr>
+<td><input id="j_id_jsp_772644165_146:j_id_jsp_772644165_148" name="j_id_jsp_772644165_146:j_id_jsp_772644165_148" onclick="A4J.AJAX.Submit('j_id_jsp_772644165_146',event,{'similarityGroupingId':'j_id_jsp_772644165_146:j_id_jsp_772644165_148','parameters':{'j_id_jsp_772644165_146:j_id_jsp_772644165_148':'j_id_jsp_772644165_146:j_id_jsp_772644165_148'} ,'containerId':'j_id_jsp_772644165_0'} );return false;" value="Fechar" type="button" /></td>
+</tr>
+</tbody>
+</table>
+<input type="hidden" name="javax.faces.ViewState" id="javax.faces.ViewState" value="j_id8" autocomplete="off" />
+</form></td>
+</tr>
+</tbody>
+</table>
+</td></tr></table></div></div></div><div class="rich-mpnl-mask-div rich-mpnl-mask-div-transparent" id="panel-bannerCursorDiv" style="z-index: -200;"><button class="rich-mpnl-button" id="panel-bannerLastHref"></button></div><script type="text/javascript">new ModalPanel('panel-banner',
+				{
+					width: 320,
+					height: -1,
+
+					minWidth: -1,
+					minHeight: -1,
+
+					resizeable: false,
+					moveable: true,
+
+					left: "auto",
+					top: "true",
+
+					zindex: 100,onresize: '',onmove: '',onshow: '',onhide: '',onbeforeshow: '',onbeforehide: '',
+					domElementAttachment: "",				
+					keepVisualState: false,
+					showWhenRendered: false,
+					selectBehavior: "disable",
+
+					autosized: true,
+					overlapEmbedObjects: false});</script></div><script type="text/javascript"></script></div>
+<form id="j_id_jsp_772644165_149" name="j_id_jsp_772644165_149" method="post" action="/ufape/logado.jsf" enctype="application/x-www-form-urlencoded">
+<input type="hidden" name="j_id_jsp_772644165_149" value="j_id_jsp_772644165_149" />
+<script id="j_id_jsp_772644165_149:atualizarDados" type="text/javascript">//<![CDATA[
+		updateDadosPesquisa=function(){A4J.AJAX.Submit('j_id_jsp_772644165_149',null,{'similarityGroupingId':'j_id_jsp_772644165_149:atualizarDados','parameters':{'j_id_jsp_772644165_149:atualizarDados':'j_id_jsp_772644165_149:atualizarDados'} ,'containerId':'j_id_jsp_772644165_0'} )};
+		//]]></script><input type="hidden" name="javax.faces.ViewState" id="javax.faces.ViewState" value="j_id8" autocomplete="off" />
+</form><input id="deveBloquear" type="hidden" name="deveBloquear" value="false" /><input id="urlPesquisa" type="hidden" name="urlPesquisa" /><input id="pesquisaRespondida" type="hidden" name="pesquisaRespondida" value="false" />
+		 
+		
+		
+		
+		
+		<script type="text/javascript">
+			var urlPesquisa = document.getElementById("urlPesquisa").value;
+			var pesquisaRespondida = document.getElementById("pesquisaRespondida").value;
+			
+			var updateDados = $j("#updateDadosPesquisa");
+			if(pesquisaRespondida == 'false' && urlPesquisa.trim().length > 0 ){
+				$j.ajax({
+					type: 'GET',
+					timeout: 3000,
+					url: urlPesquisa,
+					success: function(data) {
+						var json = JSON.parse(data);
+						var fl_participacao = json['data'].fl_participacao;
+						var fl_erro = json.msg.fl_error;
+						
+						if(fl_participacao || fl_erro) {
+							Richfaces.hideModalPanel('modalPesquisaNacionalDiscente');
+							updateDadosPesquisa();
+						} else {
+							Richfaces.showModalPanel('modalPesquisaNacionalDiscente');
+						}
+					},
+					erro: function(data, status, error){
+						console.log(data);
+						Richfaces.hideModalPanel('modalPesquisaNacionalDiscente');
+						updateDadosPesquisa();
+					}
+				});
+			}
+		</script>
+		
+		<div id="modalPesquisaNacionalDiscente" style="display: none;"><input autocomplete="off" id="modalPesquisaNacionalDiscenteOpenedState" name="modalPesquisaNacionalDiscenteOpenedState" type="hidden" /><div class="rich-modalpanel " id="modalPesquisaNacionalDiscenteContainer" style="position: absolute; display: none; z-index: 100; background-color: inherit;"><div class="rich-mpnl-mask-div-opaque rich-mpnl-mask-div" id="modalPesquisaNacionalDiscenteDiv" style="z-index: -1;"><button class="rich-mpnl-button" id="modalPesquisaNacionalDiscenteFirstHref"></button></div><div class="rich-mpnl-panel"><div class="rich-mp-container" id="modalPesquisaNacionalDiscenteCDiv" style="position: absolute; left: 0px; top: 0px; z-index: 9;"><div class="rich-mpnl-shadow" id="modalPesquisaNacionalDiscenteShadowDiv"></div><div class="rich-mpnl-ovf-hd rich-mpnl-trim rich-mpnl-content" id="modalPesquisaNacionalDiscenteContentDiv" style="z-index=99999;"><table border="0" cellpadding="0" cellspacing="0" class="rich-mp-content-table" id="modalPesquisaNacionalDiscenteContentTable" style="height: 100%; width: 100%;"><tr style="height: 1%;"><td class="rich-mpnl-header-cell"><div class="rich-mpnl-text rich-mpnl-header " id="modalPesquisaNacionalDiscenteHeader" style="white-space: nowrap;"><span id="panelConfirmacao"><span id="outPutCOnfirmacao" class="aviso">V Pesquisa Nacional de Perfil dos Graduandos</span></span></div></td></tr><tr style="height: 99%"><td class="rich-mpnl-body" valign="top"><table style="text-align: center">
+<tbody>
+<tr>
+<td><span style="font-size:12px;">Graduandos (as) das Universidades Federais</span></td>
+</tr>
+<tr>
+<td>
+			
+				
+				<br>
+				</td>
+</tr>
+<tr>
+<td><span style="font-size:12px;">Participe do CENSO/2018</span></td>
+</tr>
+<tr>
+<td>
+				<br>
+				</td>
+</tr>
+<tr>
+<td><span style="font-size:12px;">Responda as perguntas do Formul&aacute;rio da V Pesquisa Nacional do Perfil dos Graduandos!</span></td>
+</tr>
+<tr>
+<td>
+				<br>
+				</td>
+</tr>
+<tr>
+<td><span style="font-size:12px;">Fa&ccedil;a parte desta hist&oacute;ria!</span></td>
+</tr>
+<tr>
+<td>
+				<br>
+				</td>
+</tr>
+<tr>
+<td><span style="font-size:12px;">Valeu!</span></td>
+</tr>
+<tr>
+<td>
+				<br>
+				</td>
+</tr>
+<tr>
+<td><img id="pesquisaNacionalGraduando" src="imagens/ufpe/pesquisaNacionalGraduando.png" title="" /></td>
+</tr>
+<tr>
+<td>
+<br>
+				</td>
+</tr>
+<tr>
+<td>
+<form id="j_id_jsp_772644165_164" name="j_id_jsp_772644165_164" method="post" action="/ufape/logado.jsf" enctype="application/x-www-form-urlencoded">
+<input type="hidden" name="j_id_jsp_772644165_164" value="j_id_jsp_772644165_164" />
+<table style="text-align: center" width="100%">
+<tbody>
+<tr>
+<td>
+						<a href="http://www.perfil.ufu.br" target="_blank">
+						</td>
+<td><input id="j_id_jsp_772644165_164:j_id_jsp_772644165_166" name="j_id_jsp_772644165_164:j_id_jsp_772644165_166" onclick="redirectAvaliacao();A4J.AJAX.Submit('j_id_jsp_772644165_164',event,{'similarityGroupingId':'j_id_jsp_772644165_164:j_id_jsp_772644165_166','parameters':{'j_id_jsp_772644165_164:j_id_jsp_772644165_166':'j_id_jsp_772644165_164:j_id_jsp_772644165_166'} ,'containerId':'j_id_jsp_772644165_0'} );return false;" value="Ir para a Pesquisa" type="button" /></td>
+<td></a>
+					</td>
+</tr>
+</tbody>
+</table>
+<input type="hidden" name="javax.faces.ViewState" id="javax.faces.ViewState" value="j_id8" autocomplete="off" />
+</form></td>
+</tr>
+</tbody>
+</table>
+</td></tr></table></div><div class="rich-mpnl-resizer" id="modalPesquisaNacionalDiscenteResizerN" style="width: 40px; height: 4px;"></div><div class="rich-mpnl-resizer" id="modalPesquisaNacionalDiscenteResizerE" style="height: 40px; width: 4px;"></div><div class="rich-mpnl-resizer" id="modalPesquisaNacionalDiscenteResizerS" style="width: 40px; height: 4px;"></div><div class="rich-mpnl-resizer" id="modalPesquisaNacionalDiscenteResizerW" style="height: 40px; width: 4px;"></div><div class="rich-mpnl-resizer" id="modalPesquisaNacionalDiscenteResizerNWU" style="width: 40px; height: 4px;"></div><div class="rich-mpnl-resizer" id="modalPesquisaNacionalDiscenteResizerNEU" style="height: 40px; width: 4px;"></div><div class="rich-mpnl-resizer" id="modalPesquisaNacionalDiscenteResizerNEL" style="width: 40px; height: 4px;"></div><div class="rich-mpnl-resizer" id="modalPesquisaNacionalDiscenteResizerSEU" style="height: 40px; width: 4px;"></div><div class="rich-mpnl-resizer" id="modalPesquisaNacionalDiscenteResizerSEL" style="width: 40px; height: 4px;"></div><div class="rich-mpnl-resizer" id="modalPesquisaNacionalDiscenteResizerSWL" style="height: 40px; width: 4px;"></div><div class="rich-mpnl-resizer" id="modalPesquisaNacionalDiscenteResizerSWU" style="width: 40px; height: 4px;"></div><div class="rich-mpnl-resizer" id="modalPesquisaNacionalDiscenteResizerNWL" style="height: 40px; width: 4px;"></div></div></div><div class="rich-mpnl-mask-div rich-mpnl-mask-div-transparent" id="modalPesquisaNacionalDiscenteCursorDiv" style="z-index: -200;"><button class="rich-mpnl-button" id="modalPesquisaNacionalDiscenteLastHref"></button></div><script type="text/javascript">new ModalPanel('modalPesquisaNacionalDiscente',
+				{
+					width: 300,
+					height: 500,
+
+					minWidth: -1,
+					minHeight: -1,
+
+					resizeable: true,
+					moveable: true,
+
+					left: "auto",
+					top: "auto",
+
+					zindex: 100,onresize: '',onmove: '',onshow: '',onhide: '',onbeforeshow: '',onbeforehide: '',
+					domElementAttachment: "",				
+					keepVisualState: false,
+					showWhenRendered: false,
+					selectBehavior: "disable",
+
+					autosized: false,
+					overlapEmbedObjects: false});</script></div><script type="text/javascript"></script></div>
+		
+		<script type="text/javascript">
+			function redirectAvaliacao() {
+				var deveBloquear = $j("#deveBloquear").val();
+				if(deveBloquear == 'false') {
+					window.open('http://www.perfil.ufu.br');
+				}
+			}
+		</script>
+		
+		<!-- FIM PESQUISA NACIONAL GRADUANDOS -->
+		
+		<!-- INICIO PESQUISA PESQUISA CODIGO ETICA -->
+		<input id="cpfPessoa" type="hidden" name="cpfPessoa" value="12379729492" /><input id="isServidor" type="hidden" name="isServidor" value="false" />
+		
+
+			<script type="text/javascript">
+				try{
+					
+					if(document.getElementById("isServidor").value.indexOf("true") >= 0){	
+						jQuery.get( "https://docs.google.com/forms/d/1R9q05tk5sp56PSu2rO1jgM--RF1jCR4DewWmu3BOORk/edit", function( data ) {
+						  
+						});	
+					}
+				}catch (e) {
+					document.getElementById("confirmUsuarioInativoContainer").style.display="none";
+				}
+			</script>
+
+			<!-- 
+			<div id="confirmUsuarioInativoCodigoEtica" style="display: none;"><input autocomplete="off" id="confirmUsuarioInativoCodigoEticaOpenedState" name="confirmUsuarioInativoCodigoEticaOpenedState" type="hidden" /><div class="rich-modalpanel " id="confirmUsuarioInativoCodigoEticaContainer" style="position: absolute; display: none; z-index: 100; background-color: inherit;"><div class="rich-mpnl-mask-div-opaque rich-mpnl-mask-div" id="confirmUsuarioInativoCodigoEticaDiv" style="z-index: -1;"><button class="rich-mpnl-button" id="confirmUsuarioInativoCodigoEticaFirstHref"></button></div><div class="rich-mpnl-panel"><div class="rich-mp-container" id="confirmUsuarioInativoCodigoEticaCDiv" style="position: absolute; left: 0px; top: 0px; z-index: 9;"><div class="rich-mpnl-shadow" id="confirmUsuarioInativoCodigoEticaShadowDiv"></div><div class="rich-mpnl-ovf-hd rich-mpnl-trim rich-mpnl-content" id="confirmUsuarioInativoCodigoEticaContentDiv" style="z-index=99999;"><table border="0" cellpadding="0" cellspacing="0" class="rich-mp-content-table" id="confirmUsuarioInativoCodigoEticaContentTable" style="height: 100%; width: 100%;"><tr style="height: 1%;"><td class="rich-mpnl-header-cell"><div class="rich-mpnl-text rich-mpnl-header " id="confirmUsuarioInativoCodigoEticaHeader" style="white-space: nowrap;"><span id="panelConfirmacaoCodigoEtica"><span id="outPutCOnfirmacaoCodigoEtica" class="aviso">C&oacute;digo de &Eacute;tica da UFPE</span></span></div></td></tr><tr style="height: 99%"><td class="rich-mpnl-body" valign="top"><table style="text-align: center">
+<tbody>
+<tr>
+<td><img id="pesquisaCodigoEtica" src="imagens/ufpe/Banner-302x253.png" title="" /></td>
+</tr>
+<tr>
+<td>
+				
+					
+<br>
+					</td>
+</tr>
+<tr>
+<td>
+<form id="j_id_jsp_772644165_174" name="j_id_jsp_772644165_174" method="post" action="/ufape/logado.jsf" enctype="application/x-www-form-urlencoded">
+<input type="hidden" name="j_id_jsp_772644165_174" value="j_id_jsp_772644165_174" />
+<table style="text-align: center" width="100%">
+<tbody>
+<tr>
+<td>
+							<a href="https://docs.google.com/forms/d/1R9q05tk5sp56PSu2rO1jgM--RF1jCR4DewWmu3BOORk/edit" target="_blank">
+							</td>
+<td><input id="j_id_jsp_772644165_174:j_id_jsp_772644165_176" name="j_id_jsp_772644165_174:j_id_jsp_772644165_176" onclick="javascript:window.open('https://docs.google.com/forms/d/1R9q05tk5sp56PSu2rO1jgM--RF1jCR4DewWmu3BOORk/edit');A4J.AJAX.Submit('j_id_jsp_772644165_174',event,{'similarityGroupingId':'j_id_jsp_772644165_174:j_id_jsp_772644165_176','parameters':{'j_id_jsp_772644165_174:j_id_jsp_772644165_176':'j_id_jsp_772644165_174:j_id_jsp_772644165_176'} ,'containerId':'j_id_jsp_772644165_0'} );return false;" value="Ir para a Pesquisa" type="button" /></td>
+</tr>
+<tr>
+<td></a>
+						 	</td>
+<td><input id="j_id_jsp_772644165_174:j_id_jsp_772644165_177" name="j_id_jsp_772644165_174:j_id_jsp_772644165_177" onclick="A4J.AJAX.Submit('j_id_jsp_772644165_174',event,{'similarityGroupingId':'j_id_jsp_772644165_174:j_id_jsp_772644165_177','parameters':{'j_id_jsp_772644165_174:j_id_jsp_772644165_177':'j_id_jsp_772644165_174:j_id_jsp_772644165_177'} ,'containerId':'j_id_jsp_772644165_0'} );return false;" value="Fechar" type="button" /></td>
+</tr>
+</tbody>
+</table>
+<input type="hidden" name="javax.faces.ViewState" id="javax.faces.ViewState" value="j_id8" autocomplete="off" />
+</form></td>
+</tr>
+</tbody>
+</table>
+</td></tr></table></div><div class="rich-mpnl-resizer" id="confirmUsuarioInativoCodigoEticaResizerN" style="width: 40px; height: 4px;"></div><div class="rich-mpnl-resizer" id="confirmUsuarioInativoCodigoEticaResizerE" style="height: 40px; width: 4px;"></div><div class="rich-mpnl-resizer" id="confirmUsuarioInativoCodigoEticaResizerS" style="width: 40px; height: 4px;"></div><div class="rich-mpnl-resizer" id="confirmUsuarioInativoCodigoEticaResizerW" style="height: 40px; width: 4px;"></div><div class="rich-mpnl-resizer" id="confirmUsuarioInativoCodigoEticaResizerNWU" style="width: 40px; height: 4px;"></div><div class="rich-mpnl-resizer" id="confirmUsuarioInativoCodigoEticaResizerNEU" style="height: 40px; width: 4px;"></div><div class="rich-mpnl-resizer" id="confirmUsuarioInativoCodigoEticaResizerNEL" style="width: 40px; height: 4px;"></div><div class="rich-mpnl-resizer" id="confirmUsuarioInativoCodigoEticaResizerSEU" style="height: 40px; width: 4px;"></div><div class="rich-mpnl-resizer" id="confirmUsuarioInativoCodigoEticaResizerSEL" style="width: 40px; height: 4px;"></div><div class="rich-mpnl-resizer" id="confirmUsuarioInativoCodigoEticaResizerSWL" style="height: 40px; width: 4px;"></div><div class="rich-mpnl-resizer" id="confirmUsuarioInativoCodigoEticaResizerSWU" style="width: 40px; height: 4px;"></div><div class="rich-mpnl-resizer" id="confirmUsuarioInativoCodigoEticaResizerNWL" style="height: 40px; width: 4px;"></div></div></div><div class="rich-mpnl-mask-div rich-mpnl-mask-div-transparent" id="confirmUsuarioInativoCodigoEticaCursorDiv" style="z-index: -200;"><button class="rich-mpnl-button" id="confirmUsuarioInativoCodigoEticaLastHref"></button></div><script type="text/javascript">new ModalPanel('confirmUsuarioInativoCodigoEtica',
+				{
+					width: 320,
+					height: 370,
+
+					minWidth: -1,
+					minHeight: -1,
+
+					resizeable: true,
+					moveable: true,
+
+					left: "auto",
+					top: "auto",
+
+					zindex: 100,onresize: '',onmove: '',onshow: '',onhide: '',onbeforeshow: '',onbeforehide: '',
+					domElementAttachment: "",				
+					keepVisualState: false,
+					showWhenRendered: false,
+					selectBehavior: "disable",
+
+					autosized: false,
+					overlapEmbedObjects: false});</script></div><script type="text/javascript"></script></div>
+			 -->
+			
+			<!-- FIM PESQUISA PESQUISA CODIGO ETICA -->
+		
+	
+		
+		<script type="text/javascript">
+			
+			var moveMenuLateral = function(){
+				MLateral = new MenuLiquido("menuLateralBox");
+				MLateral.redimensionaMenu();
+			};
+			
+			moveMenuLateral();
+			ajustaConteudo();
+		</script>
+	</div> <!-- fim AreaDoMenuLateral -->
+		
+			
+			
+			
+			
+            
+			    
+			      
+			    
+			    
+			        <iframe id="Conteudo" name="Conteudo" height="100%" style="border:0px;" frameborder='0' 
+						src="/ufape/jsp/InicioTela.jsf" 
+						onload="mantemSessaoTelaInicio(); ajustaConteudo();atualizarMenuLateral();atualizaTempoRestante();window.houveAcao=false;">	
+					</iframe>
+			    
+			
+				
+	</div><!-- Fim AreaDeConteudo -->
+
+		<div id="Rodape" class="principal">
+			<div class="conteiner">
+				<span class="titulo">Navegadores Recomendados: </span>
+				<ul>
+					<li><a href="http://br.mozdev.org/download/" target="_blank"
+						id="mozilla" title="Mozilla Firefox 3 ou superior">Mozilla Firefox</a>
+					</li>
+					<li><a href="http://www.google.com/chrome?hl=pt-BR"
+						target="_blank" id="chrome" title="Google Chrome 2 ou superior">Google
+							Chrome</a>
+					</li>
+					<li><a href="http://windows.microsoft.com/pt-br/internet-explorer/download-ie" target="_blank" id="ie" class="ie" title="Internet Explorer 8 ou superior">
+				Internet Explorer</a></li>
+				</ul>
+				
+				<span class="icones"> &#205;cones 
+				providos por <a href="http://glyphicons.com/" target="_blank"> 
+				<strong style="font-size: 10px">glyphicons.com </strong> </a></span>
+				
+				<span class="maquina" title="M&#225;quina:21"> 
+					<span class="fonteBranca"><strong style="font-size: 11px;">
+						21
+						</strong> 
+					</span> 
+				</span> 
+					
+		        <div class="info">
+	                <p>SIG@ - Vers&#227;o 3.100.1.61 | Todos os Direitos Reservados &#224; UFPE-NTI</p>
+	                <p> 
+	                	<strong></strong> 
+	                 <strong>
+	                <strong>
+					<a href="http://ufape.edu.br/" target="_blank">http://ufape.edu.br/</a>
+					
+				</strong>	                	
+		        </div>
+		        
+			</div>
+			<!-- Conteiner -->
+		</div>
+	
+	
+	
+	
+	
+		
+		
+	
+	
+	
+	
+	<script type="text/javascript">
+		(function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+		(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+		m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+		})(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+		ga('create', '', 'ufape.edu.br');
+		ga('send', 'pageview');
+	</script>
+	
+
+</body>
+	</html>
+	
+
+
+

@@ -24,10 +24,8 @@ class _WebViewPageState extends State<WebViewPage> {
   late final WebViewController _controller;
   bool _isLoading = true;
   bool _hasLoggedIn = false;
-  bool _iframeLoaded = false;
   bool _isWebViewVisible = false;
   bool _isProcessingGrades = false;
-  Completer<void>? _iframeReadyCompleter;
 
   @override
   void initState() {
@@ -38,19 +36,6 @@ class _WebViewPageState extends State<WebViewPage> {
   void _initializeWebView() {
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..addJavaScriptChannel(
-        'IframeChannel',
-        onMessageReceived: (JavaScriptMessage msg) {
-          if (msg.message == 'Conteudo:load') {
-            if (!_iframeLoaded) {
-              _iframeLoaded = true;
-              _iframeReadyCompleter?.complete();
-              _iframeReadyCompleter = null;
-              if (mounted) setState(() {});
-            }
-          }
-        },
-      )
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (String url) {
@@ -73,8 +58,6 @@ class _WebViewPageState extends State<WebViewPage> {
                 _hasLoggedIn = true;
               });
             }
-
-            _injectIframeWatcher();
           },
           onWebResourceError: (WebResourceError error) {
             if (mounted) {
@@ -86,62 +69,6 @@ class _WebViewPageState extends State<WebViewPage> {
         ),
       )
       ..loadRequest(Uri.parse('https://siga.ufape.edu.br/ufape/index.jsp'));
-  }
-
-  void _injectIframeWatcher() {
-    _controller.runJavaScript(r"""
-      (function() {
-        if (window.__iframeWatcherInstalled) return;
-        window.__iframeWatcherInstalled = true;
-
-        function notify(tag){ 
-          try{ 
-            IframeChannel.postMessage((tag||'iframe') + ':load'); 
-          } catch(e){} 
-        }
-
-        function attach(iframe){
-          if (!iframe || iframe.__watched) return;
-          iframe.__watched = true;
-          iframe.addEventListener('load', function(){
-            notify(iframe.id || 'iframe');
-          }, { once: true });
-        }
-
-        function attachAll(){
-          var ifr = document.getElementsByTagName('iframe');
-          for (var i=0;i<ifr.length;i++) attach(ifr[i]);
-        }
-
-        var mo = new MutationObserver(function(muts){
-          muts.forEach(function(m){
-            if (m.type === 'childList') {
-              m.addedNodes && m.addedNodes.forEach(function(n){
-                if (n.tagName === 'IFRAME') { 
-                  attach(n); 
-                } else if (n.querySelectorAll) { 
-                  n.querySelectorAll('iframe').forEach(attach); 
-                }
-              });
-            }
-          });
-        });
-        
-        try { 
-          mo.observe(document.documentElement || document.body, { 
-            childList: true, 
-            subtree: true 
-          }); 
-        } catch(e) {}
-
-        attachAll();
-
-        setTimeout(function(){
-          if (document.getElementById('Conteudo')) notify('Conteudo');
-          else if (document.getElementsByTagName('iframe').length) notify('iframe');
-        }, 1200);
-      })();
-    """);
   }
 
   void _injectLoginScript() {
@@ -235,49 +162,6 @@ class _WebViewPageState extends State<WebViewPage> {
         ],
       ),
     );
-  }
-
-  Future<void> _navigateToGrades() async {
-    const script1 = """
-      document.getElementById('menuTopo:repeatAcessoMenu:2:repeatSuperTransacoesSuperMenu:0:linkSuperTransacaoSuperMenu').click();
-    """;
-
-    const script2 = """
-      new Promise((resolve, reject) => {
-        const maxTries = 40;
-        let tries = 0;
-        const interval = setInterval(() => {
-          const iframe = document.getElementsByTagName('iframe')[0];
-          let gradesLink;
-
-          if (iframe && iframe.contentDocument) {
-            gradesLink = iframe.contentDocument.getElementById('form:repeatTransacoes:3:outputLinkTransacao');
-          }
-          
-          if (gradesLink) {
-            clearInterval(interval);
-            gradesLink.click();
-            resolve('SUCESSO: Botão de notas clicado dentro do iframe.');
-            return;
-          }
-
-          tries++;
-          if (tries >= maxTries) {
-            clearInterval(interval);
-            reject('ERRO: Tempo esgotado. Botão de notas não encontrado.');
-          }
-        }, 250);
-      });
-    """;
-
-    try {
-      await _controller.runJavaScript(script1);
-      await _controller.runJavaScriptReturningResult(script2);
-    } catch (e) {
-      _showAlert(
-          'Erro', 'Não foi possível navegar para as notas: ${e.toString()}',
-          isError: true);
-    }
   }
 
   Future<void> _extractAndShowGrades() async {
@@ -413,41 +297,52 @@ class _WebViewPageState extends State<WebViewPage> {
     }
   }
 
-  Future<void> _waitForConteudoLoad(
+  /// Espera de forma robusta que a página de notas seja totalmente carregada,
+  /// verificando a presença do botão "Imprimir" dentro do iframe 'Conteudo'.
+  Future<void> _waitForGradesPageReady(
       {Duration timeout = const Duration(seconds: 20)}) async {
-    try {
-      final ok = await _controller.runJavaScriptReturningResult(r"""
-        (function(){
-          var iframe = document.getElementById('Conteudo');
-          if(!iframe || !iframe.contentDocument) return false;
-          var fc = iframe.contentDocument.getElementById('form-corpo');
-          if(!fc) return false;
-          var periodDivs = fc.querySelectorAll('div[id]');
-          for (var i=0;i<periodDivs.length;i++){
-            if (/^\d{4}\.\d$/.test(periodDivs[i].id)) return true;
-          }
-          return false;
-        })();
-      """);
-      if (ok == true || ok.toString() == 'true') {
-        _iframeLoaded = true;
+    final completer = Completer<void>();
+    Timer? timer;
+    final stopwatch = Stopwatch()..start();
+
+    const script = """
+    (function() {
+      const iframe = document.getElementById('Conteudo');
+      if (!iframe || !iframe.contentDocument) return false;
+      
+      // Procura pelo botão "Imprimir"
+      const printButton = iframe.contentDocument.querySelector('input[type="button"][value="Imprimir"]');
+      
+      // Se o botão existir, a página está pronta
+      return printButton != null;
+    })();
+    """;
+
+    timer = Timer.periodic(const Duration(milliseconds: 250), (t) async {
+      if (stopwatch.elapsed > timeout) {
+        timer?.cancel();
+        if (!completer.isCompleted) {
+          completer.completeError(Exception(
+              'Tempo esgotado esperando a página de notas carregar.'));
+        }
+        return;
       }
-    } catch (_) {}
 
-    if (_iframeLoaded) return;
-
-    _iframeReadyCompleter ??= Completer<void>();
-
-    bool timedOut = false;
-    final t = Timer(timeout, () {
-      timedOut = true;
-      if (!(_iframeReadyCompleter?.isCompleted ?? true)) {
-        _iframeReadyCompleter?.complete();
+      try {
+        final result = await _controller.runJavaScriptReturningResult(script);
+        // O resultado pode ser bool ou String 'true'/'false'
+        if (result == true || result.toString() == 'true') {
+          timer?.cancel();
+          if (!completer.isCompleted) {
+            completer.complete();
+          }
+        }
+      } catch (e) {
+        // Ignora erros temporários enquanto a página carrega
       }
     });
 
-    await _iframeReadyCompleter!.future;
-    if (!timedOut) t.cancel();
+    return completer.future;
   }
 
   Future<void> _navigateAndExtractGrades() async {
@@ -456,9 +351,7 @@ class _WebViewPageState extends State<WebViewPage> {
     setState(() {
       _isProcessingGrades = true;
       _isLoading = true;
-      _iframeLoaded = false;
     });
-    _iframeReadyCompleter = null;
 
     _showLoadingDialog('Iniciando processo automático...');
 
@@ -506,7 +399,7 @@ class _WebViewPageState extends State<WebViewPage> {
       _hideLoadingDialog();
       _showLoadingDialog('Aguardando carregamento da página de notas...');
 
-      await _waitForConteudoLoad(timeout: const Duration(seconds: 20));
+      await _waitForGradesPageReady(timeout: const Duration(seconds: 25));
 
       _hideLoadingDialog();
       _showLoadingDialog('Extraindo dados das notas...');
@@ -544,7 +437,6 @@ class _WebViewPageState extends State<WebViewPage> {
         foregroundColor: Colors.white,
         elevation: 2,
         actions: [
-          // Menu dropdown
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert, color: Colors.white),
             onSelected: (value) {
@@ -717,14 +609,13 @@ class _WebViewPageState extends State<WebViewPage> {
               ),
             ),
           ],
-          // Botões manuais - aparecem apenas quando WebView está visível
+          // Botões manuais
           if (_isWebViewVisible)
             Positioned(
               bottom: 16,
-              left: 16,
               right: 16,
               child: SafeArea(
-                child: ElevatedButton.icon(
+                child: FloatingActionButton.extended(
                   onPressed:
                       _isProcessingGrades ? null : _navigateAndExtractGrades,
                   icon: _isProcessingGrades
@@ -734,40 +625,10 @@ class _WebViewPageState extends State<WebViewPage> {
                           child: CircularProgressIndicator(
                               strokeWidth: 2, color: Colors.white))
                       : const Icon(Icons.school, color: Colors.white),
-                  label: const Text('NOTAS',
+                  label: const Text('Extrair Notas Automaticamente',
                       style: TextStyle(fontWeight: FontWeight.bold)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF00695C),
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                  ),
+                  backgroundColor: const Color(0xFF00695C),
                 ),
-              ),
-            ),
-          if (_isWebViewVisible)
-            Positioned(
-              bottom: 16,
-              right: 16,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  FloatingActionButton.small(
-                    heroTag: "navigate",
-                    onPressed: _navigateToGrades,
-                    backgroundColor: const Color(0xFF00695C),
-                    tooltip: 'Navegar para Notas (Manual)',
-                    child: const Icon(Icons.navigate_next, color: Colors.white),
-                  ),
-                  const SizedBox(height: 8),
-                  FloatingActionButton.small(
-                    heroTag: "extract",
-                    onPressed: _extractAndShowGrades,
-                    backgroundColor: const Color(0xFF004D40),
-                    tooltip: 'Extrair Notas (Manual)',
-                    child: const Icon(Icons.download, color: Colors.white),
-                  ),
-                ],
               ),
             ),
         ],

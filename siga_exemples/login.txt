@@ -1,0 +1,426 @@
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+
+
+
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+	<head>
+		<title>SIG@UFAPE</title>
+		<meta name="description" content="Apoia as áreas de ensino (graduação e pós), pesquisa, recursos humanos, processos administrativos, planejamento institucional, gestão patrimonial, processo de eleição e gestão de restaurante universitário.">
+		<link class="component" href="/ufape/a4j/s/3_3_3.Finalorg/richfaces/renderkit/html/css/basic_classes.xcss/DATB/eAHj27nnFx8QAwATpgT7.jsf" rel="stylesheet" type="text/css" /><link class="component" href="/ufape/a4j/s/3_3_3.Finalorg/richfaces/renderkit/html/css/extended_classes.xcss/DATB/eAHj27nnFx8QAwATpgT7.jsf" media="rich-extended-skinning" rel="stylesheet" type="text/css" /><script type="text/javascript">window.RICH_FACES_EXTENDED_SKINNING_ON=true;</script><script src="/ufape/a4j/g/3_3_3.Finalorg/richfaces/renderkit/html/scripts/skinning.js.jsf" type="text/javascript"></script><link rel="stylesheet" type="text/css" href="/ufape/jsp/acesso/style/inicio.min.css" />
+		<link rel="stylesheet" type="text/css" href="/ufape/jsp/acesso/style/verde.min.css" />
+		<link rel="icon" href="/ufape/jsp/acesso/images/verde/favicon.ico" type="image/x-icon" />
+	
+		
+	</head>
+
+	<body>
+	
+		<!-- Dialog de acessibilidade -->
+<div id='containerAcessibilidade'>
+	<div id="modalAcessibilidade" class="modalAcessibilidade">
+		<h2>Acessibilidade</h2>
+		<a href='javascript: escondeAcessibilidade();' class='sair' title="Fechar acessibilidade">Sair</a>
+		<div class="container-texto-acess">
+			<div id="subviewAcessibilidade">
+				<div class="acess_topico">
+
+					<p class="textoAcess">
+						A Acessibilidade Web está relacionada à adaptação do ambiente digital para que todos possam
+						visualizar, navegar e interagir de maneira efetiva com o conteúdo.
+						O termo remete também às recomendações que padronizam
+						a criação e a interpretação dos conteúdos online e facilitam o acesso dos usuários
+						aos sites, independentemente de possuírem alguma deficiência ou não.
+					</p>
+
+					<p class="textoAcess">
+						Em sua nova interface, o SIG@ oferece alguns recursos de acessibilidade, seguindo as
+						diretrizes e a metodologia do e-MAG - Modelo de Acessibilidade de
+						Governo Eletrônico e da W3C (<i>World Wide Web Consortium</i>).
+					</p>
+				</div>
+
+				<div class="acess_topico">
+					<h3 class="acess">Recursos de acessibilidade</h3>
+				</div>
+
+				<div class="acess_topico">
+					<h4 class="acess">Navegação por TAB: </h4>
+
+					<p class="textoAcess">
+						Caso não seja possível navegar pelo mouse, o SIG@ permite que a navegação por todo seu conteúdo
+						seja feita através do teclado utilizando a tecla "TAB".
+					</p>
+				</div>
+
+				<div class="acess_topico">
+					<h4 class="acess">Zoom: </h4>
+					
+					<p class="textoAcess">Para aumentar e diminuir os elementos na tela, você pode utilizar
+					os recursos nativos do seu navegador: </p>	
+					
+					<ul class="tabela_atalhos_col1">
+						<li>Pressione Ctrl + para aumentar os elementos da tela;</li>
+						<li>Pressione Ctrl - para diminuir os elementos da tela;</li>
+						<li>Pressione Ctrl 0 para que os elementos da tela retorne ao tamanho original.</li>
+					</ul>
+						
+				</div>
+
+				<div class="acess_topico">
+					<h4 class="acess">Contraste: </h4>
+
+					<p class="textoAcess">
+						Na barra de Acessibilidade localizada no topo da página <span id="barra" title="Demonstração da barra de acessibilidade">Demonstração da barra de acessibilidade</span>
+						você pode clicar no botão
+						<span id="contraste" title="Botão contraste - círculo metade preto, metade branco">Botão contraste - círculo metade preto, metade branco</span>
+						para ativar o Alto Contraste e melhorar a visualização da tela.
+					</p>
+
+				</div>
+			</div>
+		</div>
+	</div>
+</div>
+		<div id='conteinerAjuda'>
+	<div id="modalAjuda" class="modalAjuda">
+		<h2>Ajuda</h2>
+		<a href='javascript: escondeAjuda();' class='sair' title="Fechar ajuda">Sair</a>
+		<ul>
+			<li>
+				Escolha um serviço: SIG@ ou SIG@ Processo.
+			</li>
+			<li>
+				Informe seu login ou CPF e sua senha.
+			</li>
+			<li>
+				Caso tenha esquecido a senha, clique em "Esqueceu sua senha?".
+			</li>
+			<li>
+				Se ainda não tiver uma senha, clique em "Solicitar Acesso".
+			</li>
+		</ul>
+	</div>
+</div>
+		
+		
+		
+			<div id="areaTotal">
+		
+			<!-- Topo -->
+			<div id="subviewTopo:j_id_jsp_845824696_1pc2" class="wrapper-box-topo"><div id="subviewTopo:j_id_jsp_845824696_2pc2" class="box-topo"><div id="subviewTopo:j_id_jsp_845824696_3pc2" class="topo"><a href="/ufape" onclick="if(window.setEncerrarSessao){window.setEncerrarSessao(false);}" title="SIG@UFAPE" class="logo"></a><a href="http://ufape.edu.br/" target="_blank"><img id="subviewTopo:logoIES" src="/ufape/jsp/acesso/images/logosInstituicoes/UFAPE.png" alt="UFAPE" title="Site da Institui&ccedil;&atilde;o" class="logo-ufpe" /></a><div id="subviewTopo:j_id_jsp_845824696_7pc2" class="menu-federal"><a href="http://ufape.edu.br/ufape" target="_blank" class="li">A UFAPE</a><a href="http://ufape.edu.br/pro-reitorias" target="_blank" class="li">PR&Oacute;-REITORIAS</a><a href="http://ufape.edu.br/pr%C3%B3-reitoria-assist%C3%AAncia-estudantil-prae" target="_blank" class="li">ESTUDANTES</a><a href="http://ufape.edu.br/ufape" target="_blank" class="li">MEM&Oacute;RIA</a></div><div id="subviewTopo:j_id_jsp_845824696_11pc2" class="Links">
+							
+								<ul>
+									
+										<li><a href="http://ufape.edu.br/ufape" class="li">Processo P&uacute;blico</a></li>
+									
+										<li><a href="http://ufape.edu.br/ufape" class="li">Perguntas Frequentes</a></li>
+									
+										<li><a href="http://ufape.edu.br/ufape" class="li">AVA</a></li>
+									
+										<li><a href="http://www.cartilha.cert.br" class="li">Cartilha de Seguran&ccedil;a para Internet</a></li>
+									
+								</ul>
+						
+						</div>
+
+					
+
+					
+
+						
+
+						
+
+						<!-- BARRA DE ACESSIBILIDADE -->
+				
+							<div id="barra_de_acessibilidade">
+								<ul>
+									<li class='text-bar'>Acessibilidade :</li>
+									<li><a href='javascript: exibeAcessibilidade();'
+										class='acessibilidade' title='Acessibilidade'>Acessibilidade</a></li>
+									<li><a href='javascript: altocontraste();'
+										class='contraste' title="Habilitar Contraste">Contraste</a></li>
+									<li><a href='javascript: exibeAjuda();' class='duvida'
+										title='Ajuda'> </a></li>
+								</ul>
+							</div>
+	
+				</div></div></div>
+
+	<!--  Scripts das Funções das Telas de Login -->
+	<script type="text/javascript" src="/ufape/jsp/acesso/js/funcoesInicioTela.min.js"></script>
+
+	<script type="text/javascript">
+		function altocontraste() {
+			if (!window.acessibilidade) {
+				window.acessibilidade = true;
+				document.cookie = "altoContraste=true; path=/";
+				$j('body').addClass('acessibilidade');
+				$j("img[id$='logoIES']")
+						.attr(
+								"src",
+								"/ufape/jsp/acesso/images/logosInstituicoes/UFAPE-ac.png");
+			} else {
+				window.acessibilidade = false;
+				document.cookie = "altoContraste=false; path=/";
+				$j('body').removeClass('acessibilidade');
+				$j("img[id$='logoIES']")
+						.attr(
+								"src",
+								"/ufape/jsp/acesso/images/logosInstituicoes/UFAPE.png");
+			}
+
+			for (var i = 0; i < window.frames.length; i++) {
+				if (window.acessibilidade) {
+					window.frames[i].altocontraste();
+				} else {
+					window.frames[i].removeAltocontraste();
+				}
+			}
+		}
+	</script>
+
+	
+<form id="formulario" name="formulario" method="post" action="/ufape/jsp/acesso/pages/inicio.jsf" enctype="application/x-www-form-urlencoded">
+<input type="hidden" name="formulario" value="formulario" />
+<div id="j_id_jsp_1514619618_3" class="Conteudo"><div id="j_id_jsp_1514619618_4" class="coluna-esquerda">
+
+				<!-- Slide -->
+				<div id="divAvisoNavegador" class="aviso-navegador">
+					<a class="sair-aviso-navegador"
+						href="javascript: escondeAvisoNavegador();"></a> O seu navegador
+					não é compatível com o SIG@. Algumas funções podem não se comportar
+					como esperado. Recomendamos os seguintes navegadores:
+					<ul class="ul-aviso-navegador">
+						<li><a href="http://br.mozdev.org/download/" target="_blank"
+							class="mozilla" title="Mozilla Firefox"></a> Mozilla Firefox 3 ou
+							superior;</li>
+						<li><a href="http://www.google.com/chrome?hl=pt-BR"
+							target="_blank" class="chrome" title="Google Chrome"></a> Google
+							Chrome 2 ou superior;</li>
+						<li><a href="http://windows.microsoft.com/pt-br/internet-explorer/download-ie"
+							target="_blank" class="ie" title="Internet Explorer 8"></a> Internet Explorer 8 ou superior;</li>
+					</ul>
+				</div>
+
+
+				<div id="divAvisoFirefox25" class="aviso-navegador">
+					<a class="sair-aviso-navegador"
+						href="javascript: escondeAvisoFirefox();"></a> O seu navegador
+					possuir alguns plugins que não são compatíveis com o SIG@. <br />
+					Atualize todos os plugins/extensões.
+
+					<ul class="ul-aviso-navegador">
+						<li><a
+							href="https://addons.mozilla.org/pt-br/firefox/addon/pdfjs/"
+							class="mozilla" target="_blank" title="Atualizar O PDF viewer.js"></a>Clique
+							aqui para atualizar o PDF Viewer.js</li>
+					</ul>
+				</div>
+
+
+				
+
+				
+
+				<!-- Links Principais -->
+				<ul id="link-principal">
+					
+<script type="text/javascript" language="Javascript">function dpf(f) {var adp = f.adp;if (adp != null) {for (var i = 0;i < adp.length;i++) {f.removeChild(adp[i]);}}};function apf(f, pvp) {var adp = new Array();f.adp = adp;var i = 0;for (k in pvp) {var p = document.createElement("input");p.type = "hidden";p.name = k;p.value = pvp[k];f.appendChild(p);adp[i++] = p;}};function jsfcljs(f, pvp, t) {apf(f, pvp);var ft = f.target;if (t) {f.target = t;}f.submit();f.target = ft;dpf(f);};</script>
+<a href="#" title="M&oacute;dulos do SIG@" onclick="var a=function(){window.setEncerrarSessao(false);};var b=function(){if(typeof jsfcljs == 'function'){jsfcljs(document.getElementById('formulario'),{'j_id_jsp_1514619618_22':'j_id_jsp_1514619618_22'},'');}return false};return (a()==false) ? false : b();">
+
+						<li>
+							<div class="thumb" id="agenda"></div>
+							<h2>SIG@</h2> <br />
+							<p id="siga_info">O Sistema de Informações e Gestão Acadêmica
+								(SIG@) apoia as áreas de ensino (graduação e pós), pesquisa,
+								recursos humanos, processos administrativos, planejamento
+								institucional, gestão patrimonial, processo de eleição e gestão
+								de restaurante universitário.</p>
+						</li>
+
+					</a><a href="#" title="Solicitar Acesso" onclick="var a=function(){window.setEncerrarSessao(false);};var b=function(){if(typeof jsfcljs == 'function'){jsfcljs(document.getElementById('formulario'),{'j_id_jsp_1514619618_23':'j_id_jsp_1514619618_23'},'');}return false};return (a()==false) ? false : b();">
+
+						<li>
+							<div class="thumb" id="chave"></div>
+							<h2>Solicitar Acesso</h2> <br />
+							<p id="siga_info2">Este processo permite que uma senha seja
+								criada para acessar o sistema pela primeira vez ou em caso de
+								desbloqueio de acesso.</p>
+						</li>
+
+					</a>
+					
+				</ul>
+			</div><div id="j_id_jsp_1514619618_24" class="login ui-corner-all"><label for="cpf">
+Login/CPF:</label><input id="cpf" type="text" name="cpf" tabindex="1" /><label for="txtPassword">
+Senha:</label><input id="txtPassword" type="password" name="txtPassword" value="" tabindex="2" /><span id="divMayus" style="display:none;" class="alertaLogin">Tecla Caps Lock ativada.</span><span id="j_id_jsp_1514619618_35"></span><a href="#" title="Recuperar senha" onclick="if(typeof jsfcljs == 'function'){jsfcljs(document.getElementById('formulario'),{'j_id_jsp_1514619618_39':'j_id_jsp_1514619618_39'},'');}return false"><label onclick="window.setEncerrarSessao(false);" class="esqueceuSenha">
+Esqueceu sua senha?</label></a><input id="btnEntrar" type="submit" name="btnEntrar" value="Entrar" onclick="window.setEncerrarSessao(false);" style=" " tabindex="4" class="btEntrar login ui-corner-all" /></div> 
+			
+			<!-- banners -->
+			<div layout="block" style="float:right; margin:10px;" styleClass="login ui-corner-all">
+			<table>
+<tbody>
+<tr>
+<td><table id="imagens-banner">
+<tbody>
+<tr>
+<td><a href="https://docs.google.com/forms/d/e/1FAIpQLScKjuX0HCXF9T-VzKEooU0sqyTCLL7rUazBo_EG1OUjNbi9uQ/viewform?usp=sharing&amp;ouid=113098994307378189325" target="_blank"><img id="imagens-banner:0:imgBanner1" src="https://arquivos.ufape.edu.br/siga/formulario_avaliacao_docente_2025_1.jpg" style="margin-bottom: 5px; width: 302px" /></a></td>
+</tr>
+</tbody>
+</table>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+			
+		</div>
+		
+	<input type="hidden" name="javax.faces.ViewState" id="javax.faces.ViewState" value="j_id5" autocomplete="off" />
+</form>
+
+	
+
+	
+
+
+
+
+
+
+
+
+
+<!-- Rodapé -->
+
+<!-- Espaço vazio para rodape flexivel. Garante a altura para exibicao do rodape na parte inferior da pagina -->
+	<div id="espacoVazioRodape"></div>
+</div>
+
+
+<div id="j_id_jsp_1514619618_47" class="Rodape"><div id="j_id_jsp_1514619618_48" class="conteiner">
+
+	
+			<span class="titulo">Navegadores Recomendados: </span>
+			
+			<ul>
+				<li><a href="http://br.mozdev.org/download/" target="_blank" class="mozilla" title="Mozilla Firefox 3 ou superior"> Mozilla Firefox</a></li>
+				<li><a href="http://www.google.com/chrome?hl=pt-BR" target="_blank" class="chrome" title="Google Chrome 2 ou superior">Google Chrome</a></li>
+				<li><a href="http://windows.microsoft.com/pt-br/internet-explorer/download-ie" target="_blank" class="ie" title="Internet Explorer 8 ou superior">
+				Internet Explorer</a></li>
+			</ul>
+
+			<div class="seloSeguranca">
+				<!-- Não quebrar essa linha se não o link não funciona -->
+				
+				
+
+			<!--- DO NOT EDIT - GlobalSign SSL Site Seal Code - DO NOT EDIT --->
+			<table width=110 border=0 cellspacing=0 cellpadding=0
+				title="CLICK TO VERIFY: This site uses a GlobalSign SSL Certificate to secure your personal information.">
+				<tr>
+					<td><span id="s19_img_wrapper_rnp_image_110-45_en"><a
+							href="https://www.globalsign.eu/" target=_blank title="SSL">
+								<img alt="SSL" border=0 id="ss_img"
+								src="//seal.globalsign.com/SiteSeal/images/gs_noscript_110-45_en.gif">
+						</a></span> <script type="text/javascript"
+							src="//seal.globalsign.com/SiteSeal/rnp/rnp_image_110-45_en.js"></script><br />
+						<a href="https://www.globalsign.eu/" target=_blank
+						style="color: #000000; text-decoration: none; display: block; text-indent: -9999px; font: bold 8px arial; margin: 0px; padding: 0px;">SSL
+							Certificates from GlobalSign Certificate Authority</a></td>
+				</tr>
+			</table>
+			<!--- DO NOT EDIT - GlobalSign SSL Site Seal Code - DO NOT EDIT --->
+
+			
+
+			</div>
+
+			<span class="maquina" title="Máquina:21">
+				<span class="fonteBranca"> <strong> 21 </strong> </span>
+			</span>
+
+			<span class="info"> 
+				<span>SIG@ - Versão 3.100.1.61 | Todos os Direitos Reservados à UFPE-STI </span> 
+				
+				<strong> </strong> 
+				 
+				
+				
+				<strong>
+					<a href="http://ufape.edu.br/" target="_blank">http://ufape.edu.br/</a>
+					
+				</strong>
+			</span>
+		
+	</div></div>
+
+<script type="text/javascript">
+	var widgetId;
+	
+	var verifyCallback = function(response) {
+		if(false){
+			document.getElementById('btnEntrar').click();
+		}
+    };
+	var onloadCallback = function() {
+		if($j("#widget-captcha").size() > 0 && "6LdXbnQmAAAAAH7xhzE7feri1plXrFKz34-dx0pe".length > 0) {
+			
+			widgetId = grecaptcha.render('widget-captcha', {
+				'sitekey' : '6LdXbnQmAAAAAH7xhzE7feri1plXrFKz34-dx0pe',
+				'theme' : 'light',
+				'callback' : verifyCallback
+			});	
+		}
+	};
+	
+	
+</script>
+
+<script src="https://www.google.com/recaptcha/api.js?hl=pt-BR&onload=onloadCallback&render=explicit" async defer>
+</script>
+
+<script type="text/javascript">
+	(function(i, s, o, g, r, a, m) {
+		i['GoogleAnalyticsObject'] = r;
+		i[r] = i[r] || function() {
+			(i[r].q = i[r].q || []).push(arguments)
+		}, i[r].l = 1 * new Date();
+		a = s.createElement(o), m = s.getElementsByTagName(o)[0];
+		a.async = 1;
+		a.src = g;
+		m.parentNode.insertBefore(a, m)
+	})(window, document, 'script', '//www.google-analytics.com/analytics.js',
+			'ga');
+
+	ga('create', '', 'ufape.edu.br');
+	ga('send', 'pageview');
+</script>
+
+</body>
+</html>
