@@ -7,8 +7,10 @@ import 'ui/charts/charts_page.dart' as a0;
 import 'ui/grades/grades_page.dart' as a1;
 import 'ui/home/home_page.dart' as a2;
 import 'ui/login/login_page.dart' as a3;
-import 'ui/splash/splash_page.dart' as a4;
-import 'ui/webview/webview_page.dart' as a5;
+import 'ui/settings/settings_page.dart' as a4;
+import 'ui/siga/siga_page.dart' as a5;
+import 'ui/splash/splash_page.dart' as a6;
+import 'ui/siga/widgets/siga_page_widget.dart' as a7;
 
 Route b0Builder(BuildContext ctx, RouteSettings settings) =>
     Routefly.defaultRouteBuilder(
@@ -38,11 +40,23 @@ Route b4Builder(BuildContext ctx, RouteSettings settings) =>
     Routefly.defaultRouteBuilder(
       ctx,
       settings,
-      const a4.SplashPage(),
+      const a4.SettingsPage(),
     );
 Route b5Builder(BuildContext ctx, RouteSettings settings) =>
     Routefly.defaultRouteBuilder(
       ctx,
       settings,
-      const a5.WebViewPage(),
+      const a5.SigaPage(),
+    );
+Route b6Builder(BuildContext ctx, RouteSettings settings) =>
+    Routefly.defaultRouteBuilder(
+      ctx,
+      settings,
+      const a6.SplashPage(),
+    );
+Route b7Builder(BuildContext ctx, RouteSettings settings) =>
+    Routefly.defaultRouteBuilder(
+      ctx,
+      settings,
+      const a7.SigaPageWidget(),
     );

@@ -1,28 +1,32 @@
 import 'dart:convert';
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:my_ufape/app_widget.dart';
-import 'package:my_ufape/ui/grades/grades_page.dart';
+import 'package:my_ufape/config/dependencies.dart';
+import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
+import 'package:result_dart/result_dart.dart';
 import 'package:routefly/routefly.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import '../../domain/entities/grades_model.dart';
+import '../../../domain/entities/grades_model.dart';
 
-class WebViewPage extends StatefulWidget {
-  const WebViewPage({
+class SigaPageWidget extends StatefulWidget {
+  const SigaPageWidget({
     super.key,
   });
 
   @override
-  State<WebViewPage> createState() => _WebViewPageState();
+  State<SigaPageWidget> createState() => _SigaPageWidgetState();
 }
 
-class _WebViewPageState extends State<WebViewPage> {
-  late final WebViewController _controller;
-  String username = Routefly.query.arguments['username'] ?? '';
-  String password = Routefly.query.arguments['password'] ?? '';
+class _SigaPageWidgetState extends State<SigaPageWidget> {
+  WebViewController? _controller;
+  SettingsRepository settingsRepository = injector.get();
+  String username = '';
+  String password = '';
   bool _isLoading = true;
   bool _isLoggedIn = false;
+
+  String message = '';
 
   Timer? _statusCheckTimer;
 
@@ -45,7 +49,26 @@ class _WebViewPageState extends State<WebViewPage> {
     super.dispose();
   }
 
-  void _initializeWebView() {
+  Future<void> _initializeWebView() async {
+    setState(() {
+      _controller = null;
+      message = 'Obtendo credenciais';
+    });
+    await settingsRepository.getUserCredentials().fold((login) {
+      username = login.username;
+      password = login.password;
+    }, (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao obter credenciais: $error'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    });
+    setState(() {
+      message = 'Inicializando Webview';
+    });
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
       ..setNavigationDelegate(
@@ -67,10 +90,6 @@ class _WebViewPageState extends State<WebViewPage> {
             // Se for a página de login e ainda não tentamos logar
             if (url.contains('index.jsp') && !_isLoggedIn) {
               _injectLoginScript();
-              // Otimisticamente, consideramos logado. O timer corrigirá se falhar.
-              setState(() {
-                _isLoggedIn = true;
-              });
             }
             _checkLoginStatus(); // Verifica o status assim que a página carrega
           },
@@ -86,7 +105,10 @@ class _WebViewPageState extends State<WebViewPage> {
       ..loadRequest(Uri.parse('https://siga.ufape.edu.br/ufape/index.jsp'));
   }
 
-  void _injectLoginScript() {
+  Future<void> _injectLoginScript() async {
+    setState(() {
+      message = 'Fazendo login no siga';
+    });
     final safeUsername =
         username.replaceAll(r'\', r'\\').replaceAll(r"'", r"\'");
     final safePassword =
@@ -113,7 +135,7 @@ class _WebViewPageState extends State<WebViewPage> {
         }
       })();
     """;
-    _controller.runJavaScript(script);
+    await _controller!.runJavaScript(script);
   }
 
   void _showLoadingDialog(String message) {
@@ -269,7 +291,7 @@ class _WebViewPageState extends State<WebViewPage> {
 
     try {
       final jsonResult =
-          await _controller.runJavaScriptReturningResult(script) as String;
+          await _controller!.runJavaScriptReturningResult(script) as String;
       if (!mounted) return;
 
       dynamic decodedData = jsonDecode(jsonResult);
@@ -340,7 +362,7 @@ class _WebViewPageState extends State<WebViewPage> {
       }
 
       try {
-        final result = await _controller.runJavaScriptReturningResult(script);
+        final result = await _controller!.runJavaScriptReturningResult(script);
         // O resultado pode ser bool ou String 'true'/'false'
         if (result == true || result.toString() == 'true') {
           timer?.cancel();
@@ -373,7 +395,7 @@ class _WebViewPageState extends State<WebViewPage> {
       const script1 = """
         document.getElementById('menuTopo:repeatAcessoMenu:2:repeatSuperTransacoesSuperMenu:0:linkSuperTransacaoSuperMenu').click();
       """;
-      await _controller.runJavaScript(script1);
+      await _controller!.runJavaScript(script1);
 
       _hideLoadingDialog();
       _showLoadingDialog('Procurando link de notas...');
@@ -405,7 +427,7 @@ class _WebViewPageState extends State<WebViewPage> {
           }, 250);
         });
       """;
-      await _controller.runJavaScriptReturningResult(script2);
+      await _controller!.runJavaScriptReturningResult(script2);
 
       _hideLoadingDialog();
       _showLoadingDialog('Aguardando carregamento da página de notas...');
@@ -446,7 +468,7 @@ class _WebViewPageState extends State<WebViewPage> {
       // Este script verifica a presença do label com o nome do usuário.
       // Se existir, o usuário está logado. Caso contrário, não está.
       const script = "document.getElementById('lblNomePessoa') != null;";
-      final result = await _controller.runJavaScriptReturningResult(script);
+      final result = await _controller!.runJavaScriptReturningResult(script);
 
       final bool currentlyLoggedIn =
           result == true || result.toString() == 'true';
@@ -455,6 +477,14 @@ class _WebViewPageState extends State<WebViewPage> {
       if (currentlyLoggedIn != _isLoggedIn) {
         setState(() {
           _isLoggedIn = currentlyLoggedIn;
+          if (currentlyLoggedIn) {
+            message = "Conectado";
+            Future.delayed(Duration(seconds: 2)).then((value) {
+              setState(() {
+                message = "";
+              });
+            });
+          }
         });
       }
     } catch (e) {
@@ -520,177 +550,41 @@ class _WebViewPageState extends State<WebViewPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Row(
-          children: [
-            Image.asset('assets/images/logo_ufape_25.png', height: 60),
-            const Text(
-              'SIGA UFAPE',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
-            const Spacer(),
-            _buildStatusIndicator(),
-          ],
+    return Column(
+      spacing: 8,
+      children: [
+        AnimatedSwitcher(
+          duration: const Duration(milliseconds: 300),
+          child: message.isNotEmpty
+              ? Text(message, key: ValueKey(message))
+              : const SizedBox.shrink(key: ValueKey('empty')),
         ),
-        backgroundColor: const Color(0xFF004D40),
-        foregroundColor: Colors.white,
-        elevation: 2,
-        actions: [
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, color: Colors.white),
-            onSelected: (value) {
-              switch (value) {
-                case 'toggle_webview':
-                  _toggleWebViewVisibility();
-                  break;
-                case 'refresh':
-                  _controller.reload();
-                  break;
-                case 'reauthenticate':
-                  Routefly.navigate(routePaths.login);
-              }
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'toggle_webview',
-                child: Row(
-                  children: [
-                    Icon(
-                      _isWebViewVisible
-                          ? Icons.visibility_off
-                          : Icons.visibility,
-                      color: Colors.black,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(_isWebViewVisible
-                        ? 'Ocultar WebView'
-                        : 'Mostrar WebView'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'refresh',
-                child: Row(
-                  children: [
-                    Icon(Icons.refresh, color: Colors.black),
-                    SizedBox(width: 8),
-                    Text('Recarregar Página'),
-                  ],
-                ),
-              ),
-              const PopupMenuItem(
-                value: 'reauthenticate',
-                child: Row(
-                  children: [
-                    Icon(Icons.logout, color: Colors.black),
-                    SizedBox(width: 8),
-                    Text('Reautenticar'),
-                  ],
-                ),
+        _controller != null
+            ? Expanded(child: WebViewWidget(controller: _controller!))
+            : Spacer(),
+        Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            spacing: 8,
+            children: [
+              ElevatedButton.icon(
+                onPressed:
+                    _isProcessingGrades ? null : _navigateAndExtractGrades,
+                icon: _isProcessingGrades
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white))
+                    : const Icon(Icons.school, color: Colors.white),
+                label: const Text('Extrair Notas',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
               ),
             ],
           ),
-        ],
-      ),
-      body: Stack(
-        children: [
-          if (_isWebViewVisible) ...[
-            WebViewWidget(controller: _controller),
-            if (_isLoading && !_isProcessingGrades)
-              Container(
-                color: Colors.black54,
-                child: const Center(
-                  child: CircularProgressIndicator(
-                    valueColor:
-                        AlwaysStoppedAnimation<Color>(Color(0xFF004D40)),
-                  ),
-                ),
-              ),
-          ] else ...[
-            Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    const Color(0xFF004D40).withOpacity(0.1),
-                    const Color(0xFF00695C).withOpacity(0.05),
-                  ],
-                ),
-              ),
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset('assets/images/logo_ufape_100.png',
-                        height: 200),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Sistema Acadêmico',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                    const SizedBox(height: 48),
-                    SizedBox(
-                      width: 200,
-                      child: ElevatedButton.icon(
-                        onPressed: _isProcessingGrades
-                            ? null
-                            : _navigateAndExtractGrades,
-                        icon: _isProcessingGrades
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2, color: Colors.white))
-                            : const Icon(Icons.school, color: Colors.white),
-                        label: const Text('NOTAS',
-                            style: TextStyle(fontWeight: FontWeight.bold)),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF00695C),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10)),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-          // Botões manuais
-          if (_isWebViewVisible)
-            Positioned(
-              bottom: 16,
-              right: 16,
-              child: SafeArea(
-                child: FloatingActionButton.extended(
-                  onPressed:
-                      _isProcessingGrades ? null : _navigateAndExtractGrades,
-                  icon: _isProcessingGrades
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white))
-                      : const Icon(Icons.school, color: Colors.white),
-                  label: const Text('Extrair Notas Automaticamente',
-                      style: TextStyle(fontWeight: FontWeight.bold)),
-                  backgroundColor: const Color(0xFF00695C),
-                  foregroundColor: Colors.white,
-                ),
-              ),
-            ),
-        ],
-      ),
+        )
+      ],
     );
   }
 }

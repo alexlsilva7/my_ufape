@@ -25,7 +25,7 @@ class SplashViewModel extends ChangeNotifier {
     });
     print('Login: ${login?.username}, ${login?.password}');
     if (login != null) {
-      Routefly.navigate(routePaths.webview, arguments: {
+      Routefly.navigate(routePaths.home, arguments: {
         'username': login!.username,
         'password': login!.password,
       });

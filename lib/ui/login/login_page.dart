@@ -1,7 +1,9 @@
+import 'package:brasil_fields/brasil_fields.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:my_ufape/app_widget.dart';
-import 'package:my_ufape/ui/webview/webview_page.dart';
+import 'package:my_ufape/ui/siga/widgets/siga_page_widget.dart';
 import 'package:routefly/routefly.dart';
 
 class LoginPage extends StatefulWidget {
@@ -42,12 +44,7 @@ class _LoginPageState extends State<LoginPage> {
         // Navega automaticamente após o build completar
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => WebViewPage(),
-            ),
-          );
+          Routefly.navigate(routePaths.home);
         });
       }
     } catch (e) {
@@ -72,10 +69,7 @@ class _LoginPageState extends State<LoginPage> {
         // Ignore storage errors; continue login
       }
 
-      Routefly.navigate(routePaths.webview, arguments: {
-        'username': username,
-        'password': password,
-      });
+      Routefly.navigate(routePaths.home);
     }
   }
 
@@ -127,6 +121,10 @@ class _LoginPageState extends State<LoginPage> {
                     }
                     return null;
                   },
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    CpfInputFormatter(),
+                  ],
                 ),
                 const SizedBox(height: 16),
                 // Campo de Senha

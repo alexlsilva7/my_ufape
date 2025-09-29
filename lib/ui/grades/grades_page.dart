@@ -12,8 +12,6 @@ class GradesPage extends StatefulWidget {
 
 class _GradesPageState extends State<GradesPage> {
   List<Periodo> periodos = Routefly.query.arguments['periodos'] ?? [];
-  static const Color _primary = Color(0xFF004D40);
-  static const Color _secondary = Color(0xFF00695C);
 
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
@@ -164,9 +162,6 @@ class _GradesPageState extends State<GradesPage> {
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         title: const Text('Minhas Notas'),
-        backgroundColor: _primary,
-        foregroundColor: Colors.white,
-        elevation: 2,
         toolbarHeight: 80,
         actions: [
           // Botão de Gráficos
@@ -179,12 +174,12 @@ class _GradesPageState extends State<GradesPage> {
                 ),
               );
             },
-            icon: const Icon(Icons.bar_chart, color: Colors.white),
+            icon: const Icon(Icons.bar_chart),
             tooltip: 'Ver Gráficos de Desempenho',
           ),
           // Botão de Filtro por Situação
           PopupMenuButton<String>(
-            icon: const Icon(Icons.filter_list, color: Colors.white),
+            icon: const Icon(Icons.filter_list),
             tooltip: 'Filtrar por Situação',
             onSelected: (value) {
               setState(() {
@@ -200,8 +195,9 @@ class _GradesPageState extends State<GradesPage> {
                       _filterBySituacao == 'todos'
                           ? Icons.radio_button_checked
                           : Icons.radio_button_unchecked,
-                      color:
-                          _filterBySituacao == 'todos' ? _primary : Colors.grey,
+                      color: _filterBySituacao == 'todos'
+                          ? Theme.of(context).primaryColor
+                          : Colors.grey,
                       size: 20,
                     ),
                     const SizedBox(width: 8),
@@ -276,7 +272,6 @@ class _GradesPageState extends State<GradesPage> {
             },
             icon: Icon(
               _sortBy == 'recente' ? Icons.arrow_downward : Icons.arrow_upward,
-              color: Colors.white,
             ),
             tooltip: _sortBy == 'recente'
                 ? 'Ordenado: Mais recente primeiro'
@@ -288,13 +283,7 @@ class _GradesPageState extends State<GradesPage> {
           child: Container(
             width: double.infinity,
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [_primary, _secondary],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
+            color: Theme.of(context).appBarTheme.backgroundColor,
             child: Column(
               children: [
                 // Estatísticas
@@ -303,13 +292,13 @@ class _GradesPageState extends State<GradesPage> {
                   children: [
                     _buildStatItem(
                         'Total', totalDisciplinas.toString(), Icons.school),
-                    _dividerLine(),
+                    _dividerLine(context),
                     _buildStatItem('Aprovadas', totalAprovadas.toString(),
                         Icons.check_circle),
-                    _dividerLine(),
+                    _dividerLine(context),
                     _buildStatItem('Períodos', periodos.length.toString(),
                         Icons.calendar_today),
-                    _dividerLine(),
+                    _dividerLine(context),
                     _buildStatItem('Média', overallMedia.toStringAsFixed(2),
                         Icons.analytics),
                   ],
@@ -350,7 +339,6 @@ class _GradesPageState extends State<GradesPage> {
                           )
                         : null,
                     filled: true,
-                    fillColor: Colors.white,
                     contentPadding: const EdgeInsets.symmetric(vertical: 8),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(10),
@@ -478,7 +466,7 @@ class _GradesPageState extends State<GradesPage> {
       case 'reprovado':
         return Colors.red.shade700;
       default:
-        return _primary;
+        return Theme.of(context).primaryColor;
     }
   }
 
@@ -508,11 +496,11 @@ class _GradesPageState extends State<GradesPage> {
     }
   }
 
-  Widget _dividerLine() {
+  Widget _dividerLine(BuildContext ctx) {
     return Container(
       width: 1,
       height: 24,
-      color: Colors.white.withOpacity(0.35),
+      color: Theme.of(ctx).dividerColor,
     );
   }
 
@@ -528,7 +516,7 @@ class _GradesPageState extends State<GradesPage> {
         const SizedBox(width: 6),
         Text(
           label,
-          style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 12),
+          style: TextStyle(fontSize: 12),
         ),
       ],
     );
@@ -537,12 +525,11 @@ class _GradesPageState extends State<GradesPage> {
   Widget _buildStatItem(String label, String value, IconData icon) {
     return Column(
       children: [
-        Icon(icon, color: Colors.white, size: 18),
+        Icon(icon, size: 18),
         const SizedBox(height: 4),
         Text(
           value,
           style: const TextStyle(
-            color: Colors.white,
             fontSize: 16,
             fontWeight: FontWeight.w700,
           ),
@@ -550,7 +537,6 @@ class _GradesPageState extends State<GradesPage> {
         Text(
           label,
           style: TextStyle(
-            color: Colors.white.withOpacity(0.85),
             fontSize: 11,
           ),
         ),
@@ -622,7 +608,7 @@ class _GradesPageState extends State<GradesPage> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                 decoration: BoxDecoration(
-                  color: _primary,
+                  color: Theme.of(context).primaryColor,
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Column(
@@ -1172,14 +1158,16 @@ class _GradesPageState extends State<GradesPage> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: _primary.withOpacity(0.1),
+                      color: Theme.of(context).primaryColor.withOpacity(0.1),
                       borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: _primary.withOpacity(0.25)),
+                      border: Border.all(
+                          color:
+                              Theme.of(context).primaryColor.withOpacity(0.25)),
                     ),
                     child: Text(
                       periodoNome,
                       style: TextStyle(
-                        color: _primary,
+                        color: Theme.of(context).primaryColor,
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                       ),

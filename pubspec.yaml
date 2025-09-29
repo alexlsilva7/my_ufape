@@ -18,6 +18,7 @@ dependencies:
   result_dart: ^2.1.1
   shared_preferences: ^2.5.3
   result_command: ^2.1.0
+  brasil_fields: ^1.18.0
   
 
 dev_dependencies:

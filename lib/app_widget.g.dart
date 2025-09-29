@@ -24,14 +24,24 @@ List<RouteEntity> get routes => [
         routeBuilder: b3Builder,
       ),
       RouteEntity(
+        key: '/settings',
+        uri: Uri.parse('/settings'),
+        routeBuilder: b4Builder,
+      ),
+      RouteEntity(
+        key: '/siga',
+        uri: Uri.parse('/siga'),
+        routeBuilder: b5Builder,
+      ),
+      RouteEntity(
         key: '/splash',
         uri: Uri.parse('/splash'),
-        routeBuilder: b4Builder,
+        routeBuilder: b6Builder,
       ),
       RouteEntity(
         key: '/webview',
         uri: Uri.parse('/webview'),
-        routeBuilder: b5Builder,
+        routeBuilder: b7Builder,
       ),
     ];
 
@@ -41,6 +51,8 @@ const routePaths = (
   grades: '/grades',
   home: '/home',
   login: '/login',
+  settings: '/settings',
+  siga: '/siga',
   splash: '/splash',
   webview: '/webview',
 );
