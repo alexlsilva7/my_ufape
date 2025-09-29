@@ -2,7 +2,9 @@ import 'dart:convert';
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:my_ufape/app_widget.dart';
 import 'package:my_ufape/ui/grades/grades_page.dart';
+import 'package:routefly/routefly.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../../domain/entities/grades_model.dart';
 
@@ -17,8 +19,8 @@ class WebViewPage extends StatefulWidget {
 
 class _WebViewPageState extends State<WebViewPage> {
   late final WebViewController _controller;
-  String username = '';
-  String password = '';
+  String username = Routefly.query.arguments['username'] ?? '';
+  String password = Routefly.query.arguments['password'] ?? '';
   bool _isLoading = true;
   bool _isLoggedIn = false;
 
@@ -296,13 +298,9 @@ class _WebViewPageState extends State<WebViewPage> {
             'Aviso', 'Nenhuma disciplina encontrada para extrair.');
         return;
       }
-
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => GradesPage(),
-        ),
-      );
+      Routefly.push(routePaths.grades, arguments: {
+        'periodos': periodos,
+      });
     } catch (e) {
       debugPrint("Erro ao executar/decodificar script: $e");
       await _showAlert('Erro', 'Ocorreu um erro ao extrair as notas: $e',
@@ -553,6 +551,8 @@ class _WebViewPageState extends State<WebViewPage> {
                 case 'refresh':
                   _controller.reload();
                   break;
+                case 'reauthenticate':
+                  Routefly.navigate(routePaths.login);
               }
             },
             itemBuilder: (context) => [
@@ -560,9 +560,12 @@ class _WebViewPageState extends State<WebViewPage> {
                 value: 'toggle_webview',
                 child: Row(
                   children: [
-                    Icon(_isWebViewVisible
-                        ? Icons.visibility_off
-                        : Icons.visibility),
+                    Icon(
+                      _isWebViewVisible
+                          ? Icons.visibility_off
+                          : Icons.visibility,
+                      color: Colors.black,
+                    ),
                     const SizedBox(width: 8),
                     Text(_isWebViewVisible
                         ? 'Ocultar WebView'
@@ -574,9 +577,19 @@ class _WebViewPageState extends State<WebViewPage> {
                 value: 'refresh',
                 child: Row(
                   children: [
-                    Icon(Icons.refresh),
+                    Icon(Icons.refresh, color: Colors.black),
                     SizedBox(width: 8),
                     Text('Recarregar Página'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'reauthenticate',
+                child: Row(
+                  children: [
+                    Icon(Icons.logout, color: Colors.black),
+                    SizedBox(width: 8),
+                    Text('Reautenticar'),
                   ],
                 ),
               ),
@@ -625,74 +638,27 @@ class _WebViewPageState extends State<WebViewPage> {
                       ),
                     ),
                     const SizedBox(height: 48),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 16),
-                      margin: const EdgeInsets.symmetric(horizontal: 32),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        children: [
-                          const Icon(
-                            Icons.info_outline,
-                            color: Color(0xFF004D40),
-                            size: 32,
-                          ),
-                          const SizedBox(height: 12),
-                          const Text(
-                            'O WebView está executando em segundo plano',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Clique em NOTAS para visualizar suas notas ou use o menu para mostrar o WebView',
-                            style: TextStyle(
-                              fontSize: 14,
-                              color: Colors.grey.shade600,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                          const SizedBox(height: 16),
-                          SizedBox(
-                            width: double.infinity,
-                            child: ElevatedButton.icon(
-                              onPressed: _isProcessingGrades
-                                  ? null
-                                  : _navigateAndExtractGrades,
-                              icon: _isProcessingGrades
-                                  ? const SizedBox(
-                                      width: 18,
-                                      height: 18,
-                                      child: CircularProgressIndicator(
-                                          strokeWidth: 2, color: Colors.white))
-                                  : const Icon(Icons.school,
-                                      color: Colors.white),
-                              label: const Text('NOTAS',
-                                  style:
-                                      TextStyle(fontWeight: FontWeight.bold)),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: const Color(0xFF00695C),
-                                padding:
-                                    const EdgeInsets.symmetric(vertical: 12),
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10)),
-                              ),
-                            ),
-                          ),
-                        ],
+                    SizedBox(
+                      width: 200,
+                      child: ElevatedButton.icon(
+                        onPressed: _isProcessingGrades
+                            ? null
+                            : _navigateAndExtractGrades,
+                        icon: _isProcessingGrades
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: Colors.white))
+                            : const Icon(Icons.school, color: Colors.white),
+                        label: const Text('NOTAS',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF00695C),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10)),
+                        ),
                       ),
                     ),
                   ],

@@ -10,9 +10,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 final injector = AutoInjector();
 
 Future<void> setupDependencies() async {
-  injector.addLazySingleton(SplashViewModel.new);
-  injector.addLazySingleton(HomeViewModel.new);
-
   injector.addSingleton(LocalStoragePreferencesService.new);
   SharedPreferences prefs = await SharedPreferences.getInstance();
   injector.addInstance<SharedPreferences>(prefs);
@@ -27,6 +24,9 @@ Future<void> setupDependencies() async {
       injector.get<FlutterSecureStorage>(),
     ),
   );
+
+  injector.addLazySingleton(SplashViewModel.new);
+  injector.addLazySingleton(HomeViewModel.new);
 
   injector.commit();
 }

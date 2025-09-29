@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:routefly/routefly.dart';
 import '../../domain/entities/grades_model.dart';
 import '../charts/charts_page.dart';
 
@@ -10,7 +11,7 @@ class GradesPage extends StatefulWidget {
 }
 
 class _GradesPageState extends State<GradesPage> {
-  List<Periodo> periodos = [];
+  List<Periodo> periodos = Routefly.query.arguments['periodos'] ?? [];
   static const Color _primary = Color(0xFF004D40);
   static const Color _secondary = Color(0xFF00695C);
 

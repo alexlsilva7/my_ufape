@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:my_ufape/app_widget.dart';
 import 'package:my_ufape/ui/webview/webview_page.dart';
+import 'package:routefly/routefly.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -70,12 +72,10 @@ class _LoginPageState extends State<LoginPage> {
         // Ignore storage errors; continue login
       }
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => WebViewPage(),
-        ),
-      );
+      Routefly.navigate(routePaths.webview, arguments: {
+        'username': username,
+        'password': password,
+      });
     }
   }
 
@@ -102,12 +102,7 @@ class _LoginPageState extends State<LoginPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                Image.network(
-                  'https://ufape.edu.br/sites/default/files/BRAS%C3%83O_SITE.fw_.png',
-                  height: 120,
-                  errorBuilder: (context, error, stackTrace) =>
-                      const Icon(Icons.school, size: 80),
-                ),
+                Image.asset('assets/images/logo_ufape_100.png', height: 100),
                 const SizedBox(height: 32),
                 Text(
                   'Acesse sua conta',
