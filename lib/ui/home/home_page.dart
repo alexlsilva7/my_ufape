@@ -90,8 +90,34 @@ class HomePage extends StatelessWidget {
                     subtitle: 'Visualizar notas e histórico',
                     icon: Icons.grade,
                     color: Colors.green,
-                    onTap: () {
-                      Routefly.push(routePaths.grades);
+                    onTap: () async {
+                      final settingsRepo = injector.get<SettingsRepository>();
+                      final result = await settingsRepo.getCachedGrades();
+                      if (context.mounted) {
+                        result.fold(
+                          (periodos) {
+                            if (periodos.isEmpty) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text(
+                                        'Nenhuma nota no cache. Sincronizando com o SIGA...')),
+                              );
+                              Routefly.push(routePaths.siga);
+                            } else {
+                              Routefly.push(routePaths.grades,
+                                  arguments: {'periodos': periodos});
+                            }
+                          },
+                          (failure) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content: Text(
+                                      'Nenhuma nota em cache. Sincronizando com o SIGA...')),
+                            );
+                            Routefly.push(routePaths.siga);
+                          },
+                        );
+                      }
                     },
                   ),
                   _buildFeatureCard(

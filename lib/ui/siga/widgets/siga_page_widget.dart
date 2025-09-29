@@ -320,6 +320,9 @@ class _SigaPageWidgetState extends State<SigaPageWidget> {
             'Aviso', 'Nenhuma disciplina encontrada para extrair.');
         return;
       }
+
+      await settingsRepository.saveGrades(periodos);
+
       Routefly.push(routePaths.grades, arguments: {
         'periodos': periodos,
       });

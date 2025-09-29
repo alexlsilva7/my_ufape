@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_ufape/app_widget.dart';
 import 'package:routefly/routefly.dart';
 import '../../domain/entities/grades_model.dart';
 import '../charts/charts_page.dart';
@@ -167,12 +168,9 @@ class _GradesPageState extends State<GradesPage> {
           // Botão de Gráficos
           IconButton(
             onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ChartsPage(),
-                ),
-              );
+              Routefly.push(routePaths.charts, arguments: {
+                'periodos': periodos,
+              });
             },
             icon: const Icon(Icons.bar_chart),
             tooltip: 'Ver Gráficos de Desempenho',

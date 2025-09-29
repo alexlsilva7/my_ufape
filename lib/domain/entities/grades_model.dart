@@ -1,5 +1,3 @@
-// lib/domain/entities/grades_model.dart
-
 // Representa um período letivo (ex: "2025.1")
 class Periodo {
   final String nome;
@@ -7,7 +5,6 @@ class Periodo {
 
   Periodo({required this.nome, required this.disciplinas});
 
-  // --- NOVO CONSTRUTOR ADICIONADO ---
   factory Periodo.fromJson(Map<String, dynamic> json) {
     var disciplinasList = json['disciplinas'] as List;
     List<Disciplina> disciplinas =
@@ -17,6 +14,11 @@ class Periodo {
       disciplinas: disciplinas,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'nome': nome,
+        'disciplinas': disciplinas.map((d) => d.toJson()).toList(),
+      };
 }
 
 // Representa uma disciplina com suas notas e situação
@@ -31,7 +33,6 @@ class Disciplina {
     required this.notas,
   });
 
-  // --- NOVO CONSTRUTOR ADICIONADO ---
   factory Disciplina.fromJson(Map<String, dynamic> json) {
     // Converte o mapa de notas para o tipo correto Map<String, String>
     final notasMap = (json['notas'] as Map)
@@ -43,4 +44,10 @@ class Disciplina {
       notas: notasMap,
     );
   }
+
+  Map<String, dynamic> toJson() => {
+        'nome': nome,
+        'situacao': situacao,
+        'notas': notas,
+      };
 }
