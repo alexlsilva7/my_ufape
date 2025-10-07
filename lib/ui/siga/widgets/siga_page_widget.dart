@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:my_ufape/app_widget.dart';
 import 'package:my_ufape/config/dependencies.dart';
@@ -8,6 +9,8 @@ import 'package:result_dart/result_dart.dart';
 import 'package:routefly/routefly.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../../../domain/entities/grades_model.dart';
+import 'package:my_ufape/data/parsers/profile_parser.dart';
+import 'package:my_ufape/domain/entities/curricular_profile.dart';
 
 class SigaPageWidget extends StatefulWidget {
   const SigaPageWidget({
@@ -32,6 +35,7 @@ class _SigaPageWidgetState extends State<SigaPageWidget> {
 
   bool _isWebViewVisible = false;
   bool _isProcessingGrades = false;
+  bool _isProcessingProfile = false;
 
   @override
   void initState() {
@@ -567,27 +571,314 @@ class _SigaPageWidgetState extends State<SigaPageWidget> {
             : Spacer(),
         Padding(
           padding: const EdgeInsets.all(8.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            spacing: 8,
+          child: Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            alignment: WrapAlignment.center,
             children: [
               ElevatedButton.icon(
+                // Lógica de `onPressed` atualizada para considerar ambos os processos
                 onPressed:
-                    _isProcessingGrades ? null : _navigateAndExtractGrades,
+                    _isProcessingGrades || _isProcessingProfile || !_isLoggedIn
+                        ? null
+                        : _navigateAndExtractGrades,
                 icon: _isProcessingGrades
                     ? const SizedBox(
                         width: 18,
                         height: 18,
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white))
+                            strokeWidth: 2, color: Colors.white),
+                      )
                     : const Icon(Icons.school, color: Colors.white),
-                label: const Text('Extrair Notas',
-                    style: TextStyle(fontWeight: FontWeight.bold)),
+                label: const Text(
+                  'Extrair Notas',
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+              ),
+              ElevatedButton.icon(
+                onPressed:
+                    _isProcessingGrades || _isProcessingProfile || !_isLoggedIn
+                        ? null
+                        : _navigateAndExtractProfile,
+                icon: _isProcessingProfile
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Icon(Icons.list_alt, color: Colors.white),
+                label: const Text('Extrair Perfil Curricular',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                    )),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.secondary,
+                ),
               ),
             ],
           ),
         )
       ],
     );
+  }
+
+  Future<void> _navigateAndExtractProfile() async {
+    if (_isProcessingProfile) return;
+
+    setState(() {
+      _isProcessingProfile = true;
+      _isLoading = true;
+    });
+
+    _showLoadingDialog('Iniciando extração do Perfil Curricular...');
+
+    try {
+      // Passo 1: Clica no menu "Consultas > Detalhamento de Discente" (sem alteração)
+      _hideLoadingDialog();
+      _showLoadingDialog('Navegando para Detalhamento do Discente...');
+      const scriptNavDiscente = """
+        document.getElementById('menuTopo:repeatAcessoMenu:2:repeatSuperTransacoesSuperMenu:0:linkSuperTransacaoSuperMenu').click();
+      """;
+      await _controller!.runJavaScript(scriptNavDiscente);
+
+      // Passo 2: Clica no link "Informações do Discente" (sem alteração)
+      _hideLoadingDialog();
+      _showLoadingDialog('Acessando Informações do Discente...');
+      const scriptInfoDiscente = """
+        new Promise((resolve, reject) => {
+          const maxTries = 40;
+          let tries = 0;
+          const interval = setInterval(() => {
+            const iframe = document.getElementById('Conteudo');
+            if (iframe && iframe.contentDocument) {
+              const infoLink = iframe.contentDocument.getElementById('form:repeatTransacoes:2:outputLinkTransacao');
+              if (infoLink) {
+                clearInterval(interval);
+                infoLink.click();
+                resolve('SUCESSO: Link "Informações do Discente" clicado.');
+                return;
+              }
+            }
+            tries++;
+            if (tries >= maxTries) {
+              clearInterval(interval);
+              reject('ERRO: Link "Informações do Discente" não encontrado.');
+            }
+          }, 250);
+        });
+      """;
+      await _controller!.runJavaScriptReturningResult(scriptInfoDiscente);
+
+      _hideLoadingDialog();
+      _showLoadingDialog('Aguardando página de informações...');
+      await _waitForStudentInfoPageReady(timeout: const Duration(seconds: 25));
+
+      // Passo 3: Clica no item "Perfil Curricular" da lista sanfonada (sem alteração)
+      _hideLoadingDialog();
+      _showLoadingDialog('Abrindo Perfil Curricular...');
+      const scriptClickPerfil = """
+        new Promise((resolve, reject) => {
+            const iframe = document.getElementById('Conteudo');
+            if (iframe && iframe.contentDocument) {
+                const sanfonaLinks = iframe.contentDocument.querySelectorAll('ul.sanfona a');
+                for(let i = 0; i < sanfonaLinks.length; i++) {
+                    if(sanfonaLinks[i].innerText.trim() === 'Perfil Curricular') {
+                        sanfonaLinks[i].click();
+                        resolve('SUCESSO: "Perfil Curricular" clicado.');
+                        return;
+                    }
+                }
+            }
+            reject('ERRO: Item "Perfil Curricular" não encontrado.');
+        });
+      """;
+      await _controller!.runJavaScriptReturningResult(scriptClickPerfil);
+
+      // Passo 4: Aguarda o conteúdo do perfil ser carregado DENTRO do iframe (sem alteração)
+      _hideLoadingDialog();
+      _showLoadingDialog('Aguardando carregamento dos dados do perfil...');
+      await _waitForProfilePageReady(timeout: const Duration(seconds: 25));
+
+      // Pequeno delay para garantir que o conteúdo dinâmico foi renderizado.
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // Passo 5: Extrai o HTML do iframe e faz o parse
+      _hideLoadingDialog();
+      _showLoadingDialog('Extraindo e processando dados...');
+
+      // --- SCRIPT DE EXTRAÇÃO CORRIGIDO ---
+      // A lógica é a mesma, mas agora extraímos o 'outerHTML' para garantir que temos o nó raiz.
+      const getHtmlScript = """
+      (function() {
+          try {
+              const mainIframe = document.getElementById('Conteudo');
+              if (!mainIframe || !mainIframe.contentDocument) return JSON.stringify({ "error": "Iframe principal não encontrado." });
+              
+              const contentDiv = mainIframe.contentDocument.getElementById('content');
+              if (!contentDiv) return JSON.stringify({ "error": "Div de conteúdo do perfil não encontrado." });
+              
+              // Retornar o outerHTML da div para incluir a própria div no parsing, se necessário,
+              // ou innerHTML se o conteúdo está estritamente dentro. Vamos usar innerHTML.
+              return contentDiv.innerHTML;
+          } catch(e) {
+              return JSON.stringify({ "error": "Exceção ao acessar o conteúdo do iframe: " + e.toString() });
+          }
+      })();
+      """;
+      final dynamic htmlResult =
+          await _controller!.runJavaScriptReturningResult(getHtmlScript);
+
+      // --- DECODIFICAÇÃO SEGURA ---
+      String htmlContent;
+      if (htmlResult == null) {
+        throw Exception("O script de extração de HTML retornou nulo.");
+      }
+      try {
+        // Primeiro, tenta decodificar como um objeto JSON. Se for um erro, lança exceção.
+        final decodedJson = jsonDecode(htmlResult.toString());
+        if (decodedJson is Map && decodedJson.containsKey('error')) {
+          throw Exception(
+              "Erro retornado pelo script de extração: ${decodedJson['error']}");
+        }
+        // Se decodificou mas não é um erro, provavelmente é o próprio HTML (que pode ser uma string JSON)
+        htmlContent =
+            decodedJson is String ? decodedJson : htmlResult.toString();
+      } catch (e) {
+        // Se falhou ao decodificar, provavelmente a string não era JSON, então é o próprio HTML.
+        htmlContent = htmlResult.toString();
+      }
+
+      if (htmlContent.isEmpty) {
+        throw Exception("Conteúdo HTML extraído está vazio.");
+      }
+
+      final parser = ProfileParser();
+      final curriculumBlocks = await compute(parser.parse, htmlContent);
+
+      _hideLoadingDialog();
+
+      if (curriculumBlocks.isEmpty) {
+        await _showAlert('Aviso',
+            'Não foi possível extrair os dados do perfil curricular. O HTML pode ter mudado ou o conteúdo não carregou a tempo.');
+      } else {
+        // --- NAVEGAÇÃO PARA A NOVA TELA ---
+        Routefly.push(routePaths.curricularProfile,
+            arguments: curriculumBlocks);
+      }
+    } catch (e) {
+      _hideLoadingDialog();
+      await _showAlert('Erro', 'Erro no processo automático: ${e.toString()}',
+          isError: true);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isProcessingProfile = false;
+          _isLoading = false;
+        });
+      }
+    }
+  }
+
+  // A função _waitForProfilePageReady deve permanecer como estava, pois ela corretamente
+  // verifica o conteúdo DENTRO do iframe.
+  Future<void> _waitForProfilePageReady(
+      {Duration timeout = const Duration(seconds: 20)}) async {
+    final completer = Completer<void>();
+    Timer? timer;
+    final stopwatch = Stopwatch()..start();
+
+    // Este script está correto para o cenário de iframe.
+    const script = """
+    (function() {
+      const mainIframe = document.getElementById('Conteudo');
+      if (!mainIframe || !mainIframe.contentDocument) {
+        return 'error_main_iframe';
+      }
+      
+      const profileForm = mainIframe.contentDocument.getElementById('formDetalharPerfilCurricular');
+      return profileForm != null;
+    })();
+    """;
+
+    timer = Timer.periodic(const Duration(milliseconds: 250), (t) async {
+      if (stopwatch.elapsed > timeout) {
+        timer?.cancel();
+        if (!completer.isCompleted) {
+          completer.completeError(Exception(
+              'Tempo esgotado esperando o Perfil Curricular carregar.'));
+        }
+        return;
+      }
+
+      try {
+        final result = await _controller!.runJavaScriptReturningResult(script);
+
+        if (result == true || result.toString() == 'true') {
+          timer?.cancel();
+          if (!completer.isCompleted) {
+            completer.complete();
+          }
+        } else if (result.toString().startsWith('error')) {
+          timer?.cancel();
+          if (!completer.isCompleted) {
+            completer.completeError(Exception(
+                'Não foi possível acessar o conteúdo da página do SIGA.'));
+          }
+        }
+      } catch (e) {
+        // Ignora erros temporários.
+      }
+    });
+
+    return completer.future;
+  }
+
+  /// Espera a página de "Informações do Discente" carregar, verificando se o item "Perfil Curricular" está visível.
+  Future<void> _waitForStudentInfoPageReady(
+      {Duration timeout = const Duration(seconds: 20)}) async {
+    final completer = Completer<void>();
+    Timer? timer;
+    final stopwatch = Stopwatch()..start();
+
+    const script = """
+    (function() {
+      const iframe = document.getElementById('Conteudo');
+      if (iframe && iframe.contentDocument) {
+        const sanfonaLinks = iframe.contentDocument.querySelectorAll('ul.sanfona a');
+        for(let i = 0; i < sanfonaLinks.length; i++) {
+          if(sanfonaLinks[i].innerText.trim() === 'Perfil Curricular') {
+            return true; // Encontrou o elemento, a página carregou
+          }
+        }
+      }
+      return false; // Ainda não encontrou
+    })();
+    """;
+
+    timer = Timer.periodic(const Duration(milliseconds: 250), (t) async {
+      if (stopwatch.elapsed > timeout) {
+        timer?.cancel();
+        if (!completer.isCompleted) {
+          completer.completeError(Exception(
+              'Tempo esgotado esperando a página de Informações do Discente carregar.'));
+        }
+        return;
+      }
+
+      try {
+        final result = await _controller!.runJavaScriptReturningResult(script);
+        if (result == true || result.toString() == 'true') {
+          timer?.cancel();
+          if (!completer.isCompleted) {
+            completer.complete();
+          }
+        }
+      } catch (e) {
+        // Ignora erros temporários
+      }
+    });
+
+    return completer.future;
   }
 }

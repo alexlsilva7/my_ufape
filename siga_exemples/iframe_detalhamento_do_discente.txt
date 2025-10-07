@@ -229,3 +229,102 @@ if (typeof jQuery == 'undefined') {
 
 
 </body></html>
+
+menu sanfona:
+
+/**
+ * Plugin Menu Sanfona com uso de Jquery e Ajax 
+ * 11/04/2012
+ * Dayvson Lima
+ * 
+ * Manutenção
+ * 15/05/2015
+ * Thiago Bezerra 
+ * 
+ * No comportamento padrão, carrega o conteúdo dentro de uma div, 
+ * mas em alguns casos, carrega em um iframe.
+ * Para carregar no iframe, é preciso colocar class="iframe-sanfona" 
+ * no <li> onde o conteúdo será carregado. 
+ * 
+ */
+
+function abrirSanfona(e){	
+	//trocando o comportamento padrao dos links
+	var href = $j(e).attr('href');
+	$j(e).attr('href','javascript: void(0)');
+	
+	var self = $j(e);
+	var gradeHorario = $j(e).parent().hasClass('iframe-sanfona');
+	
+	if($j(e).parent().hasClass('atual')){
+		$j(e).parent().removeClass('atual');	
+		self.find('.before-ativo').addClass('before').removeClass('before-ativo');
+		$j(e).parent().find("#content").slideUp('fast',function(){});							
+	}else{
+		
+		//Insere imagem de carregamento
+		if(!document.getElementById("imagem_load_sanfona")){
+			$j('<div id="imagem_load_sanfona"></div>').insertAfter(self.find('.before'));
+		}
+		self.parent().addClass('atual');
+		self.find('.before').addClass('before-ativo').removeClass('before');
+		
+		if(self.parent().find('#content').length){
+			//imagem preloader
+			$j("#imagem_load_sanfona").remove();
+			//slide
+			self.parent().find("#content").slideDown('slow',function(){});
+		}else{
+			if(!gradeHorario){
+				// Configura o jquery para utilizar charset ISO-8859-1 
+				$j.ajaxSetup({
+					beforeSend : function(xhr) {
+						xhr.overrideMimeType('text/html; charset=ISO-8859-1');
+					}
+				});
+				
+				$j.ajax({
+			       type: 'GET',
+			       // URL para onde vai ser enviado os dados
+			       url: href,
+			       contentType: "application/x-www-form-urlencoded; charset=iso-8859-1",
+			       success: function(txt){
+						$j('<div id="content" style="display:none;">').insertAfter(self);
+						self.parent().find("#content").html(txt);
+						//imagem preloader
+						$j("#imagem_load_sanfona").remove();												
+						//slide
+						self.parent().find("#content").slideDown('slow',function(){});
+			       }
+			   });
+			} else {
+				$j('<iframe id="content" style="display:none; border: 0px solid white" width="700px" height="950px"></iframe>').insertAfter(self);										
+				self.parent().find("#content").src = href;
+				
+				//imagem preloader
+				$j("#imagem_load_sanfona").remove();
+				//slide
+				self.parent().find("#content").slideDown('slow',function(){});										
+			}
+			
+		}
+		
+	
+	}
+	return false;
+}
+
+$j(document).ready(function(){	
+	$j(".sanfona .li-sanfona").mouseover(function(){
+		$j(this).addClass('li-sanfona-hover');
+	});
+	$j(".sanfona .li-sanfona").focus(function(){
+		$j(this).addClass('li-sanfona-hover');
+	});
+	$j(".sanfona .li-sanfona").mouseout(function(){
+		$j(this).removeClass('li-sanfona-hover');
+	});
+	$j(".sanfona .li-sanfona").blur(function(){
+		$j(this).removeClass('li-sanfona-hover');
+	});
+});

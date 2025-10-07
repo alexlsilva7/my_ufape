@@ -4,13 +4,13 @@ import 'package:flutter/widgets.dart';
 import 'package:routefly/routefly.dart';
 
 import 'ui/charts/charts_page.dart' as a0;
-import 'ui/grades/grades_page.dart' as a1;
-import 'ui/home/home_page.dart' as a2;
-import 'ui/login/login_page.dart' as a3;
-import 'ui/settings/settings_page.dart' as a4;
-import 'ui/siga/siga_page.dart' as a5;
-import 'ui/splash/splash_page.dart' as a6;
-import 'ui/siga/widgets/siga_page_widget.dart' as a7;
+import 'ui/curricular_profile/curricular_profile_page.dart' as a1;
+import 'ui/grades/grades_page.dart' as a2;
+import 'ui/home/home_page.dart' as a3;
+import 'ui/login/login_page.dart' as a4;
+import 'ui/settings/settings_page.dart' as a5;
+import 'ui/siga/siga_page.dart' as a6;
+import 'ui/splash/splash_page.dart' as a7;
 
 Route b0Builder(BuildContext ctx, RouteSettings settings) =>
     Routefly.defaultRouteBuilder(
@@ -22,41 +22,41 @@ Route b1Builder(BuildContext ctx, RouteSettings settings) =>
     Routefly.defaultRouteBuilder(
       ctx,
       settings,
-      const a1.GradesPage(),
+      const a1.CurricularProfilePage(),
     );
 Route b2Builder(BuildContext ctx, RouteSettings settings) =>
     Routefly.defaultRouteBuilder(
       ctx,
       settings,
-      const a2.HomePage(),
+      const a2.GradesPage(),
     );
 Route b3Builder(BuildContext ctx, RouteSettings settings) =>
     Routefly.defaultRouteBuilder(
       ctx,
       settings,
-      const a3.LoginPage(),
+      const a3.HomePage(),
     );
 Route b4Builder(BuildContext ctx, RouteSettings settings) =>
     Routefly.defaultRouteBuilder(
       ctx,
       settings,
-      const a4.SettingsPage(),
+      const a4.LoginPage(),
     );
 Route b5Builder(BuildContext ctx, RouteSettings settings) =>
     Routefly.defaultRouteBuilder(
       ctx,
       settings,
-      const a5.SigaPage(),
+      const a5.SettingsPage(),
     );
 Route b6Builder(BuildContext ctx, RouteSettings settings) =>
     Routefly.defaultRouteBuilder(
       ctx,
       settings,
-      const a6.SplashPage(),
+      const a6.SigaPage(),
     );
 Route b7Builder(BuildContext ctx, RouteSettings settings) =>
     Routefly.defaultRouteBuilder(
       ctx,
       settings,
-      const a7.SigaPageWidget(),
+      const a7.SplashPage(),
     );

@@ -9,38 +9,38 @@ List<RouteEntity> get routes => [
         routeBuilder: b0Builder,
       ),
       RouteEntity(
+        key: '/curricular_profile',
+        uri: Uri.parse('/curricular_profile'),
+        routeBuilder: b1Builder,
+      ),
+      RouteEntity(
         key: '/grades',
         uri: Uri.parse('/grades'),
-        routeBuilder: b1Builder,
+        routeBuilder: b2Builder,
       ),
       RouteEntity(
         key: '/home',
         uri: Uri.parse('/home'),
-        routeBuilder: b2Builder,
+        routeBuilder: b3Builder,
       ),
       RouteEntity(
         key: '/login',
         uri: Uri.parse('/login'),
-        routeBuilder: b3Builder,
+        routeBuilder: b4Builder,
       ),
       RouteEntity(
         key: '/settings',
         uri: Uri.parse('/settings'),
-        routeBuilder: b4Builder,
+        routeBuilder: b5Builder,
       ),
       RouteEntity(
         key: '/siga',
         uri: Uri.parse('/siga'),
-        routeBuilder: b5Builder,
+        routeBuilder: b6Builder,
       ),
       RouteEntity(
         key: '/splash',
         uri: Uri.parse('/splash'),
-        routeBuilder: b6Builder,
-      ),
-      RouteEntity(
-        key: '/webview',
-        uri: Uri.parse('/webview'),
         routeBuilder: b7Builder,
       ),
     ];
@@ -48,11 +48,11 @@ List<RouteEntity> get routes => [
 const routePaths = (
   path: '/',
   charts: '/charts',
+  curricularProfile: '/curricular_profile',
   grades: '/grades',
   home: '/home',
   login: '/login',
   settings: '/settings',
   siga: '/siga',
   splash: '/splash',
-  webview: '/webview',
 );

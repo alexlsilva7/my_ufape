@@ -10,33 +10,34 @@ class ProfileParser {
     final document = html_parser.parse(htmlContent);
     final List<CurriculumBlock> blocks = [];
 
-    // 1. Find the main table body that contains all the curriculum blocks.
+    // --- CORRECTION ---
+    // The previous selector was failing. This one is more specific and targets
+    // the exact <tbody> that holds all the curriculum block <tr> elements.
     final mainTableBody =
-        document.querySelector('table[id*="tabelaBlocoPerfil"] > tbody');
+        document.querySelector('tbody[id*=":tabelaBlocoPerfil:tb"]');
+
     if (mainTableBody == null) {
       debugPrint(
-          "ProfileParser.parse: ERRO - Tabela principal de blocos 'tabelaBlocoPerfil' não encontrada.");
+          "ProfileParser.parse: ERRO - Tabela principal de blocos (tbody[id*=':tabelaBlocoPerfil:tb']) não encontrada. A estrutura do HTML pode ter mudado.");
       return [];
     }
 
-    // 2. Each direct 'tr' child of this tbody represents a block.
+    // Each direct 'tr' child of this tbody represents a curriculum block.
     final blockRows =
         mainTableBody.children.where((e) => e.localName == 'tr').toList();
     debugPrint(
-        "ProfileParser.parse: Encontrados ${blockRows.length} blocos curriculares.");
+        "ProfileParser.parse: Encontrados ${blockRows.length} elementos <tr> na tabela de blocos.");
 
     for (final blockRow in blockRows) {
-      // 3. Find the title element within the block row.
+      // Find the title element WITHIN the current block row.
       final titleElement = blockRow.querySelector('span.editBold');
       if (titleElement == null) {
-        debugPrint(
-            "ProfileParser.parse: AVISO - Título do bloco não encontrado em uma das linhas.");
-        continue;
+        continue; // Not a block title row
       }
       final title = titleElement.text.trim();
       debugPrint("ProfileParser.parse: Processando bloco '$title'");
 
-      // 4. Find the table of subjects within the same block row.
+      // Find the table of subjects within the SAME block row.
       final subjectsTableBody =
           blockRow.querySelector('table[id*="tabelaComponentePerfil"] > tbody');
       if (subjectsTableBody == null) {
@@ -60,6 +61,7 @@ class ProfileParser {
           final nameAndCodeText =
               cells[0].text.trim().replaceAll(RegExp(r'\s+'), ' ');
           final parts = nameAndCodeText.split(' - ');
+          if (parts.length < 2) continue;
           final code = parts.first.trim();
           final name = parts.skip(1).join(' - ').trim();
 
@@ -76,7 +78,7 @@ class ProfileParser {
           List<String> corequisites = [];
           List<String> equivalences = [];
 
-          // The detail row is the next 'tr' element if it exists and contains the detail cell.
+          // The detail row is the next 'tr' element if it exists.
           if (i + 1 < allRows.length) {
             final detailRow = allRows[i + 1];
             final detailCell =
@@ -93,7 +95,6 @@ class ProfileParser {
                     'table[id*=":$tableIdPart"] span.editPesquisa');
                 if (element == null) return [];
 
-                // Using innerHtml and splitting by <br> is more reliable.
                 return element.innerHtml
                     .split(RegExp(r'<br\s*/?>'))
                     .map((e) => html_parser
@@ -110,7 +111,7 @@ class ProfileParser {
               corequisites = extractList('coRequisitos');
               equivalences = extractList('equivalencias');
 
-              // Since we processed the detail row, skip it in the next iteration.
+              // Increment i to skip the detail row in the next iteration.
               i++;
             }
           }
@@ -138,11 +139,20 @@ class ProfileParser {
 
       if (subjects.isNotEmpty) {
         blocks.add(CurriculumBlock(title: title, subjects: subjects));
+      } else {
+        debugPrint(
+            "ProfileParser.parse: Nenhuma disciplina encontrada para o bloco '$title'.");
       }
     }
 
     debugPrint(
         "ProfileParser.parse: parsing concluído. Total de blocos extraídos: ${blocks.length}");
+
+    print(blocks);
+    if (blocks.isEmpty && blockRows.isNotEmpty) {
+      debugPrint(
+          "ProfileParser.parse: AVISO - Blocos foram encontrados, mas nenhuma disciplina foi extraída. Verifique a lógica de parsing das disciplinas.");
+    }
     return blocks;
   }
 }
