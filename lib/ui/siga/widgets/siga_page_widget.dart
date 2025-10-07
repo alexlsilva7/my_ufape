@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:async';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:my_ufape/app_widget.dart';
 import 'package:my_ufape/config/dependencies.dart';
@@ -10,7 +9,6 @@ import 'package:routefly/routefly.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import '../../../domain/entities/grades_model.dart';
 import 'package:my_ufape/data/parsers/profile_parser.dart';
-import 'package:my_ufape/domain/entities/curricular_profile.dart';
 
 class SigaPageWidget extends StatefulWidget {
   const SigaPageWidget({
@@ -753,18 +751,17 @@ class _SigaPageWidgetState extends State<SigaPageWidget> {
         throw Exception("Conteúdo HTML extraído está vazio.");
       }
 
-      final parser = ProfileParser();
-      final curriculumBlocks = await compute(parser.parse, htmlContent);
+      final parser = ProfileParser(htmlContent);
+      final blocks = parser.parseProfile();
 
       _hideLoadingDialog();
 
-      if (curriculumBlocks.isEmpty) {
+      if (blocks.isEmpty) {
         await _showAlert('Aviso',
             'Não foi possível extrair os dados do perfil curricular. O HTML pode ter mudado ou o conteúdo não carregou a tempo.');
       } else {
         // --- NAVEGAÇÃO PARA A NOVA TELA ---
-        Routefly.push(routePaths.curricularProfile,
-            arguments: curriculumBlocks);
+        Routefly.push(routePaths.curricularProfile, arguments: blocks);
       }
     } catch (e) {
       _hideLoadingDialog();

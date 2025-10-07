@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:my_ufape/domain/entities/curricular_profile.dart';
+import 'package:my_ufape/domain/entities/block.dart';
+import 'package:my_ufape/domain/entities/course.dart';
+import 'package:my_ufape/domain/entities/prerequisite.dart';
 
 class CurricularProfilePage extends StatelessWidget {
   const CurricularProfilePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Recupera os dados passados como argumento pela rota
     final curriculumBlocks =
-        ModalRoute.of(context)!.settings.arguments as List<CurriculumBlock>;
+        ModalRoute.of(context)!.settings.arguments as List<Block>;
 
     return Scaffold(
       appBar: AppBar(
@@ -24,16 +25,16 @@ class CurricularProfilePage extends StatelessWidget {
             elevation: 2,
             child: ExpansionTile(
               title: Text(
-                block.title,
+                block.name,
                 style:
                     const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
-              children: block.subjects.map((subject) {
+              children: block.courses.map((course) {
                 return ListTile(
-                  title: Text('${subject.code} - ${subject.name}'),
+                  title: Text('${course.code} - ${course.name}'),
                   subtitle: Text(
-                      'Período: ${subject.semester} | CH: ${subject.workloadTotal}h | Créditos: ${subject.credits}'),
-                  onTap: () => _showSubjectDetails(context, subject),
+                      'Período: ${course.period} | CH: ${course.workload.total}h | Créditos: ${course.credits}'),
+                  onTap: () => _showSubjectDetails(context, course),
                 );
               }).toList(),
             ),
@@ -43,7 +44,7 @@ class CurricularProfilePage extends StatelessWidget {
     );
   }
 
-  void _showSubjectDetails(BuildContext context, SubjectProfile subject) {
+  void _showSubjectDetails(BuildContext context, Course course) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -59,33 +60,35 @@ class CurricularProfilePage extends StatelessWidget {
                 controller: scrollController,
                 children: [
                   Text(
-                    '${subject.code} - ${subject.name}',
+                    '${course.code} - ${course.name}',
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const Divider(height: 20),
-                  _buildDetailRow('Tipo:', subject.type, context),
+                  _buildDetailRow('Tipo:', course.type.toString(), context),
+                  _buildDetailRow('Período Sugerido:', course.period, context),
                   _buildDetailRow(
-                      'Período Sugerido:', subject.semester, context),
-                  _buildDetailRow('Créditos:', subject.credits, context),
-                  _buildDetailRow('CH Teórica:',
-                      '${subject.workloadTheoretical}h', context),
+                      'Créditos:', course.credits.toString(), context),
                   _buildDetailRow(
-                      'CH Prática:', '${subject.workloadPractical}h', context),
+                      'CH Teórica:', '${course.workload.teorica}h', context),
                   _buildDetailRow(
-                      'CH Total:', '${subject.workloadTotal}h', context),
+                      'CH Prática:', '${course.workload.pratica}h', context),
+                  _buildDetailRow(
+                      'CH Extensão:', '${course.workload.extensao}h', context),
+                  _buildDetailRow(
+                      'CH Total:', '${course.workload.total}h', context),
                   const Divider(height: 20),
-                  if (subject.prerequisites.isNotEmpty)
-                    _buildDetailList('Pré-requisitos:', subject.prerequisites),
-                  if (subject.corequisites.isNotEmpty)
-                    _buildDetailList('Co-requisitos:', subject.corequisites),
-                  if (subject.equivalences.isNotEmpty)
-                    _buildDetailList('Equivalências:', subject.equivalences),
-                  if (subject.syllabus.isNotEmpty) ...[
+                  if (course.prerequisites.isNotEmpty)
+                    _buildDetailList('Pré-requisitos:', course.prerequisites),
+                  if (course.corequisites.isNotEmpty)
+                    _buildDetailList('Co-requisitos:', course.corequisites),
+                  if (course.equivalences.isNotEmpty)
+                    _buildDetailList('Equivalências:', course.equivalences),
+                  if (course.ementa.isNotEmpty) ...[
                     const SizedBox(height: 10),
                     Text('Ementa:',
                         style: Theme.of(context).textTheme.titleMedium),
                     const SizedBox(height: 4),
-                    Text(subject.syllabus),
+                    Text(course.ementa),
                   ],
                 ],
               ),
@@ -113,7 +116,7 @@ class CurricularProfilePage extends StatelessWidget {
     );
   }
 
-  Widget _buildDetailList(String label, List<String> items) {
+  Widget _buildDetailList(String label, List<Prerequisite> items) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4.0),
       child: Column(
@@ -122,7 +125,7 @@ class CurricularProfilePage extends StatelessWidget {
           Text('$label ', style: const TextStyle(fontWeight: FontWeight.bold)),
           ...items.map((item) => Padding(
                 padding: const EdgeInsets.only(left: 8.0, top: 2.0),
-                child: Text('• $item'),
+                child: Text('• ${item.code} - ${item.name}'),
               )),
         ],
       ),
