@@ -251,6 +251,27 @@ class _SigaPageWidgetState extends State<SigaPageWidget> {
                         const statusElement = detailsDiv.querySelector('font.editPesquisa > u');
                         const situacao = statusElement ? statusElement.innerText.trim() : 'Cursando';
 
+                        // Extrair nome do professor
+                        let teacher = '';
+                        const teacherTables = detailsDiv.querySelectorAll('table');
+                        for (const table of teacherTables) {
+                            const rows = table.querySelectorAll('tr');
+                            for (const row of rows) {
+                                const cells = row.querySelectorAll('td');
+                                if (cells.length >= 2) {
+                                    const labelCell = cells[0].querySelector('font.edit b');
+                                    if (labelCell && labelCell.innerText.includes('Docente')) {
+                                        const teacherCell = cells[1].querySelector('font.editPesquisa');
+                                        if (teacherCell) {
+                                            teacher = teacherCell.innerText.trim();
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            if (teacher) break;
+                        }
+
                         const notas = {};
                         const headerCells = detailsDiv.querySelectorAll('td[bgcolor="#FAEBD7"]');
                         if (headerCells.length > 0) {
@@ -270,7 +291,8 @@ class _SigaPageWidgetState extends State<SigaPageWidget> {
                         currentPeriod.disciplinas.push({
                             nome: nome,
                             situacao: situacao,
-                            notas: notas
+                            notas: notas,
+                            teacher: teacher
                         });
 
                 } catch (e) {

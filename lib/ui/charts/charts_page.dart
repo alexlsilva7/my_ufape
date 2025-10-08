@@ -29,68 +29,58 @@ class _ChartsPageState extends State<ChartsPage> {
     final progression = _computeProgression(periodMedias);
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         title: const Text('Análise de Desempenho'),
         elevation: 0,
       ),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         child: Column(
+          spacing: 8,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Cards de Resumo Principal
             _buildMainStatsCards(analytics),
-            const SizedBox(height: 24),
 
             // Tendência de Performance
             if (performanceTrend != null) ...[
               _buildPerformanceTrendCard(performanceTrend),
-              const SizedBox(height: 24),
             ],
 
             // Análise de Consistência e Progressão
             Row(
+              spacing: 8,
               children: [
                 if (consistency != null)
                   Expanded(
                     child: _buildConsistencyCard(consistency),
                   ),
-                if (consistency != null && progression != null)
-                  const SizedBox(width: 12),
                 if (progression != null)
                   Expanded(
                     child: _buildProgressionCard(progression),
                   ),
               ],
             ),
-            const SizedBox(height: 24),
 
             // Gráfico de Pizza - Distribuição de Situações
             _buildPieChartCard(analytics),
-            const SizedBox(height: 24),
 
             // Gráfico de Linha - Evolução das Médias
             if (periodMedias.length > 1) _buildLineChartCard(periodMedias),
-            const SizedBox(height: 24),
 
             // Comparativo: Correlação entre carga (nº disciplinas) e média por período
             if (periodMedias.isNotEmpty) _buildCorrelationCard(periodMedias),
-            const SizedBox(height: 24),
 
             // Distribuição de Notas
             if (gradeDistribution.isNotEmpty)
               _buildGradeDistributionCard(gradeDistribution),
-            const SizedBox(height: 24),
 
-            // Top 5 Melhores Disciplinas
+            // Top 10 Melhores Disciplinas
             if (subjectPerformance.isNotEmpty)
               _buildSubjectPerformanceCard(subjectPerformance),
-            const SizedBox(height: 24),
 
             // Melhor Período
             if (periodMedias.isNotEmpty) _buildBestPeriodCard(periodMedias),
-            const SizedBox(height: 24),
 
             // Insights e Recomendações
             _buildInsightsCard(analytics, performanceTrend, consistency),
@@ -130,7 +120,7 @@ class _ChartsPageState extends State<ChartsPage> {
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         Row(
           children: [
             Expanded(
@@ -373,7 +363,6 @@ class _ChartsPageState extends State<ChartsPage> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
-                    color: _primary,
                   ),
                 ),
               ],
@@ -514,7 +503,6 @@ class _ChartsPageState extends State<ChartsPage> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: _primary,
               ),
             ),
             const SizedBox(height: 24),
@@ -609,7 +597,6 @@ class _ChartsPageState extends State<ChartsPage> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: _primary,
               ),
             ),
             const SizedBox(height: 20),
@@ -817,14 +804,16 @@ class _ChartsPageState extends State<ChartsPage> {
           children: [
             Row(
               children: [
-                Icon(Icons.scatter_plot, color: _secondary),
+                Icon(
+                  Icons.scatter_plot,
+                ),
                 const SizedBox(width: 8),
                 Text(
                   'Correlação: carga vs média',
                   style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: _primary),
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
                 const Spacer(),
                 Text(
@@ -927,7 +916,6 @@ class _ChartsPageState extends State<ChartsPage> {
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
-                color: _primary,
               ),
             ),
             const SizedBox(height: 20),
@@ -1047,13 +1035,20 @@ class _ChartsPageState extends State<ChartsPage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              'Top 10 Melhores Desempenhos',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: _primary,
-              ),
+            Row(
+              children: [
+                //ranking icon
+                Icon(Icons.emoji_events,
+                    color: Colors.amber.shade700, size: 26),
+                const SizedBox(width: 10),
+                Text(
+                  'Top 10 Melhores Desempenhos',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 20),
             if (best.isNotEmpty) ...[
@@ -1066,9 +1061,9 @@ class _ChartsPageState extends State<ChartsPage> {
                   index == 0
                       ? Colors.amber.shade700
                       : index == 1
-                          ? Colors.grey.shade400
+                          ? Colors.amber.shade700
                           : index == 2
-                              ? Colors.brown.shade400
+                              ? Colors.amber.shade700
                               : Colors.green.shade600,
                   rank: index + 1,
                   periodo: subject['periodo'] as String?,
@@ -1109,7 +1104,6 @@ class _ChartsPageState extends State<ChartsPage> {
                     style: const TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.bold,
-                      color: Colors.white,
                     ),
                   ),
                 ),
@@ -1125,7 +1119,6 @@ class _ChartsPageState extends State<ChartsPage> {
                     style: TextStyle(
                       fontSize: 13,
                       fontWeight: FontWeight.w500,
-                      color: Colors.grey.shade800,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
@@ -1136,7 +1129,11 @@ class _ChartsPageState extends State<ChartsPage> {
                       periodo,
                       style: TextStyle(
                         fontSize: 11,
-                        color: Colors.grey.shade600,
+                        color: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.color
+                            ?.withAlpha(170),
                         fontStyle: FontStyle.italic,
                       ),
                       maxLines: 1,
@@ -1236,7 +1233,6 @@ class _ChartsPageState extends State<ChartsPage> {
     if (insights.isEmpty) {
       insights.add({
         'icon': Icons.info_outline,
-        'color': _primary,
         'title': 'Continue estudando',
         'description':
             'Mantenha a consistência nos estudos para alcançar seus objetivos.',
@@ -1252,14 +1248,13 @@ class _ChartsPageState extends State<ChartsPage> {
           children: [
             Row(
               children: [
-                Icon(Icons.psychology, color: _primary),
+                Icon(Icons.psychology),
                 const SizedBox(width: 8),
                 Text(
                   'Insights e Recomendações',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: _primary,
                   ),
                 ),
               ],
@@ -1326,9 +1321,10 @@ class _ChartsPageState extends State<ChartsPage> {
     String? subtitle,
   }) {
     return Card(
+      margin: const EdgeInsets.all(8),
       elevation: 2,
       child: Container(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [

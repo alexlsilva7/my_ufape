@@ -3,7 +3,6 @@ import 'package:my_ufape/app_widget.dart';
 import 'package:my_ufape/domain/entities/subject_note.dart';
 import 'package:routefly/routefly.dart';
 import '../../domain/entities/semester.dart';
-import '../charts/charts_page.dart';
 
 class GradesPage extends StatefulWidget {
   const GradesPage({super.key});
@@ -161,7 +160,6 @@ class _GradesPageState extends State<GradesPage> {
         : [];
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         title: const Text('Minhas Notas'),
         toolbarHeight: 80,
@@ -306,13 +304,13 @@ class _GradesPageState extends State<GradesPage> {
                 // Legenda rápida
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
+                  spacing: 12,
                   children: [
                     _legendDot(
                         Colors.green.shade600, 'Aprovadas: $totalAprovadas'),
-                    const SizedBox(width: 12),
-                    _legendDot(
-                        Colors.orange.shade600, 'Cursando: $totalCursando'),
-                    const SizedBox(width: 12),
+                    if (totalCursando > 0)
+                      _legendDot(
+                          Colors.orange.shade600, 'Cursando: $totalCursando'),
                     _legendDot(
                         Colors.red.shade600, 'Reprovadas: $totalReprovadas'),
                   ],
@@ -638,23 +636,29 @@ class _GradesPageState extends State<GradesPage> {
                   const SizedBox(width: 4),
                   Text('$aprovadas'),
                   const SizedBox(width: 8),
-                  Icon(Icons.hourglass_bottom,
-                      size: 14, color: Colors.orange.shade700),
-                  const SizedBox(width: 4),
-                  Text('$cursando'),
+                  if (cursando > 0)
+                    Icon(Icons.hourglass_bottom,
+                        size: 14, color: Colors.orange.shade700),
+                  if (cursando > 0) const SizedBox(width: 4),
+                  if (cursando > 0) Text('$cursando'),
                   const SizedBox(width: 8),
                   Icon(Icons.cancel, size: 14, color: Colors.red.shade700),
                   const SizedBox(width: 4),
                   Text('$reprovadas'),
                   const SizedBox(width: 12),
-                  Text(
-                    '${aprovacaoPercent.toStringAsFixed(0)}%',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: _getAprovacaoColor(aprovacaoPercent),
-                      fontWeight: FontWeight.w600,
+                  SizedBox(
+                    width: 35,
+                    child: Center(
+                      child: Text(
+                        '${aprovacaoPercent.toStringAsFixed(0)}%',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: _getAprovacaoColor(aprovacaoPercent),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
-                  ),
+                  )
                 ],
               ),
             ],
@@ -669,9 +673,7 @@ class _GradesPageState extends State<GradesPage> {
                       children: [
                         Row(
                           children: [
-                            Text('Aprovação',
-                                style: TextStyle(
-                                    fontSize: 12, color: Colors.grey.shade700)),
+                            Text('Aprovação', style: TextStyle(fontSize: 12)),
                             const Spacer(),
                             Text(
                               '${aprovacaoPercent.toStringAsFixed(0)}%',
@@ -795,13 +797,12 @@ class _GradesPageState extends State<GradesPage> {
 
     return InkWell(
       onTap: () => _showDisciplinaDetails(disciplina),
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(4),
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          color: Colors.white,
-          border: Border.all(color: Colors.grey.shade200),
+          borderRadius: BorderRadius.circular(4),
+          border: Border.all(color: Colors.grey.withAlpha(30)),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.04),
@@ -818,7 +819,15 @@ class _GradesPageState extends State<GradesPage> {
               top: 0,
               bottom: 0,
               width: 4,
-              child: Container(color: situacaoColor),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: situacaoColor,
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(4),
+                    bottomLeft: Radius.circular(4),
+                  ),
+                ),
+              ),
             ),
             Padding(
               padding: const EdgeInsets.fromLTRB(14, 14, 14, 12),
@@ -832,12 +841,33 @@ class _GradesPageState extends State<GradesPage> {
                       baseStyle: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
-                        color: Colors.black87,
                       ),
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  if (disciplina.teacher.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Icon(Icons.person,
+                            size: 14, color: Colors.grey.shade600),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            disciplina.teacher,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade400,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                   const SizedBox(height: 8),
                   Container(
                     padding:
@@ -934,7 +964,6 @@ class _GradesPageState extends State<GradesPage> {
     await showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
       ),
@@ -942,9 +971,9 @@ class _GradesPageState extends State<GradesPage> {
         expand: false,
         initialChildSize: 0.5,
         minChildSize: 0.4,
-        maxChildSize: 0.9,
+        maxChildSize: 1,
         builder: (_, controller) => Padding(
-          padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+          padding: const EdgeInsets.fromLTRB(8, 10, 8, 16),
           child: ListView(
             controller: controller,
             children: [
@@ -966,6 +995,25 @@ class _GradesPageState extends State<GradesPage> {
                   fontSize: 18,
                 ),
               ),
+              if (d.teacher.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Row(
+                  children: [
+                    Icon(Icons.person, size: 16, color: Colors.grey.shade600),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        d.teacher,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade600,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 6),
               Row(
                 mainAxisSize: MainAxisSize.min,
@@ -984,57 +1032,47 @@ class _GradesPageState extends State<GradesPage> {
               ),
               const SizedBox(height: 12),
               if (d.notas.isNotEmpty)
-                Card(
-                  elevation: 1.5,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                  child: Padding(
-                    padding: const EdgeInsets.all(12),
-                    child: Wrap(
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: d.notas.entries.map((e) {
-                        final isMedia = _isMediaKey(e.key);
-                        final color = _chipColorFor(e.key, e.value);
-                        return Container(
-                          width: (MediaQuery.of(context).size.width -
-                                  16 -
-                                  16 -
-                                  10) /
-                              2, // 2 colunas
-                          constraints: const BoxConstraints(minWidth: 120),
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 12, vertical: 10),
-                          decoration: BoxDecoration(
-                            color: color.withOpacity(0.08),
-                            borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: color.withOpacity(0.25)),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                e.key,
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.grey.shade700,
-                                  fontWeight: FontWeight.w600,
-                                ),
+                Padding(
+                  padding: const EdgeInsets.all(0),
+                  child: Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: d.notas.entries.map((e) {
+                      final isMedia = _isMediaKey(e.key);
+                      final color = _chipColorFor(e.key, e.value);
+                      return Container(
+                        constraints: const BoxConstraints(minWidth: 120),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 10),
+                        decoration: BoxDecoration(
+                          color: color.withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: color.withOpacity(0.25)),
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              e.key,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: Colors.grey.shade700,
+                                fontWeight: FontWeight.w600,
                               ),
-                              const SizedBox(height: 6),
-                              Text(
-                                e.value,
-                                style: TextStyle(
-                                  fontSize: 18,
-                                  color: color,
-                                  fontWeight: FontWeight.w800,
-                                ),
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              e.value,
+                              style: TextStyle(
+                                fontSize: 18,
+                                color: color,
+                                fontWeight: FontWeight.w800,
                               ),
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                    ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
                   ),
                 ),
             ],
@@ -1124,16 +1162,16 @@ class _GradesPageState extends State<GradesPage> {
 
     return InkWell(
       onTap: () => _showDisciplinaDetails(disciplina),
-      borderRadius: BorderRadius.circular(12),
+      borderRadius: BorderRadius.circular(0),
       child: Container(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
+          borderRadius: BorderRadius.circular(0),
           color: Colors.white,
           border: Border.all(color: Colors.grey.shade200),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.04),
-              blurRadius: 8,
+              blurRadius: 2,
               offset: const Offset(0, 3),
             ),
           ],
@@ -1188,6 +1226,28 @@ class _GradesPageState extends State<GradesPage> {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  if (disciplina.teacher.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Icon(Icons.person,
+                            size: 14, color: Colors.grey.shade600),
+                        const SizedBox(width: 4),
+                        Expanded(
+                          child: Text(
+                            disciplina.teacher,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.grey.shade600,
+                              fontWeight: FontWeight.w500,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                   const SizedBox(height: 8),
 
                   // Status
