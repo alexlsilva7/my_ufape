@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:my_ufape/core/exceptions/app_exception.dart';
 import 'package:my_ufape/data/services/settings/local_storage_preferences_service.dart';
-import 'package:my_ufape/domain/entities/grades_model.dart';
+import 'package:my_ufape/domain/entities/semester.dart';
 import 'package:my_ufape/domain/entities/login.dart';
 import 'package:result_dart/result_dart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -91,7 +91,7 @@ class SettingsRepositoryImpl extends ChangeNotifier
   }
 
   @override
-  AsyncResult<Unit> saveGrades(List<Periodo> periodos) async {
+  AsyncResult<Unit> saveGrades(List<Semester> periodos) async {
     try {
       final jsonString = jsonEncode(periodos.map((p) => p.toJson()).toList());
       await _prefs.setString('cached_grades', jsonString);
@@ -102,7 +102,7 @@ class SettingsRepositoryImpl extends ChangeNotifier
   }
 
   @override
-  AsyncResult<List<Periodo>> getCachedGrades() async {
+  AsyncResult<List<Semester>> getCachedGrades() async {
     try {
       final jsonString = _prefs.getString('cached_grades');
       if (jsonString == null) {
@@ -110,8 +110,9 @@ class SettingsRepositoryImpl extends ChangeNotifier
             AppException('Nenhum dado de notas no cache.', StackTrace.current));
       }
       final List<dynamic> jsonList = jsonDecode(jsonString);
-      final periodos = jsonList.map((json) => Periodo.fromJson(json)).toList();
-      return Success(periodos);
+      final semesters =
+          jsonList.map((json) => Semester.fromJson(json)).toList();
+      return Success(semesters);
     } catch (e, s) {
       return Failure(AppException('Falha ao ler notas do cache: $e', s));
     }

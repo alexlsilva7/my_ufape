@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:my_ufape/domain/entities/block.dart';
-import 'package:my_ufape/domain/entities/course.dart';
+import 'package:my_ufape/domain/entities/block_of_profile.dart';
+import 'package:my_ufape/domain/entities/subject.dart';
 import 'package:my_ufape/domain/entities/prerequisite.dart';
 
 class CurricularProfilePage extends StatelessWidget {
@@ -9,7 +9,7 @@ class CurricularProfilePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final curriculumBlocks =
-        ModalRoute.of(context)!.settings.arguments as List<Block>;
+        ModalRoute.of(context)!.settings.arguments as List<BlockOfProfile>;
 
     return Scaffold(
       appBar: AppBar(
@@ -29,7 +29,7 @@ class CurricularProfilePage extends StatelessWidget {
                 style:
                     const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
-              children: block.courses.map((course) {
+              children: block.subjects.map((course) {
                 return ListTile(
                   title: Text('${course.code} - ${course.name}'),
                   subtitle: Text(
@@ -44,7 +44,7 @@ class CurricularProfilePage extends StatelessWidget {
     );
   }
 
-  void _showSubjectDetails(BuildContext context, Course course) {
+  void _showSubjectDetails(BuildContext context, Subject subject) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -60,35 +60,35 @@ class CurricularProfilePage extends StatelessWidget {
                 controller: scrollController,
                 children: [
                   Text(
-                    '${course.code} - ${course.name}',
+                    '${subject.code} - ${subject.name}',
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const Divider(height: 20),
-                  _buildDetailRow('Tipo:', course.type.toString(), context),
-                  _buildDetailRow('Período Sugerido:', course.period, context),
+                  _buildDetailRow('Tipo:', subject.type.toString(), context),
+                  _buildDetailRow('Período Sugerido:', subject.period, context),
                   _buildDetailRow(
-                      'Créditos:', course.credits.toString(), context),
+                      'Créditos:', subject.credits.toString(), context),
                   _buildDetailRow(
-                      'CH Teórica:', '${course.workload.teorica}h', context),
+                      'CH Teórica:', '${subject.workload.teorica}h', context),
                   _buildDetailRow(
-                      'CH Prática:', '${course.workload.pratica}h', context),
+                      'CH Prática:', '${subject.workload.pratica}h', context),
                   _buildDetailRow(
-                      'CH Extensão:', '${course.workload.extensao}h', context),
+                      'CH Extensão:', '${subject.workload.extensao}h', context),
                   _buildDetailRow(
-                      'CH Total:', '${course.workload.total}h', context),
+                      'CH Total:', '${subject.workload.total}h', context),
                   const Divider(height: 20),
-                  if (course.prerequisites.isNotEmpty)
-                    _buildDetailList('Pré-requisitos:', course.prerequisites),
-                  if (course.corequisites.isNotEmpty)
-                    _buildDetailList('Co-requisitos:', course.corequisites),
-                  if (course.equivalences.isNotEmpty)
-                    _buildDetailList('Equivalências:', course.equivalences),
-                  if (course.ementa.isNotEmpty) ...[
+                  if (subject.prerequisites.isNotEmpty)
+                    _buildDetailList('Pré-requisitos:', subject.prerequisites),
+                  if (subject.corequisites.isNotEmpty)
+                    _buildDetailList('Co-requisitos:', subject.corequisites),
+                  if (subject.equivalences.isNotEmpty)
+                    _buildDetailList('Equivalências:', subject.equivalences),
+                  if (subject.ementa.isNotEmpty) ...[
                     const SizedBox(height: 10),
                     Text('Ementa:',
                         style: Theme.of(context).textTheme.titleMedium),
                     const SizedBox(height: 4),
-                    Text(course.ementa),
+                    Text(subject.ementa),
                   ],
                 ],
               ),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:routefly/routefly.dart';
-import '../../domain/entities/grades_model.dart';
+import '../../domain/entities/semester.dart';
 import 'dart:math' as math;
 
 class ChartsPage extends StatefulWidget {
@@ -16,7 +16,7 @@ class _ChartsPageState extends State<ChartsPage> {
   static const Color _secondary = Color(0xFF00695C);
   static const Color _accent = Color(0xFF26A69A);
 
-  final List<Periodo> periodos = Routefly.query.arguments['periodos'] ?? [];
+  final List<Semester> periodos = Routefly.query.arguments['periodos'] ?? [];
 
   @override
   Widget build(BuildContext context) {
@@ -342,7 +342,7 @@ class _ChartsPageState extends State<ChartsPage> {
         (a, b) => (a['media'] as double) > (b['media'] as double) ? a : b);
 
     // Período com mais disciplinas aprovadas
-    final periodWithMostApproved = periodos.fold<Periodo?>(null, (prev, p) {
+    final periodWithMostApproved = periodos.fold<Semester?>(null, (prev, p) {
       if (prev == null) return p;
       final approvedP = p.disciplinas
           .where((d) => d.situacao.toUpperCase().contains('APROVADO'))
@@ -754,7 +754,7 @@ class _ChartsPageState extends State<ChartsPage> {
 
       final periodoObj = periodos.firstWhere(
         (p) => p.nome == periodoName,
-        orElse: () => Periodo(nome: periodoName, disciplinas: []),
+        orElse: () => Semester(nome: periodoName, disciplinas: []),
       );
 
       final count = periodoObj.disciplinas.length;
@@ -1654,7 +1654,7 @@ class _ChartsPageState extends State<ChartsPage> {
     }
   }
 
-  String _getProfessorForSubject(String subjectName, Periodo periodo) {
+  String _getProfessorForSubject(String subjectName, Semester periodo) {
     // Lista de professores fictícios baseada no nome da disciplina
     final professors = [
       'Prof. Silva',

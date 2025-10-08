@@ -7,7 +7,7 @@ import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
 import 'package:result_dart/result_dart.dart';
 import 'package:routefly/routefly.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import '../../../domain/entities/grades_model.dart';
+import '../../../domain/entities/semester.dart';
 import 'package:my_ufape/data/parsers/profile_parser.dart';
 
 class SigaPageWidget extends StatefulWidget {
@@ -312,9 +312,9 @@ class _SigaPageWidgetState extends State<SigaPageWidget> {
         return;
       }
 
-      final List<Periodo> periodos = decodedList
+      final List<Semester> periodos = decodedList
           .map((periodoJson) =>
-              Periodo.fromJson(periodoJson as Map<String, dynamic>))
+              Semester.fromJson(periodoJson as Map<String, dynamic>))
           .toList();
 
       if (periodos.isEmpty) {

@@ -1,8 +1,7 @@
-import 'course_type.dart';
 import 'prerequisite.dart';
 import 'workload.dart';
 
-class Course {
+class Subject {
   final String code;
   final String name;
   final CourseType type;
@@ -14,7 +13,7 @@ class Course {
   final List<Prerequisite> equivalences;
   final String ementa;
 
-  Course({
+  Subject({
     required this.code,
     required this.name,
     required this.type,
@@ -41,5 +40,39 @@ class Course {
   Equivalências: ${equivalences.map((p) => '${p.code} - ${p.name}').join(', ')}
   Ementa: ${ementa.isNotEmpty ? ementa.trim() : 'Não encontrada'}
 -------------------------------------------''';
+  }
+}
+
+enum CourseType {
+  obrigatorio,
+  optativo,
+  eletivo,
+  desconhecido;
+
+  static CourseType fromString(String type) {
+    switch (type.toUpperCase()) {
+      case 'OBRIGATÓRIO':
+        return CourseType.obrigatorio;
+      case 'OPTATIVO':
+        return CourseType.optativo;
+      case 'ELETIVO':
+        return CourseType.eletivo;
+      default:
+        return CourseType.desconhecido;
+    }
+  }
+
+  @override
+  String toString() {
+    switch (this) {
+      case CourseType.obrigatorio:
+        return 'Obrigatório';
+      case CourseType.optativo:
+        return 'Optativo';
+      case CourseType.eletivo:
+        return 'Eletivo';
+      case CourseType.desconhecido:
+        return 'Desconhecido';
+    }
   }
 }

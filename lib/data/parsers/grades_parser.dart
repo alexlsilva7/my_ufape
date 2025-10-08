@@ -1,5 +1,4 @@
 import 'package:flutter/foundation.dart';
-import 'package:html/dom.dart';
 import 'package:html/parser.dart' as html_parser;
 import 'package:my_ufape/domain/entities/curricular_profile.dart';
 

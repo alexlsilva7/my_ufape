@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:my_ufape/app_widget.dart';
+import 'package:my_ufape/domain/entities/subject_note.dart';
 import 'package:routefly/routefly.dart';
-import '../../domain/entities/grades_model.dart';
+import '../../domain/entities/semester.dart';
 import '../charts/charts_page.dart';
 
 class GradesPage extends StatefulWidget {
@@ -12,7 +13,7 @@ class GradesPage extends StatefulWidget {
 }
 
 class _GradesPageState extends State<GradesPage> {
-  List<Periodo> periodos = Routefly.query.arguments['periodos'] ?? [];
+  List<Semester> periodos = Routefly.query.arguments['periodos'] ?? [];
 
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
@@ -22,8 +23,8 @@ class _GradesPageState extends State<GradesPage> {
   final Set<String> _expandedPeriods = {};
   String _filterBySituacao = 'todos'; // todos | aprovado | cursando | reprovado
 
-  List<Periodo> get _preparedPeriodos {
-    List<Periodo> base = List<Periodo>.from(periodos);
+  List<Semester> get _preparedPeriodos {
+    List<Semester> base = List<Semester>.from(periodos);
 
     // Aplicar filtro por situação
     if (_filterBySituacao != 'todos') {
@@ -44,11 +45,11 @@ class _GradesPageState extends State<GradesPage> {
               }
             }).toList();
             return disciplinasFiltradas.isNotEmpty
-                ? Periodo(nome: p.nome, disciplinas: disciplinasFiltradas)
+                ? Semester(nome: p.nome, disciplinas: disciplinasFiltradas)
                 : null;
           })
           .where((p) => p != null)
-          .cast<Periodo>()
+          .cast<Semester>()
           .toList();
     }
 
@@ -70,28 +71,28 @@ class _GradesPageState extends State<GradesPage> {
                 .where((d) => d.nome.toLowerCase().contains(q))
                 .toList();
             return ds.isNotEmpty
-                ? Periodo(nome: p.nome, disciplinas: ds)
+                ? Semester(nome: p.nome, disciplinas: ds)
                 : null;
           })
           .where((p) => p != null)
-          .cast<Periodo>()
+          .cast<Semester>()
           .toList();
     }
 
     if (_sortBy == 'disciplina') {
       base = base.map((p) {
         final ds = [...p.disciplinas]..sort((a, b) => a.nome.compareTo(b.nome));
-        return Periodo(nome: p.nome, disciplinas: ds);
+        return Semester(nome: p.nome, disciplinas: ds);
       }).toList();
     }
 
     return base;
   }
 
-  double _computePeriodoAverage(Periodo periodo) {
+  double _computeSemesterAverage(Semester semester) {
     // Tenta extrair a "média" de cada disciplina quando disponível.
     final medias = <double>[];
-    for (final d in periodo.disciplinas) {
+    for (final d in semester.disciplinas) {
       for (final e in d.notas.entries) {
         if (_isMediaKey(e.key)) {
           final v = double.tryParse(e.value.replaceAll(',', '.'));
@@ -103,10 +104,10 @@ class _GradesPageState extends State<GradesPage> {
     return medias.reduce((a, b) => a + b) / medias.length;
   }
 
-  double _computeOverallAverage(List<Periodo> periodos) {
+  double _computeOverallAverage(List<Semester> periodos) {
     final medias = <double>[];
     for (final p in periodos) {
-      final m = _computePeriodoAverage(p);
+      final m = _computeSemesterAverage(p);
       if (m > 0) medias.add(m);
     }
     if (medias.isEmpty) return 0.0;
@@ -423,7 +424,8 @@ class _GradesPageState extends State<GradesPage> {
                               const SizedBox(height: 12),
                           itemBuilder: (context, index) {
                             final item = allMatchingDisciplines[index];
-                            final disciplina = item['disciplina'] as Disciplina;
+                            final disciplina =
+                                item['disciplina'] as SubjectNote;
                             final periodoNome = item['periodo'] as String;
                             return _buildIndividualDisciplineCard(
                                 disciplina, periodoNome);
@@ -571,7 +573,7 @@ class _GradesPageState extends State<GradesPage> {
     );
   }
 
-  Widget _buildPeriodoCard(Periodo periodo, bool expanded) {
+  Widget _buildPeriodoCard(Semester periodo, bool expanded) {
     final aprovadas = periodo.disciplinas
         .where((d) => d.situacao.toUpperCase().contains('APROVADO'))
         .length;
@@ -580,7 +582,7 @@ class _GradesPageState extends State<GradesPage> {
         .length;
     final total = periodo.disciplinas.length;
     final cursando = total - aprovadas - reprovadas;
-    final periodMedia = _computePeriodoAverage(periodo);
+    final periodMedia = _computeSemesterAverage(periodo);
     final aprovacaoPercent = total > 0 ? (aprovadas / total) * 100.0 : 0.0;
 
     return Card(
@@ -706,8 +708,8 @@ class _GradesPageState extends State<GradesPage> {
     );
   }
 
-  Widget _buildGroupedDisciplines(List<Disciplina> disciplinas) {
-    final groups = <String, List<Disciplina>>{
+  Widget _buildGroupedDisciplines(List<SubjectNote> disciplinas) {
+    final groups = <String, List<SubjectNote>>{
       'Cursando': [],
       'Aprovado': [],
       'Reprovado': [],
@@ -787,7 +789,7 @@ class _GradesPageState extends State<GradesPage> {
     return Colors.red.shade600;
   }
 
-  Widget _buildDisciplineCard(Disciplina disciplina) {
+  Widget _buildDisciplineCard(SubjectNote disciplina) {
     final situacaoColor = _getSituacaoColor(disciplina.situacao);
     final situacaoIcon = _getSituacaoIcon(disciplina.situacao);
 
@@ -927,7 +929,7 @@ class _GradesPageState extends State<GradesPage> {
     );
   }
 
-  Future<void> _showDisciplinaDetails(Disciplina d) async {
+  Future<void> _showDisciplinaDetails(SubjectNote d) async {
     final situacaoColor = _getSituacaoColor(d.situacao);
     await showModalBottomSheet(
       context: context,
@@ -1116,7 +1118,7 @@ class _GradesPageState extends State<GradesPage> {
   }
 
   Widget _buildIndividualDisciplineCard(
-      Disciplina disciplina, String periodoNome) {
+      SubjectNote disciplina, String periodoNome) {
     final situacaoColor = _getSituacaoColor(disciplina.situacao);
     final situacaoIcon = _getSituacaoIcon(disciplina.situacao);
 

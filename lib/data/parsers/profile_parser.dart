@@ -1,8 +1,7 @@
 import 'package:html/parser.dart' show parse;
 import 'package:html/dom.dart';
-import 'package:my_ufape/domain/entities/block.dart';
-import 'package:my_ufape/domain/entities/course.dart';
-import 'package:my_ufape/domain/entities/course_type.dart';
+import 'package:my_ufape/domain/entities/block_of_profile.dart';
+import 'package:my_ufape/domain/entities/subject.dart';
 import 'package:my_ufape/domain/entities/prerequisite.dart';
 import 'package:my_ufape/domain/entities/workload.dart';
 
@@ -11,28 +10,22 @@ class ProfileParser {
 
   ProfileParser(String htmlContent) : _document = parse(htmlContent);
 
-  List<Block> parseProfile() {
-    print('ProfileParser.parse: Iniciando parsing.');
-    final List<Block> blocks = [];
+  List<BlockOfProfile> parseProfile() {
+    final List<BlockOfProfile> blocks = [];
 
     final mainTable =
         _document.querySelector('#formDetalharPerfilCurricular\\:tabelas');
     if (mainTable == null) {
-      print('ProfileParser.parse: Tabela principal não encontrada.');
       return blocks;
     }
 
     final blockRows = mainTable.querySelectorAll('tbody > tr');
-    print(
-        'ProfileParser.parse: Encontrados ${blockRows.length} elementos <tr> na tabela de blocos.');
-
     for (final blockRow in blockRows) {
       final blockNameElement = blockRow.querySelector('span.editBold');
       if (blockNameElement == null) continue;
 
       final blockName = blockNameElement.text.trim();
-      print("ProfileParser.parse: Processando bloco '$blockName'");
-      final block = Block(name: blockName);
+      final block = BlockOfProfile(name: blockName);
 
       final courseTable =
           blockRow.querySelector('table[id*=":tabelaComponentePerfil"]');
@@ -87,7 +80,7 @@ class ProfileParser {
           }
         }
 
-        block.courses.add(Course(
+        block.subjects.add(Subject(
           code: code,
           name: name,
           type: type,
@@ -107,8 +100,6 @@ class ProfileParser {
       }
       blocks.add(block);
     }
-    print(
-        'ProfileParser.parse: parsing concluído. Total de blocos extraídos: ${blocks.length}');
     return blocks;
   }
 
@@ -162,6 +153,6 @@ class ProfileParser {
       }
     }
 
-    return results; // Retorna lista vazia se não encontrar nada
+    return results;
   }
 }
