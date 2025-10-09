@@ -4,10 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:my_ufape/app_widget.dart';
 import 'package:my_ufape/config/dependencies.dart';
 import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
+import 'package:my_ufape/data/repositories/subject_note/subject_note_repository.dart';
+import 'package:my_ufape/domain/entities/subject_note.dart';
 import 'package:result_dart/result_dart.dart';
 import 'package:routefly/routefly.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import '../../../domain/entities/semester.dart';
 import 'package:my_ufape/data/parsers/profile_parser.dart';
 
 class SigaPageWidget extends StatefulWidget {
@@ -22,6 +23,7 @@ class SigaPageWidget extends StatefulWidget {
 class _SigaPageWidgetState extends State<SigaPageWidget> {
   WebViewController? _controller;
   SettingsRepository settingsRepository = injector.get();
+  SubjectNoteRepository subjectNoteRepository = injector.get();
   String username = '';
   String password = '';
   bool _isLoading = true;
@@ -221,16 +223,12 @@ class _SigaPageWidgetState extends State<SigaPageWidget> {
             return JSON.stringify([{ "error": "Container 'form-corpo' não encontrado no iFrame." }]);
         }
 
-        const periodos = [];
+        const disciplinas = [];
         
         for (const element of mainContainer.children) {
             if (element.tagName === 'DIV' && /^\\d{4}\\.\\d\$/.test(element.id)) {
                 const periodDiv = element;
                 const periodName = periodDiv.id;
-                const currentPeriod = {
-                    nome: periodName,
-                    disciplinas: []
-                };
 
                 const subjectTables = periodDiv.querySelectorAll('table[id="tagrodape"]');
                 for (const headerTable of subjectTables) {
@@ -288,8 +286,9 @@ class _SigaPageWidgetState extends State<SigaPageWidget> {
                             }
                         }
                         
-                        currentPeriod.disciplinas.push({
+                        disciplinas.push({
                             nome: nome,
+                            semestre: periodName,
                             situacao: situacao,
                             notas: notas,
                             teacher: teacher
@@ -299,14 +298,9 @@ class _SigaPageWidgetState extends State<SigaPageWidget> {
                     console.error('Erro ao analisar uma disciplina no período ' + periodName + ': ' + e);
                 }
             }
-            
-            if (currentPeriod.disciplinas.length > 0) {
-               periodos.push(currentPeriod);
-            }
         }
     }
-    periodos.sort((a, b) => b.nome.localeCompare(a.nome));
-    return JSON.stringify(periodos);
+    return JSON.stringify(disciplinas);
   } catch (e) {
     return JSON.stringify([{ "error": e.toString() }]);
   }
@@ -334,22 +328,28 @@ class _SigaPageWidgetState extends State<SigaPageWidget> {
         return;
       }
 
-      final List<Semester> periodos = decodedList
-          .map((periodoJson) =>
-              Semester.fromJson(periodoJson as Map<String, dynamic>))
+      final List<SubjectNote> disciplinas = decodedList
+          .map((d) => SubjectNote.fromJson(d as Map<String, dynamic>))
           .toList();
 
-      if (periodos.isEmpty) {
+      if (disciplinas.isEmpty) {
         await _showAlert(
             'Aviso', 'Nenhuma disciplina encontrada para extrair.');
         return;
       }
 
-      await settingsRepository.saveGrades(periodos);
+      // Salvar no banco de dados
+      _hideLoadingDialog();
+      _showLoadingDialog('Salvando dados no banco...');
 
-      Routefly.push(routePaths.grades, arguments: {
-        'periodos': periodos,
-      });
+      // Salvar todas as disciplinas
+      for (final disciplina in disciplinas) {
+        await subjectNoteRepository.addSubjectNote(disciplina);
+      }
+
+      _hideLoadingDialog();
+      // Navegar para a página de grades sem parâmetros
+      await Routefly.push(routePaths.grades);
     } catch (e) {
       debugPrint("Erro ao executar/decodificar script: $e");
       await _showAlert('Erro', 'Ocorreu um erro ao extrair as notas: $e',

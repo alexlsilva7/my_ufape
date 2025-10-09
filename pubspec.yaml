@@ -6,6 +6,8 @@ version: 0.1.0
 environment:
   sdk: ^3.6.2
 
+isar_version: &isar_version 3.3.0-dev.3
+
 dependencies:
   flutter:
     sdk: flutter
@@ -19,12 +21,18 @@ dependencies:
   shared_preferences: ^2.5.3
   result_command: ^2.1.0
   brasil_fields: ^1.18.0
-  
+  # isar
+  isar_community: ^3.3.0-dev.3
+  isar_community_flutter_libs: ^3.3.0-dev.3
+  path_provider: ^2.1.5
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^5.0.0
+  # isar
+  isar_community_generator: ^3.3.0-dev.3
+  build_runner: any
 
 flutter:
   uses-material-design: true

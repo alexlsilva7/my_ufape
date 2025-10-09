@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:routefly/routefly.dart';
-import '../../domain/entities/semester.dart';
+import 'package:my_ufape/domain/entities/subject_note.dart';
 import 'dart:math' as math;
 
 class ChartsPage extends StatefulWidget {
@@ -12,11 +12,10 @@ class ChartsPage extends StatefulWidget {
 }
 
 class _ChartsPageState extends State<ChartsPage> {
-  static const Color _primary = Color(0xFF004D40);
-  static const Color _secondary = Color(0xFF00695C);
-  static const Color _accent = Color(0xFF26A69A);
-
-  final List<Semester> periodos = Routefly.query.arguments['periodos'] ?? [];
+  final List<Map<String, dynamic>> periodosData =
+      (Routefly.query.arguments['periodos'] as List<dynamic>?)
+              ?.cast<Map<String, dynamic>>() ??
+          [];
 
   @override
   Widget build(BuildContext context) {
@@ -100,7 +99,7 @@ class _ChartsPageState extends State<ChartsPage> {
                 'Média Geral',
                 analytics['overallAverage'].toStringAsFixed(2),
                 Icons.analytics_outlined,
-                _primary,
+                Theme.of(context).primaryColor,
                 subtitle: _getGradeLabel(analytics['overallAverage']),
               ),
             ),
@@ -168,8 +167,9 @@ class _ChartsPageState extends State<ChartsPage> {
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color:
-                    isImproving ? Colors.green.shade50 : Colors.orange.shade50,
+                color: isImproving
+                    ? Colors.green.shade600.withOpacity(0.15)
+                    : Colors.orange.shade600.withOpacity(0.15),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
@@ -204,7 +204,11 @@ class _ChartsPageState extends State<ChartsPage> {
                         : 'Sua média diminuiu ${change.abs().toStringAsFixed(2)} pontos',
                     style: TextStyle(
                       fontSize: 13,
-                      color: Colors.grey.shade700,
+                      color: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.color
+                          ?.withOpacity(0.8),
                     ),
                   ),
                 ],
@@ -247,7 +251,7 @@ class _ChartsPageState extends State<ChartsPage> {
               'Desvio: ${stdDev.toStringAsFixed(2)}',
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey.shade600,
+                color: Theme.of(context).textTheme.bodySmall?.color,
               ),
             ),
             const SizedBox(height: 4),
@@ -256,7 +260,11 @@ class _ChartsPageState extends State<ChartsPage> {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 11,
-                color: Colors.grey.shade600,
+                color: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.color
+                    ?.withOpacity(0.8),
                 fontStyle: FontStyle.italic,
               ),
             ),
@@ -307,7 +315,7 @@ class _ChartsPageState extends State<ChartsPage> {
               '${change > 0 ? '+' : ''}${change.toStringAsFixed(2)}',
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey.shade600,
+                color: Theme.of(context).textTheme.bodySmall?.color,
               ),
             ),
             const SizedBox(height: 4),
@@ -316,7 +324,11 @@ class _ChartsPageState extends State<ChartsPage> {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 11,
-                color: Colors.grey.shade600,
+                color: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.color
+                    ?.withOpacity(0.8),
                 fontStyle: FontStyle.italic,
               ),
             ),
@@ -332,20 +344,22 @@ class _ChartsPageState extends State<ChartsPage> {
         (a, b) => (a['media'] as double) > (b['media'] as double) ? a : b);
 
     // Período com mais disciplinas aprovadas
-    final periodWithMostApproved = periodos.fold<Semester?>(null, (prev, p) {
-      if (prev == null) return p;
-      final approvedP = p.disciplinas
-          .where((d) => d.situacao.toUpperCase().contains('APROVADO'))
-          .length;
-      final approvedPrev = prev.disciplinas
-          .where((d) => d.situacao.toUpperCase().contains('APROVADO'))
-          .length;
-      return approvedP > approvedPrev ? p : prev;
-    })!;
+    Map<String, dynamic>? periodWithMostApproved;
+    int maxApproved = 0;
 
-    final approvedCount = periodWithMostApproved.disciplinas
-        .where((d) => d.situacao.toUpperCase().contains('APROVADO'))
-        .length;
+    for (final p in periodosData) {
+      final disciplinas =
+          (p['disciplinas'] as List<dynamic>).cast<SubjectNote>();
+      final approved = disciplinas
+          .where((d) => d.situacao.toUpperCase().contains('APROVADO'))
+          .length;
+      if (approved > maxApproved) {
+        maxApproved = approved;
+        periodWithMostApproved = p;
+      }
+    }
+
+    final approvedCount = maxApproved;
 
     return Card(
       elevation: 2,
@@ -375,9 +389,11 @@ class _ChartsPageState extends State<ChartsPage> {
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.amber.shade50,
+                      color: Colors.amber.shade600.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.amber.shade200),
+                      border: Border.all(
+                        color: Colors.amber.shade600.withOpacity(0.3),
+                      ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
@@ -395,7 +411,8 @@ class _ChartsPageState extends State<ChartsPage> {
                           'Média',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey.shade700,
+                            color:
+                                Theme.of(context).textTheme.bodyMedium?.color,
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -425,15 +442,17 @@ class _ChartsPageState extends State<ChartsPage> {
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
+                      color: Colors.blue.shade600.withOpacity(0.15),
                       borderRadius: BorderRadius.circular(10),
-                      border: Border.all(color: Colors.blue.shade100),
+                      border: Border.all(
+                        color: Colors.blue.shade600.withOpacity(0.3),
+                      ),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
                         Text(
-                          periodWithMostApproved.nome,
+                          periodWithMostApproved?['nome'] as String? ?? '',
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.w700,
@@ -445,7 +464,8 @@ class _ChartsPageState extends State<ChartsPage> {
                           'Aprovadas',
                           style: TextStyle(
                             fontSize: 12,
-                            color: Colors.grey.shade700,
+                            color:
+                                Theme.of(context).textTheme.bodyMedium?.color,
                           ),
                         ),
                         const SizedBox(height: 6),
@@ -477,7 +497,11 @@ class _ChartsPageState extends State<ChartsPage> {
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey.shade600,
+                color: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.color
+                    ?.withOpacity(0.8),
                 fontStyle: FontStyle.italic,
               ),
             ),
@@ -610,13 +634,17 @@ class _ChartsPageState extends State<ChartsPage> {
                     horizontalInterval: 2,
                     getDrawingHorizontalLine: (value) {
                       return FlLine(
-                        color: Colors.grey.shade300,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey.shade700
+                            : Colors.grey.shade300,
                         strokeWidth: 1,
                       );
                     },
                     getDrawingVerticalLine: (value) {
                       return FlLine(
-                        color: Colors.grey.shade300,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey.shade700
+                            : Colors.grey.shade300,
                         strokeWidth: 1,
                       );
                     },
@@ -640,7 +668,10 @@ class _ChartsPageState extends State<ChartsPage> {
                               child: Text(
                                 periodMedias[index]['periodo'] as String,
                                 style: TextStyle(
-                                  color: Colors.grey.shade700,
+                                  color: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.color,
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -660,7 +691,8 @@ class _ChartsPageState extends State<ChartsPage> {
                           return Text(
                             value.toStringAsFixed(1),
                             style: TextStyle(
-                              color: Colors.grey.shade700,
+                              color:
+                                  Theme.of(context).textTheme.bodySmall?.color,
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                             ),
@@ -671,7 +703,11 @@ class _ChartsPageState extends State<ChartsPage> {
                   ),
                   borderData: FlBorderData(
                     show: true,
-                    border: Border.all(color: Colors.grey.shade400),
+                    border: Border.all(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.grey.shade600
+                          : Colors.grey.shade400,
+                    ),
                   ),
                   minX: 0,
                   maxX: (periodMedias.length - 1).toDouble(),
@@ -692,7 +728,10 @@ class _ChartsPageState extends State<ChartsPage> {
                       isCurved: true,
                       curveSmoothness: 0.3,
                       gradient: LinearGradient(
-                        colors: [_primary, _accent],
+                        colors: [
+                          Theme.of(context).primaryColor,
+                          Theme.of(context).colorScheme.secondary,
+                        ],
                       ),
                       barWidth: 3,
                       isStrokeCapRound: true,
@@ -701,9 +740,9 @@ class _ChartsPageState extends State<ChartsPage> {
                         getDotPainter: (spot, percent, barData, index) {
                           return FlDotCirclePainter(
                             radius: 5,
-                            color: _primary,
+                            color: Theme.of(context).primaryColor,
                             strokeWidth: 2,
-                            strokeColor: Colors.white,
+                            strokeColor: Theme.of(context).cardColor,
                           );
                         },
                       ),
@@ -711,8 +750,11 @@ class _ChartsPageState extends State<ChartsPage> {
                         show: true,
                         gradient: LinearGradient(
                           colors: [
-                            _primary.withOpacity(0.15),
-                            _accent.withOpacity(0.05),
+                            Theme.of(context).primaryColor.withOpacity(0.15),
+                            Theme.of(context)
+                                .colorScheme
+                                .secondary
+                                .withOpacity(0.05),
                           ],
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
@@ -739,12 +781,14 @@ class _ChartsPageState extends State<ChartsPage> {
       final periodoName = pm['periodo'] as String;
       final media = (pm['media'] as double);
 
-      final periodoObj = periodos.firstWhere(
-        (p) => p.nome == periodoName,
-        orElse: () => Semester(nome: periodoName, disciplinas: []),
+      final periodoObj = periodosData.firstWhere(
+        (p) => p['nome'] == periodoName,
+        orElse: () => {'nome': periodoName, 'disciplinas': <SubjectNote>[]},
       );
 
-      final count = periodoObj.disciplinas.length;
+      final disciplinas =
+          (periodoObj['disciplinas'] as List<dynamic>).cast<SubjectNote>();
+      final count = disciplinas.length;
       xs.add(count.toDouble());
       ys.add(media);
       // Usar construtor mínimo para compatibilidade da versão do fl_chart
@@ -850,7 +894,10 @@ class _ChartsPageState extends State<ChartsPage> {
                             child: Text(
                               value.toInt().toString(),
                               style: TextStyle(
-                                  color: Colors.grey.shade700,
+                                  color: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.color,
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600),
                             ),
@@ -867,7 +914,10 @@ class _ChartsPageState extends State<ChartsPage> {
                           return Text(
                             value.toStringAsFixed(1),
                             style: TextStyle(
-                                color: Colors.grey.shade700,
+                                color: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.color,
                                 fontSize: 11,
                                 fontWeight: FontWeight.w600),
                           );
@@ -882,7 +932,11 @@ class _ChartsPageState extends State<ChartsPage> {
                   ),
                   borderData: FlBorderData(
                       show: true,
-                      border: Border.all(color: Colors.grey.shade300)),
+                      border: Border.all(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey.shade600
+                            : Colors.grey.shade300,
+                      )),
                 ),
               ),
             ),
@@ -891,7 +945,11 @@ class _ChartsPageState extends State<ChartsPage> {
               interpretation,
               style: TextStyle(
                   fontSize: 12,
-                  color: Colors.grey.shade700,
+                  color: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.color
+                      ?.withOpacity(0.8),
                   fontStyle: FontStyle.italic),
               textAlign: TextAlign.center,
             ),
@@ -946,7 +1004,10 @@ class _ChartsPageState extends State<ChartsPage> {
                               child: Text(
                                 ranges[index],
                                 style: TextStyle(
-                                  color: Colors.grey.shade700,
+                                  color: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.color,
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -965,7 +1026,8 @@ class _ChartsPageState extends State<ChartsPage> {
                           return Text(
                             value.toInt().toString(),
                             style: TextStyle(
-                              color: Colors.grey.shade700,
+                              color:
+                                  Theme.of(context).textTheme.bodySmall?.color,
                               fontSize: 11,
                               fontWeight: FontWeight.w600,
                             ),
@@ -976,13 +1038,19 @@ class _ChartsPageState extends State<ChartsPage> {
                   ),
                   borderData: FlBorderData(
                     show: true,
-                    border: Border.all(color: Colors.grey.shade400),
+                    border: Border.all(
+                      color: Theme.of(context).brightness == Brightness.dark
+                          ? Colors.grey.shade600
+                          : Colors.grey.shade400,
+                    ),
                   ),
                   gridData: FlGridData(
                     show: true,
                     getDrawingHorizontalLine: (value) {
                       return FlLine(
-                        color: Colors.grey.shade300,
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey.shade700
+                            : Colors.grey.shade300,
                         strokeWidth: 1,
                       );
                     },
@@ -1015,7 +1083,11 @@ class _ChartsPageState extends State<ChartsPage> {
               'Quantidade de disciplinas por faixa de nota',
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.grey.shade600,
+                color: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.color
+                    ?.withOpacity(0.8),
                 fontStyle: FontStyle.italic,
               ),
             ),
@@ -1297,7 +1369,11 @@ class _ChartsPageState extends State<ChartsPage> {
                                 insight['description'] as String,
                                 style: TextStyle(
                                   fontSize: 13,
-                                  color: Colors.grey.shade700,
+                                  color: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.color
+                                      ?.withOpacity(0.8),
                                 ),
                               ),
                             ],
@@ -1320,6 +1396,7 @@ class _ChartsPageState extends State<ChartsPage> {
     Color color, {
     String? subtitle,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Card(
       margin: const EdgeInsets.all(8),
       elevation: 2,
@@ -1345,7 +1422,7 @@ class _ChartsPageState extends State<ChartsPage> {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
-                color: Colors.grey.shade700,
+                color: Theme.of(context).textTheme.bodyMedium?.color,
               ),
             ),
             if (subtitle != null) ...[
@@ -1355,7 +1432,11 @@ class _ChartsPageState extends State<ChartsPage> {
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   fontSize: 10,
-                  color: Colors.grey.shade600,
+                  color: Theme.of(context)
+                      .textTheme
+                      .bodySmall
+                      ?.color
+                      ?.withOpacity(0.7),
                   fontStyle: FontStyle.italic,
                 ),
               ),
@@ -1397,7 +1478,11 @@ class _ChartsPageState extends State<ChartsPage> {
             '($count)',
             style: TextStyle(
               fontSize: 12,
-              color: Colors.grey.shade600,
+              color: Theme.of(context)
+                  .textTheme
+                  .bodySmall
+                  ?.color
+                  ?.withOpacity(0.7),
             ),
           ),
         ],
@@ -1407,7 +1492,9 @@ class _ChartsPageState extends State<ChartsPage> {
 
   // Analytics computation methods
   Map<String, dynamic> _computeAnalytics() {
-    final allDisciplinas = periodos.expand((p) => p.disciplinas).toList();
+    final allDisciplinas = periodosData
+        .expand((p) => (p['disciplinas'] as List<dynamic>).cast<SubjectNote>())
+        .toList();
     final totalDisciplinas = allDisciplinas.length;
     final totalAprovadas = allDisciplinas
         .where((d) => d.situacao.toUpperCase().contains('APROVADO'))
@@ -1424,7 +1511,7 @@ class _ChartsPageState extends State<ChartsPage> {
       'totalAprovadas': totalAprovadas,
       'totalReprovadas': totalReprovadas,
       'totalCursando': totalCursando,
-      'totalPeriodos': periodos.length,
+      'totalPeriodos': periodosData.length,
       'approvalRate': approvalRate,
       'overallAverage': _computeOverallAverage(),
     };
@@ -1433,10 +1520,12 @@ class _ChartsPageState extends State<ChartsPage> {
   List<Map<String, dynamic>> _computePeriodAverages() {
     final periodMedias = <Map<String, dynamic>>[];
 
-    for (final periodo in periodos) {
+    for (final periodoData in periodosData) {
+      final disciplinas =
+          (periodoData['disciplinas'] as List<dynamic>).cast<SubjectNote>();
       final medias = <double>[];
 
-      for (final disciplina in periodo.disciplinas) {
+      for (final disciplina in disciplinas) {
         for (final entry in disciplina.notas.entries) {
           if (_isMediaKey(entry.key)) {
             final value = double.tryParse(entry.value.replaceAll(',', '.'));
@@ -1448,7 +1537,7 @@ class _ChartsPageState extends State<ChartsPage> {
       if (medias.isNotEmpty) {
         final mediaPeriodo = medias.reduce((a, b) => a + b) / medias.length;
         periodMedias.add({
-          'periodo': periodo.nome,
+          'periodo': periodoData['nome'] as String,
           'media': mediaPeriodo,
         });
       }
@@ -1463,8 +1552,10 @@ class _ChartsPageState extends State<ChartsPage> {
   List<Map<String, dynamic>> _computeSubjectPerformance() {
     final subjectData = <String, Map<String, dynamic>>{};
 
-    for (final periodo in periodos) {
-      for (final disciplina in periodo.disciplinas) {
+    for (final periodoData in periodosData) {
+      final disciplinas =
+          (periodoData['disciplinas'] as List<dynamic>).cast<SubjectNote>();
+      for (final disciplina in disciplinas) {
         for (final entry in disciplina.notas.entries) {
           if (_isMediaKey(entry.key)) {
             final value = double.tryParse(entry.value.replaceAll(',', '.'));
@@ -1472,9 +1563,8 @@ class _ChartsPageState extends State<ChartsPage> {
               if (!subjectData.containsKey(disciplina.nome)) {
                 subjectData[disciplina.nome] = {
                   'grades': <double>[],
-                  'periodo': periodo.nome,
-                  'professor':
-                      _getProfessorForSubject(disciplina.nome, periodo),
+                  'periodo': periodoData['nome'] as String,
+                  'professor': disciplina.teacher,
                 };
               }
               subjectData[disciplina.nome]!['grades'].add(value);
@@ -1510,8 +1600,10 @@ class _ChartsPageState extends State<ChartsPage> {
       '8-10': 0,
     };
 
-    for (final periodo in periodos) {
-      for (final disciplina in periodo.disciplinas) {
+    for (final periodoData in periodosData) {
+      final disciplinas =
+          (periodoData['disciplinas'] as List<dynamic>).cast<SubjectNote>();
+      for (final disciplina in disciplinas) {
         for (final entry in disciplina.notas.entries) {
           if (_isMediaKey(entry.key)) {
             final value = double.tryParse(entry.value.replaceAll(',', '.'));
@@ -1554,8 +1646,10 @@ class _ChartsPageState extends State<ChartsPage> {
   Map<String, dynamic>? _computeConsistency() {
     final allMedias = <double>[];
 
-    for (final periodo in periodos) {
-      for (final disciplina in periodo.disciplinas) {
+    for (final periodoData in periodosData) {
+      final disciplinas =
+          (periodoData['disciplinas'] as List<dynamic>).cast<SubjectNote>();
+      for (final disciplina in disciplinas) {
         for (final entry in disciplina.notas.entries) {
           if (_isMediaKey(entry.key)) {
             final value = double.tryParse(entry.value.replaceAll(',', '.'));
@@ -1597,8 +1691,10 @@ class _ChartsPageState extends State<ChartsPage> {
   double _computeOverallAverage() {
     final allMedias = <double>[];
 
-    for (final periodo in periodos) {
-      for (final disciplina in periodo.disciplinas) {
+    for (final periodoData in periodosData) {
+      final disciplinas =
+          (periodoData['disciplinas'] as List<dynamic>).cast<SubjectNote>();
+      for (final disciplina in disciplinas) {
         for (final entry in disciplina.notas.entries) {
           if (_isMediaKey(entry.key)) {
             final value = double.tryParse(entry.value.replaceAll(',', '.'));
@@ -1648,25 +1744,5 @@ class _ChartsPageState extends State<ChartsPage> {
       default:
         return Colors.grey;
     }
-  }
-
-  String _getProfessorForSubject(String subjectName, Semester periodo) {
-    // Lista de professores fictícios baseada no nome da disciplina
-    final professors = [
-      'Prof. Silva',
-      'Prof. Santos',
-      'Prof. Oliveira',
-      'Prof. Pereira',
-      'Prof. Costa',
-      'Prof. Rodrigues',
-      'Prof. Ferreira',
-      'Prof. Almeida',
-      'Prof. Carvalho',
-      'Prof. Gomes',
-    ];
-
-    // Gera um índice baseado no nome da disciplina para consistência
-    final hash = subjectName.hashCode.abs();
-    return professors[hash % professors.length];
   }
 }

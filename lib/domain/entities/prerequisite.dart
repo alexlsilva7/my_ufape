@@ -1,6 +1,9 @@
-class Prerequisite {
-  final String code;
-  final String name;
+import 'package:isar_community/isar.dart';
 
-  Prerequisite({required this.code, required this.name});
+part 'prerequisite.g.dart';
+
+@embedded
+class Prerequisite {
+  String? code;
+  String? name;
 }

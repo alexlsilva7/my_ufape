@@ -1,31 +1,67 @@
+import 'package:isar_community/isar.dart';
+
+part 'subject_note.g.dart';
+
+@collection
 class SubjectNote {
-  final String nome;
-  final String situacao;
-  final Map<String, String> notas; // Ex: {"VA1": "9.0", "Média": "9.5"}
-  final String teacher; // Adicionado campo professor
+  Id id = Isar.autoIncrement;
+
+  @Index()
+  String nome;
+
+  @Index()
+  String semestre;
+
+  String situacao;
+
+  List<String> notasKeys = [];
+  List<String> notasValues = [];
+
+  String teacher;
 
   SubjectNote({
     required this.nome,
+    required this.semestre,
     required this.situacao,
-    required this.notas,
     required this.teacher,
   });
 
+  // Helpers para trabalhar com notas
+  @ignore
+  Map<String, String> get notas {
+    final map = <String, String>{};
+    for (int i = 0; i < notasKeys.length && i < notasValues.length; i++) {
+      map[notasKeys[i]] = notasValues[i];
+    }
+    return map;
+  }
+
+  set notas(Map<String, String> value) {
+    notasKeys = value.keys.toList();
+    notasValues = value.values.toList();
+  }
+
+  void addNota(String key, String value) {
+    final map = notas;
+    map[key] = value;
+    notas = map;
+  }
+
   factory SubjectNote.fromJson(Map<String, dynamic> json) {
-    // Converte o mapa de notas para o tipo correto Map<String, String>
     final notasMap = (json['notas'] as Map)
         .map((key, value) => MapEntry(key.toString(), value.toString()));
 
     return SubjectNote(
-      nome: json['nome'],
-      situacao: json['situacao'],
-      notas: notasMap,
-      teacher: json['teacher'] ?? '',
-    );
+        nome: json['nome'] ?? '',
+        semestre: json['semestre'] ?? '',
+        situacao: json['situacao'] ?? '',
+        teacher: json['teacher'] ?? '')
+      ..notas = notasMap;
   }
 
   Map<String, dynamic> toJson() => {
         'nome': nome,
+        'semestre': semestre,
         'situacao': situacao,
         'notas': notas,
         'teacher': teacher,

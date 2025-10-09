@@ -1,29 +1,39 @@
+import 'package:isar_community/isar.dart';
 import 'prerequisite.dart';
 import 'workload.dart';
 
+part 'subject.g.dart';
+
+@collection
 class Subject {
-  final String code;
-  final String name;
-  final CourseType type;
-  final String period;
-  final int credits;
-  final Workload workload;
-  final List<Prerequisite> prerequisites;
-  final List<Prerequisite> corequisites;
-  final List<Prerequisite> equivalences;
-  final String ementa;
+  Id id = Isar.autoIncrement;
+
+  @Index(unique: true)
+  String code;
+
+  @Index(type: IndexType.value, caseSensitive: false)
+  String name;
+
+  @Enumerated(EnumType.ordinal32)
+  CourseType type = CourseType.desconhecido;
+
+  String period;
+  int credits = 0;
+
+  Workload workload;
+
+  List<Prerequisite> prerequisites = [];
+  List<Prerequisite> corequisites = [];
+  List<Prerequisite> equivalences = [];
+
+  String ementa = '';
 
   Subject({
     required this.code,
     required this.name,
-    required this.type,
     required this.period,
     required this.credits,
     required this.workload,
-    required this.prerequisites,
-    required this.corequisites,
-    required this.equivalences,
-    required this.ementa,
   });
 
   @override
@@ -34,7 +44,7 @@ class Subject {
   Tipo: $type
   Período: $period
   Créditos: $credits
-  C.H: Teórica:${workload.teorica} Prática:${workload.pratica} Ext:${workload.extensao} Total:${workload.total}
+  C.H: Teórica:${workload.teorica ?? -1} Prática:${workload.pratica ?? -1} Ext:${workload.extensao ?? -1} Total:${workload.total ?? -1}
   Pré-requisitos: ${prerequisites.map((p) => '${p.code} - ${p.name}').join(', ')}
   Co-requisitos: ${corequisites.map((p) => '${p.code} - ${p.name}').join(', ')}
   Equivalências: ${equivalences.map((p) => '${p.code} - ${p.name}').join(', ')}

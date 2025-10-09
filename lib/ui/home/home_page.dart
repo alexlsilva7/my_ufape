@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_ufape/data/repositories/subject_note/subject_note_repository.dart';
 import 'package:routefly/routefly.dart';
 import 'package:my_ufape/app_widget.dart';
 import 'package:my_ufape/config/dependencies.dart';
@@ -91,8 +92,9 @@ class HomePage extends StatelessWidget {
                     icon: Icons.grade,
                     color: Colors.green,
                     onTap: () async {
-                      final settingsRepo = injector.get<SettingsRepository>();
-                      final result = await settingsRepo.getCachedGrades();
+                      final SubjectNoteRepository subjectNoteRepo =
+                          injector.get<SubjectNoteRepository>();
+                      final result = await subjectNoteRepo.getAllSubjectNotes();
                       if (context.mounted) {
                         result.fold(
                           (periodos) {

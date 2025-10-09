@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:my_ufape/app_widget.dart';
+import 'package:my_ufape/config/dependencies.dart';
+import 'package:my_ufape/data/repositories/subject_note/subject_note_repository.dart';
 import 'package:my_ufape/domain/entities/subject_note.dart';
 import 'package:routefly/routefly.dart';
-import '../../domain/entities/semester.dart';
 
 class GradesPage extends StatefulWidget {
   const GradesPage({super.key});
@@ -12,7 +13,10 @@ class GradesPage extends StatefulWidget {
 }
 
 class _GradesPageState extends State<GradesPage> {
-  List<Semester> periodos = Routefly.query.arguments['periodos'] ?? [];
+  final SubjectNoteRepository subjectNoteRepository = injector.get();
+  List<SubjectNote> allDisciplinas = [];
+  bool _isLoading = true;
+  String? _errorMessage;
 
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
@@ -22,76 +26,117 @@ class _GradesPageState extends State<GradesPage> {
   final Set<String> _expandedPeriods = {};
   String _filterBySituacao = 'todos'; // todos | aprovado | cursando | reprovado
 
-  List<Semester> get _preparedPeriodos {
-    List<Semester> base = List<Semester>.from(periodos);
+  @override
+  void initState() {
+    super.initState();
+    _loadDisciplinas();
+  }
+
+  Future<void> _loadDisciplinas() async {
+    setState(() {
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    final result = await subjectNoteRepository.getAllSubjectNotes();
+
+    result.fold(
+      (disciplinas) {
+        setState(() {
+          allDisciplinas = disciplinas;
+          _isLoading = false;
+        });
+      },
+      (error) {
+        setState(() {
+          _errorMessage = 'Erro ao carregar dados: $error';
+          _isLoading = false;
+        });
+      },
+    );
+  }
+
+  // Agrupa disciplinas por semestre
+  Map<String, List<SubjectNote>> get _groupedBySemester {
+    final Map<String, List<SubjectNote>> grouped = {};
+    for (final disciplina in allDisciplinas) {
+      final semestre = disciplina.semestre;
+      if (!grouped.containsKey(semestre)) {
+        grouped[semestre] = [];
+      }
+      grouped[semestre]!.add(disciplina);
+    }
+    return grouped;
+  }
+
+  Map<String, List<SubjectNote>> get _preparedPeriodos {
+    var base = Map<String, List<SubjectNote>>.from(_groupedBySemester);
 
     // Aplicar filtro por situação
     if (_filterBySituacao != 'todos') {
-      base = base
-          .map((p) {
-            final disciplinasFiltradas = p.disciplinas.where((d) {
-              final situacao = d.situacao.toUpperCase();
-              switch (_filterBySituacao) {
-                case 'aprovado':
-                  return situacao.contains('APROVADO');
-                case 'cursando':
-                  return !situacao.contains('APROVADO') &&
-                      !situacao.contains('REPROVADO');
-                case 'reprovado':
-                  return situacao.contains('REPROVADO');
-                default:
-                  return true;
-              }
-            }).toList();
-            return disciplinasFiltradas.isNotEmpty
-                ? Semester(nome: p.nome, disciplinas: disciplinasFiltradas)
-                : null;
-          })
-          .where((p) => p != null)
-          .cast<Semester>()
-          .toList();
+      base = base.map((semestre, disciplinas) {
+        final disciplinasFiltradas = disciplinas.where((d) {
+          final situacao = d.situacao.toUpperCase();
+          switch (_filterBySituacao) {
+            case 'aprovado':
+              return situacao.contains('APROVADO');
+            case 'cursando':
+              return !situacao.contains('APROVADO') &&
+                  !situacao.contains('REPROVADO');
+            case 'reprovado':
+              return situacao.contains('REPROVADO');
+            default:
+              return true;
+          }
+        }).toList();
+        return MapEntry(semestre, disciplinasFiltradas);
+      });
+      // Remover semestres vazios
+      base.removeWhere((key, value) => value.isEmpty);
     }
 
-    if (_sortBy == 'recente') {
-      base.sort((a, b) => b.nome.compareTo(a.nome));
-    } else if (_sortBy == 'antigo') {
-      base.sort((a, b) => a.nome.compareTo(b.nome));
-    }
-
-    if (_showOnlyCurrentSemester && base.isNotEmpty) {
-      base = [base.first];
-    }
-
+    // Aplicar busca
     if (_searchQuery.isNotEmpty) {
       final q = _searchQuery.toLowerCase();
-      base = base
-          .map((p) {
-            final ds = p.disciplinas
-                .where((d) => d.nome.toLowerCase().contains(q))
-                .toList();
-            return ds.isNotEmpty
-                ? Semester(nome: p.nome, disciplinas: ds)
-                : null;
-          })
-          .where((p) => p != null)
-          .cast<Semester>()
-          .toList();
+      base = base.map((semestre, disciplinas) {
+        final disciplinasFiltradas =
+            disciplinas.where((d) => d.nome.toLowerCase().contains(q)).toList();
+        return MapEntry(semestre, disciplinasFiltradas);
+      });
+      // Remover semestres vazios
+      base.removeWhere((key, value) => value.isEmpty);
     }
 
+    // Ordenar disciplinas dentro de cada semestre se necessário
     if (_sortBy == 'disciplina') {
-      base = base.map((p) {
-        final ds = [...p.disciplinas]..sort((a, b) => a.nome.compareTo(b.nome));
-        return Semester(nome: p.nome, disciplinas: ds);
-      }).toList();
+      base = base.map((semestre, disciplinas) {
+        final sorted = [...disciplinas]
+          ..sort((a, b) => a.nome.compareTo(b.nome));
+        return MapEntry(semestre, sorted);
+      });
     }
 
     return base;
   }
 
-  double _computeSemesterAverage(Semester semester) {
-    // Tenta extrair a "média" de cada disciplina quando disponível.
+  List<String> get _sortedSemesters {
+    final semesters = _preparedPeriodos.keys.toList();
+    if (_sortBy == 'recente') {
+      semesters.sort((a, b) => b.compareTo(a));
+    } else if (_sortBy == 'antigo') {
+      semesters.sort((a, b) => a.compareTo(b));
+    }
+
+    if (_showOnlyCurrentSemester && semesters.isNotEmpty) {
+      return [semesters.first];
+    }
+
+    return semesters;
+  }
+
+  double _computeSemesterAverage(List<SubjectNote> disciplinas) {
     final medias = <double>[];
-    for (final d in semester.disciplinas) {
+    for (final d in disciplinas) {
       for (final e in d.notas.entries) {
         if (_isMediaKey(e.key)) {
           final v = double.tryParse(e.value.replaceAll(',', '.'));
@@ -103,10 +148,10 @@ class _GradesPageState extends State<GradesPage> {
     return medias.reduce((a, b) => a + b) / medias.length;
   }
 
-  double _computeOverallAverage(List<Semester> periodos) {
+  double _computeOverallAverage() {
     final medias = <double>[];
-    for (final p in periodos) {
-      final m = _computeSemesterAverage(p);
+    for (final disciplinas in _preparedPeriodos.values) {
+      final m = _computeSemesterAverage(disciplinas);
       if (m > 0) medias.add(m);
     }
     if (medias.isEmpty) return 0.0;
@@ -114,19 +159,24 @@ class _GradesPageState extends State<GradesPage> {
   }
 
   Color _chipColorFor(String key, String value) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final lowerKey = key.toLowerCase();
+
     // Não tratar "faltas" ou "freq" como nota negativa
     if (lowerKey.contains('falt') || lowerKey.contains('freq')) {
-      // neutro para zero, aviso suave para outros valores
       final numeric = double.tryParse(value.replaceAll(',', '.'));
-      if (numeric == null) return Colors.blue.shade700;
-      if (numeric == 0) return Colors.grey.shade700;
-      if (numeric < 3) return Colors.orange.shade700;
-      return Colors.green.shade700;
+      if (numeric == null)
+        return isDark ? const Color(0xFF00B4D8) : Colors.blue.shade700;
+      if (numeric == 0)
+        return isDark ? Colors.grey.shade500 : Colors.grey.shade700;
+      if (numeric < 3) return Colors.orange.shade600;
+      return Colors.green.shade600;
     }
 
-    // Se for média, dar destaque azul
-    if (_isMediaKey(key)) return Colors.blue.shade700;
+    // Se for média, dar destaque roxo/azul do tema
+    if (_isMediaKey(key)) {
+      return isDark ? const Color(0xFF8A2BE2) : const Color(0xFF8A2BE2);
+    }
 
     // Senão cair para cor por valor
     return _getGradeColor(value);
@@ -134,27 +184,71 @@ class _GradesPageState extends State<GradesPage> {
 
   @override
   Widget build(BuildContext context) {
-    final periodos = _preparedPeriodos;
+    // Mostrar loading enquanto carrega
+    if (_isLoading) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Minhas Notas'),
+        ),
+        body: const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+    }
 
-    final totalDisciplinas = periodos.expand((p) => p.disciplinas).length;
-    final totalAprovadas = periodos
-        .expand((p) => p.disciplinas)
+    // Mostrar erro se houver
+    if (_errorMessage != null) {
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Minhas Notas'),
+        ),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error_outline,
+                  size: 64, color: Theme.of(context).colorScheme.error),
+              const SizedBox(height: 16),
+              Text(
+                _errorMessage!,
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton.icon(
+                onPressed: _loadDisciplinas,
+                icon: const Icon(Icons.refresh),
+                label: const Text('Tentar Novamente'),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final periodos = _preparedPeriodos;
+    final sortedSemesters = _sortedSemesters;
+
+    final totalDisciplinas = allDisciplinas.length;
+    final totalAprovadas = allDisciplinas
         .where((d) => d.situacao.toUpperCase().contains('APROVADO'))
         .length;
-    final totalReprovadas = periodos
-        .expand((p) => p.disciplinas)
+    final totalReprovadas = allDisciplinas
         .where((d) => d.situacao.toUpperCase().contains('REPROVADO'))
         .length;
     final totalCursando = totalDisciplinas - totalAprovadas - totalReprovadas;
-    final overallMedia = _computeOverallAverage(periodos);
+    final overallMedia = _computeOverallAverage();
 
     // Quando há busca, mostra disciplinas individualmente
     final isSearching = _searchQuery.isNotEmpty;
     final allMatchingDisciplines = isSearching
-        ? periodos
-            .expand((p) => p.disciplinas.map((d) => {
+        ? periodos.entries
+            .expand((entry) => entry.value.map((d) => {
                   'disciplina': d,
-                  'periodo': p.nome,
+                  'periodo': entry.key,
                 }))
             .toList()
         : [];
@@ -167,8 +261,16 @@ class _GradesPageState extends State<GradesPage> {
           // Botão de Gráficos
           IconButton(
             onPressed: () {
+              // Converter para o formato esperado pela página de gráficos
+              final periodosForChart = periodos.entries.map((entry) {
+                return {
+                  'nome': entry.key,
+                  'disciplinas': entry.value,
+                };
+              }).toList();
+
               Routefly.push(routePaths.charts, arguments: {
-                'periodos': periodos,
+                'periodos': periodosForChart,
               });
             },
             icon: const Icon(Icons.bar_chart),
@@ -293,7 +395,9 @@ class _GradesPageState extends State<GradesPage> {
                     _buildStatItem('Aprovadas', totalAprovadas.toString(),
                         Icons.check_circle),
                     _dividerLine(context),
-                    _buildStatItem('Períodos', periodos.length.toString(),
+                    _buildStatItem(
+                        'Períodos',
+                        sortedSemesters.length.toString(),
                         Icons.calendar_today),
                     _dividerLine(context),
                     _buildStatItem('Média', overallMedia.toStringAsFixed(2),
@@ -323,12 +427,10 @@ class _GradesPageState extends State<GradesPage> {
                   decoration: InputDecoration(
                     isDense: true,
                     hintText: 'Pesquisar disciplinas...',
-                    hintStyle: TextStyle(color: Colors.grey.shade500),
-                    prefixIcon: Icon(Icons.search, color: Colors.grey.shade500),
+                    prefixIcon: const Icon(Icons.search),
                     suffixIcon: _searchQuery.isNotEmpty
                         ? IconButton(
-                            icon:
-                                Icon(Icons.clear, color: Colors.grey.shade500),
+                            icon: const Icon(Icons.clear),
                             onPressed: () {
                               _searchController.clear();
                               setState(() => _searchQuery = '');
@@ -430,7 +532,7 @@ class _GradesPageState extends State<GradesPage> {
                           },
                         ),
                       ))
-                : (periodos.isEmpty
+                : (sortedSemesters.isEmpty
                     ? _buildEmptyState()
                     : AnimatedSwitcher(
                         duration: const Duration(milliseconds: 200),
@@ -438,14 +540,16 @@ class _GradesPageState extends State<GradesPage> {
                           key: ValueKey(
                               '${_searchQuery}_${_showOnlyCurrentSemester}_${_sortBy}_${_groupByStatus}_$_filterBySituacao'),
                           padding: const EdgeInsets.symmetric(vertical: 8),
-                          itemCount: periodos.length,
+                          itemCount: sortedSemesters.length,
                           separatorBuilder: (_, __) =>
                               const SizedBox(height: 12),
                           itemBuilder: (context, index) {
-                            final periodo = periodos[index];
+                            final semestre = sortedSemesters[index];
+                            final disciplinas = periodos[semestre]!;
                             final expanded =
-                                _expandedPeriods.contains(periodo.nome);
-                            return _buildPeriodoCard(periodo, expanded);
+                                _expandedPeriods.contains(semestre);
+                            return _buildPeriodoCard(
+                                semestre, disciplinas, expanded);
                           },
                         ),
                       )),
@@ -514,16 +618,26 @@ class _GradesPageState extends State<GradesPage> {
         const SizedBox(width: 6),
         Text(
           label,
-          style: TextStyle(fontSize: 12),
+          style: TextStyle(
+            fontSize: 12,
+            color: Theme.of(context).textTheme.bodyMedium?.color,
+          ),
         ),
       ],
     );
   }
 
   Widget _buildStatItem(String label, String value, IconData icon) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Column(
       children: [
-        Icon(icon, size: 18),
+        Icon(
+          icon,
+          size: 18,
+          color: isDark
+              ? Theme.of(context).colorScheme.secondary
+              : Theme.of(context).primaryColor,
+        ),
         const SizedBox(height: 4),
         Text(
           value,
@@ -534,7 +648,7 @@ class _GradesPageState extends State<GradesPage> {
         ),
         Text(
           label,
-          style: TextStyle(
+          style: const TextStyle(
             fontSize: 11,
           ),
         ),
@@ -543,19 +657,24 @@ class _GradesPageState extends State<GradesPage> {
   }
 
   Widget _buildEmptyState() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.search_off, size: 64, color: Colors.grey.shade400),
+            Icon(
+              Icons.search_off,
+              size: 64,
+              color: isDark ? Colors.grey.shade600 : Colors.grey.shade400,
+            ),
             const SizedBox(height: 12),
             Text(
               'Nenhuma disciplina encontrada',
               style: TextStyle(
                 fontSize: 18,
-                color: Colors.grey.shade700,
+                color: Theme.of(context).textTheme.bodyLarge?.color,
                 fontWeight: FontWeight.w600,
               ),
             ),
@@ -563,7 +682,10 @@ class _GradesPageState extends State<GradesPage> {
             Text(
               'Tente ajustar os filtros ou a pesquisa.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+              style: TextStyle(
+                fontSize: 14,
+                color: isDark ? Colors.grey.shade500 : Colors.grey.shade600,
+              ),
             ),
           ],
         ),
@@ -571,16 +693,17 @@ class _GradesPageState extends State<GradesPage> {
     );
   }
 
-  Widget _buildPeriodoCard(Semester periodo, bool expanded) {
-    final aprovadas = periodo.disciplinas
+  Widget _buildPeriodoCard(
+      String semestre, List<SubjectNote> disciplinas, bool expanded) {
+    final aprovadas = disciplinas
         .where((d) => d.situacao.toUpperCase().contains('APROVADO'))
         .length;
-    final reprovadas = periodo.disciplinas
+    final reprovadas = disciplinas
         .where((d) => d.situacao.toUpperCase().contains('REPROVADO'))
         .length;
-    final total = periodo.disciplinas.length;
+    final total = disciplinas.length;
     final cursando = total - aprovadas - reprovadas;
-    final periodMedia = _computeSemesterAverage(periodo);
+    final periodMedia = _computeSemesterAverage(disciplinas);
     final aprovacaoPercent = total > 0 ? (aprovadas / total) * 100.0 : 0.0;
 
     return Card(
@@ -590,14 +713,14 @@ class _GradesPageState extends State<GradesPage> {
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
-          key: PageStorageKey(periodo.nome),
+          key: PageStorageKey(semestre),
           initiallyExpanded: expanded,
           onExpansionChanged: (isOpen) {
             setState(() {
               if (isOpen) {
-                _expandedPeriods.add(periodo.nome);
+                _expandedPeriods.add(semestre);
               } else {
-                _expandedPeriods.remove(periodo.nome);
+                _expandedPeriods.remove(semestre);
               }
             });
           },
@@ -613,7 +736,7 @@ class _GradesPageState extends State<GradesPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      periodo.nome,
+                      semestre,
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 12,
@@ -667,7 +790,7 @@ class _GradesPageState extends State<GradesPage> {
             Padding(
               padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
               child: _groupByStatus
-                  ? _buildGroupedDisciplines(periodo.disciplinas)
+                  ? _buildGroupedDisciplines(disciplinas)
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
@@ -691,7 +814,10 @@ class _GradesPageState extends State<GradesPage> {
                             value: (aprovacaoPercent / 100.0)
                                 .clamp(0.0, 1.0)
                                 .toDouble(),
-                            backgroundColor: Colors.grey.shade200,
+                            backgroundColor:
+                                Theme.of(context).brightness == Brightness.dark
+                                    ? Colors.grey.shade800
+                                    : Colors.grey.shade200,
                             valueColor: AlwaysStoppedAnimation<Color>(
                               _getAprovacaoColor(aprovacaoPercent),
                             ),
@@ -699,7 +825,7 @@ class _GradesPageState extends State<GradesPage> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        ...periodo.disciplinas.map(
+                        ...disciplinas.map(
                             (disciplina) => _buildDisciplineCard(disciplina)),
                       ],
                     ),
@@ -734,7 +860,11 @@ class _GradesPageState extends State<GradesPage> {
         children: [
           _groupPill(entry.key),
           const SizedBox(width: 8),
-          Expanded(child: Divider(color: Colors.grey.shade300)),
+          Expanded(
+            child: Divider(
+              color: Theme.of(context).dividerColor,
+            ),
+          ),
         ],
       ));
       items.add(const SizedBox(height: 8));
@@ -801,11 +931,17 @@ class _GradesPageState extends State<GradesPage> {
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
         decoration: BoxDecoration(
+          color: Theme.of(context).cardTheme.color,
           borderRadius: BorderRadius.circular(4),
-          border: Border.all(color: Colors.grey.withAlpha(30)),
+          border: Border.all(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.grey.withAlpha(60)
+                : Colors.grey.withAlpha(30),
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withOpacity(
+                  Theme.of(context).brightness == Brightness.dark ? 0.2 : 0.04),
               blurRadius: 8,
               offset: const Offset(0, 3),
             ),
@@ -838,9 +974,10 @@ class _GradesPageState extends State<GradesPage> {
                   RichText(
                     text: _highlightQuery(
                       disciplina.nome,
-                      baseStyle: const TextStyle(
+                      baseStyle: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
                       ),
                     ),
                     maxLines: 2,
@@ -850,15 +987,26 @@ class _GradesPageState extends State<GradesPage> {
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        Icon(Icons.person,
-                            size: 14, color: Colors.grey.shade600),
+                        Icon(
+                          Icons.person,
+                          size: 14,
+                          color: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.color
+                              ?.withOpacity(0.6),
+                        ),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
                             disciplina.teacher,
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey.shade400,
+                              color: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.color
+                                  ?.withOpacity(0.7),
                               fontWeight: FontWeight.w500,
                             ),
                             maxLines: 1,
@@ -929,7 +1077,11 @@ class _GradesPageState extends State<GradesPage> {
                                     entry.key,
                                     style: TextStyle(
                                       fontSize: 11,
-                                      color: Colors.grey.shade700,
+                                      color: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.color
+                                          ?.withOpacity(0.8),
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -982,7 +1134,9 @@ class _GradesPageState extends State<GradesPage> {
                   width: 36,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.grey.shade700
+                        : Colors.grey.shade300,
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
@@ -999,14 +1153,26 @@ class _GradesPageState extends State<GradesPage> {
                 const SizedBox(height: 8),
                 Row(
                   children: [
-                    Icon(Icons.person, size: 16, color: Colors.grey.shade600),
+                    Icon(
+                      Icons.person,
+                      size: 16,
+                      color: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.color
+                          ?.withOpacity(0.6),
+                    ),
                     const SizedBox(width: 6),
                     Expanded(
                       child: Text(
                         d.teacher,
                         style: TextStyle(
                           fontSize: 14,
-                          color: Colors.grey.shade600,
+                          color: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.color
+                              ?.withOpacity(0.7),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -1056,7 +1222,11 @@ class _GradesPageState extends State<GradesPage> {
                               e.key,
                               style: TextStyle(
                                 fontSize: 12,
-                                color: Colors.grey.shade700,
+                                color: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.color
+                                    ?.withOpacity(0.8),
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -1104,7 +1274,12 @@ class _GradesPageState extends State<GradesPage> {
       spans.add(TextSpan(
         text: text.substring(index, index + q.length),
         style: baseStyle?.copyWith(
-          backgroundColor: Colors.yellow.shade200,
+          backgroundColor: Theme.of(context).brightness == Brightness.dark
+              ? const Color(0xFFAA77FF).withOpacity(0.3)
+              : Colors.yellow.shade200,
+          color: Theme.of(context).brightness == Brightness.dark
+              ? Colors.white
+              : Colors.black87,
         ),
       ));
       start = index + q.length;
@@ -1166,11 +1341,16 @@ class _GradesPageState extends State<GradesPage> {
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(0),
-          color: Colors.white,
-          border: Border.all(color: Colors.grey.shade200),
+          color: Theme.of(context).cardTheme.color,
+          border: Border.all(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? Colors.grey.withAlpha(60)
+                : Colors.grey.shade200,
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.04),
+              color: Colors.black.withOpacity(
+                  Theme.of(context).brightness == Brightness.dark ? 0.2 : 0.04),
               blurRadius: 2,
               offset: const Offset(0, 3),
             ),
@@ -1217,10 +1397,10 @@ class _GradesPageState extends State<GradesPage> {
                   RichText(
                     text: _highlightQuery(
                       disciplina.nome,
-                      baseStyle: const TextStyle(
+                      baseStyle: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
-                        color: Colors.black87,
+                        color: Theme.of(context).textTheme.bodyLarge?.color,
                       ),
                     ),
                     maxLines: 2,
@@ -1230,15 +1410,26 @@ class _GradesPageState extends State<GradesPage> {
                     const SizedBox(height: 6),
                     Row(
                       children: [
-                        Icon(Icons.person,
-                            size: 14, color: Colors.grey.shade600),
+                        Icon(
+                          Icons.person,
+                          size: 14,
+                          color: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.color
+                              ?.withOpacity(0.6),
+                        ),
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
                             disciplina.teacher,
                             style: TextStyle(
                               fontSize: 12,
-                              color: Colors.grey.shade600,
+                              color: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.color
+                                  ?.withOpacity(0.7),
                               fontWeight: FontWeight.w500,
                             ),
                             maxLines: 1,
@@ -1308,7 +1499,11 @@ class _GradesPageState extends State<GradesPage> {
                                     entry.key,
                                     style: TextStyle(
                                       fontSize: 11,
-                                      color: Colors.grey.shade700,
+                                      color: Theme.of(context)
+                                          .textTheme
+                                          .bodyMedium
+                                          ?.color
+                                          ?.withOpacity(0.8),
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),

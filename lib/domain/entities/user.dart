@@ -1,8 +1,19 @@
+import 'package:isar_community/isar.dart';
+
+part 'user.g.dart';
+
+@collection
 class User {
-  String id;
+  Id id = Isar.autoIncrement;
+
   String name;
+
+  @Index(unique: true)
   String cpf;
+
+  @Index(unique: true)
   String registration;
+
   String course;
   String entryPeriod;
   String entryType;
@@ -12,7 +23,6 @@ class User {
   String currentPeriod;
 
   User({
-    required this.id,
     required this.name,
     required this.cpf,
     required this.registration,

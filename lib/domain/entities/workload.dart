@@ -1,13 +1,11 @@
-class Workload {
-  final int teorica;
-  final int pratica;
-  final int extensao;
-  final int total;
+import 'package:isar_community/isar.dart';
 
-  Workload({
-    required this.teorica,
-    required this.pratica,
-    required this.extensao,
-    required this.total,
-  });
+part 'workload.g.dart';
+
+@embedded
+class Workload {
+  int? teorica;
+  int? pratica;
+  int? extensao;
+  int? total;
 }

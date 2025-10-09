@@ -80,23 +80,29 @@ class ProfileParser {
           }
         }
 
-        block.subjects.add(Subject(
+        var workload = Workload();
+        workload.teorica = chTeorica;
+        workload.pratica = chPratica;
+        workload.extensao = chExt;
+        workload.total = chTotal;
+
+        var subject = Subject(
           code: code,
           name: name,
-          type: type,
           period: period,
           credits: credits,
-          workload: Workload(
-            teorica: chTeorica,
-            pratica: chPratica,
-            extensao: chExt,
-            total: chTotal,
-          ),
-          prerequisites: prerequisites,
-          corequisites: corequisites,
-          equivalences: equivalences,
-          ementa: ementa,
-        ));
+          workload: workload,
+        );
+
+        subject.type = type;
+
+        subject.workload = workload;
+        subject.prerequisites = prerequisites;
+        subject.corequisites = corequisites;
+        subject.equivalences = equivalences;
+        subject.ementa = ementa;
+
+        block.subjects.add(subject);
       }
       blocks.add(block);
     }
@@ -145,7 +151,10 @@ class ProfileParser {
             final code = parts[0].trim();
             final name = parts.sublist(1).join(' - ').trim();
             if (code.isNotEmpty && name.isNotEmpty) {
-              results.add(Prerequisite(code: code, name: name));
+              var prerequisite = Prerequisite();
+              prerequisite.code = code;
+              prerequisite.name = name;
+              results.add(prerequisite);
             }
           }
         }

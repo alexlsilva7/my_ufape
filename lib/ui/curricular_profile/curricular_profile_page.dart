@@ -69,13 +69,13 @@ class CurricularProfilePage extends StatelessWidget {
                   _buildDetailRow(
                       'Créditos:', subject.credits.toString(), context),
                   _buildDetailRow(
-                      'CH Teórica:', '${subject.workload.teorica}h', context),
+                      'CH Teórica:', '${subject.workload?.teorica}h', context),
                   _buildDetailRow(
-                      'CH Prática:', '${subject.workload.pratica}h', context),
+                      'CH Prática:', '${subject.workload?.pratica}h', context),
+                  _buildDetailRow('CH Extensão:',
+                      '${subject.workload?.extensao}h', context),
                   _buildDetailRow(
-                      'CH Extensão:', '${subject.workload.extensao}h', context),
-                  _buildDetailRow(
-                      'CH Total:', '${subject.workload.total}h', context),
+                      'CH Total:', '${subject.workload?.total}h', context),
                   const Divider(height: 20),
                   if (subject.prerequisites.isNotEmpty)
                     _buildDetailList('Pré-requisitos:', subject.prerequisites),
