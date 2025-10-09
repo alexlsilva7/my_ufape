@@ -6,8 +6,6 @@ version: 0.1.0
 environment:
   sdk: ^3.6.2
 
-isar_version: &isar_version 3.3.0-dev.3
-
 dependencies:
   flutter:
     sdk: flutter

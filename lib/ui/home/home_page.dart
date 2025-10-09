@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_ufape/core/ui/gen/assets.gen.dart';
 import 'package:my_ufape/data/repositories/subject_note/subject_note_repository.dart';
 import 'package:routefly/routefly.dart';
 import 'package:my_ufape/app_widget.dart';
@@ -53,24 +54,41 @@ class _HomePageState extends State<HomePage> {
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        Row(
+                          spacing: 8.0,
                           children: [
-                            Text(
-                              'Olá, $_userName! 👋',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
+                            ColorFiltered(
+                              colorFilter: ColorFilter.mode(
+                                isDark
+                                    ? Colors.white
+                                    : Colors.white, // Cor do filtro
+                                BlendMode.srcIn,
+                              ),
+                              child: Assets.images.myUfapeLogo.image(
+                                width: 50,
+                                height: 50,
                               ),
                             ),
-                            const SizedBox(height: 2),
-                            Text(
-                              'Bem-vindo ao My UFAPE',
-                              style: TextStyle(
-                                color: Colors.white.withOpacity(0.9),
-                                fontSize: 14,
-                              ),
+                            Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Olá, $_userName!',
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'Bem-vindo ao My UFAPE',
+                                  style: TextStyle(
+                                    color: Colors.white.withOpacity(0.9),
+                                    fontSize: 14,
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
