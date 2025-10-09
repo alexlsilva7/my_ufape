@@ -45,6 +45,8 @@ class _GradesPageState extends State<GradesPage> {
         setState(() {
           allDisciplinas = disciplinas;
           _isLoading = false;
+          // Identificar e abrir automaticamente o período atual
+          _autoExpandCurrentPeriod();
         });
       },
       (error) {
@@ -54,6 +56,30 @@ class _GradesPageState extends State<GradesPage> {
         });
       },
     );
+  }
+
+  // Identifica o período com disciplinas "Cursando" e o expande automaticamente
+  void _autoExpandCurrentPeriod() {
+    final periodos = _groupedBySemester;
+    for (final entry in periodos.entries) {
+      final hasCursando = entry.value.any((d) {
+        final situacao = d.situacao.toUpperCase();
+        return !situacao.contains('APROVADO') &&
+            !situacao.contains('REPROVADO');
+      });
+      if (hasCursando) {
+        _expandedPeriods.add(entry.key);
+        break; // Apenas o primeiro período com disciplinas cursando
+      }
+    }
+  }
+
+  // Verifica se um período é o atual (tem disciplinas cursando)
+  bool _isCurrentPeriod(String semestre, List<SubjectNote> disciplinas) {
+    return disciplinas.any((d) {
+      final situacao = d.situacao.toUpperCase();
+      return !situacao.contains('APROVADO') && !situacao.contains('REPROVADO');
+    });
   }
 
   // Agrupa disciplinas por semestre
@@ -705,6 +731,7 @@ class _GradesPageState extends State<GradesPage> {
     final cursando = total - aprovadas - reprovadas;
     final periodMedia = _computeSemesterAverage(disciplinas);
     final aprovacaoPercent = total > 0 ? (aprovadas / total) * 100.0 : 0.0;
+    final isCurrentPeriod = _isCurrentPeriod(semestre, disciplinas);
 
     return Card(
       elevation: 1,
@@ -753,37 +780,76 @@ class _GradesPageState extends State<GradesPage> {
                 ),
               ),
               const Spacer(),
-              Row(
-                children: [
-                  Icon(Icons.task_alt, size: 14, color: Colors.green.shade700),
-                  const SizedBox(width: 4),
-                  Text('$aprovadas'),
-                  const SizedBox(width: 8),
-                  if (cursando > 0)
-                    Icon(Icons.hourglass_bottom,
-                        size: 14, color: Colors.orange.shade700),
-                  if (cursando > 0) const SizedBox(width: 4),
-                  if (cursando > 0) Text('$cursando'),
-                  const SizedBox(width: 8),
-                  Icon(Icons.cancel, size: 14, color: Colors.red.shade700),
-                  const SizedBox(width: 4),
-                  Text('$reprovadas'),
-                  const SizedBox(width: 12),
-                  SizedBox(
-                    width: 35,
-                    child: Center(
-                      child: Text(
-                        '${aprovacaoPercent.toStringAsFixed(0)}%',
+              // Mostrar badge "PERÍODO ATUAL" ou contagens
+              if (isCurrentPeriod)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade600,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.orange.shade600.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: const Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.star,
+                        size: 16,
+                        color: Colors.white,
+                      ),
+                      SizedBox(width: 6),
+                      Text(
+                        'PERÍODO ATUAL',
                         style: TextStyle(
-                          fontSize: 12,
-                          color: _getAprovacaoColor(aprovacaoPercent),
-                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          letterSpacing: 0.5,
                         ),
                       ),
-                    ),
-                  )
-                ],
-              ),
+                    ],
+                  ),
+                )
+              else
+                Row(
+                  children: [
+                    Icon(Icons.task_alt,
+                        size: 14, color: Colors.green.shade700),
+                    const SizedBox(width: 4),
+                    Text('$aprovadas'),
+                    const SizedBox(width: 8),
+                    if (cursando > 0)
+                      Icon(Icons.hourglass_bottom,
+                          size: 14, color: Colors.orange.shade700),
+                    if (cursando > 0) const SizedBox(width: 4),
+                    if (cursando > 0) Text('$cursando'),
+                    const SizedBox(width: 8),
+                    Icon(Icons.cancel, size: 14, color: Colors.red.shade700),
+                    const SizedBox(width: 4),
+                    Text('$reprovadas'),
+                    const SizedBox(width: 12),
+                    SizedBox(
+                      width: 35,
+                      child: Center(
+                        child: Text(
+                          '${aprovacaoPercent.toStringAsFixed(0)}%',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: _getAprovacaoColor(aprovacaoPercent),
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                    )
+                  ],
+                ),
             ],
           ),
           children: [
