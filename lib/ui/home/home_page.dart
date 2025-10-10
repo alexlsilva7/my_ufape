@@ -392,7 +392,7 @@ class _HomePageState extends State<HomePage> {
         },
       },
       {
-        'title': 'Perfil',
+        'title': 'Perfil Curricular do Curso',
         'icon': Icons.person_outline,
         'color': Colors.purple.shade600,
         'onTap': () async {
@@ -471,14 +471,6 @@ class _HomePageState extends State<HomePage> {
               },
             );
           }
-        },
-      },
-      {
-        'title': 'Ajustes',
-        'icon': Icons.settings_outlined,
-        'color': Colors.grey.shade600,
-        'onTap': () {
-          Routefly.push(routePaths.settings);
         },
       },
     ];
