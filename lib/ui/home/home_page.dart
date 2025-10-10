@@ -5,6 +5,7 @@ import 'package:routefly/routefly.dart';
 import 'package:my_ufape/app_widget.dart';
 import 'package:my_ufape/config/dependencies.dart';
 import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
+import 'package:my_ufape/data/repositories/block_of_profile/block_of_profile_repository.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -394,7 +395,43 @@ class _HomePageState extends State<HomePage> {
         'title': 'Perfil',
         'icon': Icons.person_outline,
         'color': Colors.purple.shade600,
-        'onTap': () {},
+        'onTap': () async {
+          try {
+            final BlockOfProfileRepository blockRepo =
+                injector.get<BlockOfProfileRepository>();
+            final result = await blockRepo.getAllBlocks();
+            if (context.mounted) {
+              result.fold((blocks) {
+                if (blocks.isEmpty) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                          'Perfil curricular não encontrado. Extraia o perfil no SIGA.'),
+                    ),
+                  );
+                  Routefly.push(routePaths.siga);
+                } else {
+                  Routefly.push(routePaths.curricularProfile);
+                }
+              }, (failure) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text(
+                        'Erro ao carregar perfil curricular. Abrindo SIGA...'),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+                Routefly.push(routePaths.siga);
+              });
+            }
+          } catch (e) {
+            if (context.mounted) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Erro ao acessar perfil: $e')),
+              );
+            }
+          }
+        },
       },
       {
         'title': 'Gráficos',
