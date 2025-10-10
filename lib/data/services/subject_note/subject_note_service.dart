@@ -32,6 +32,27 @@ class SubjectNoteService {
     }
   }
 
+  AsyncResult<SubjectNote> getSubjectNoteByNameAndSemester(
+      String name, String semester) async {
+    try {
+      final db = await _database.connection;
+      final note = await db.subjectNotes
+          .filter()
+          .nomeEqualTo(name)
+          .and()
+          .semestreEqualTo(semester)
+          .findFirst();
+      if (note != null) {
+        return Success(note);
+      } else {
+        return Failure(Exception('Subject note not found'));
+      }
+    } catch (e) {
+      return Failure(
+          Exception('Failed to fetch subject note by name and semester: $e'));
+    }
+  }
+
   AsyncResult<int> addSubjectNote(SubjectNote note) async {
     try {
       final db = await _database.connection;

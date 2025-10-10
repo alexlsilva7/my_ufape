@@ -7,6 +7,7 @@ import 'package:flutter/foundation.dart';
 import 'package:my_ufape/domain/entities/user.dart';
 import 'package:my_ufape/domain/entities/subject.dart';
 import 'package:my_ufape/domain/entities/subject_note.dart';
+import 'package:my_ufape/domain/entities/block_of_profile.dart';
 
 class Database {
   Isar? _databaseInstance;
@@ -33,6 +34,7 @@ class Database {
           UserSchema,
           SubjectSchema,
           SubjectNoteSchema,
+          BlockOfProfileSchema,
         ],
         directory: dir.path,
         inspector: kDebugMode,

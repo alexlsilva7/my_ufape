@@ -102,7 +102,7 @@ class ProfileParser {
         subject.equivalences = equivalences;
         subject.ementa = ementa;
 
-        block.subjects.add(subject);
+        block.subjectList.add(subject);
       }
       blocks.add(block);
     }

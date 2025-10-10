@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:my_ufape/config/dependencies.dart';
+import 'package:my_ufape/core/ui/gen/assets.gen.dart';
 import 'package:my_ufape/ui/splash/splash_view_model.dart';
 
 class SplashPage extends StatefulWidget {
@@ -26,8 +27,17 @@ class _SplashPageState extends State<SplashPage> {
           mainAxisSize: MainAxisSize.min,
           spacing: 16,
           children: [
-            Image.asset('assets/images/logo_ufape_100.png', height: 120),
-            const Text('Minha UFAPE'),
+            ColorFiltered(
+              colorFilter: ColorFilter.mode(
+                Theme.of(context).colorScheme.primary,
+                BlendMode.srcIn,
+              ),
+              child: Assets.images.myUfapeLogo.image(
+                width: 150,
+                height: 150,
+              ),
+            ),
+            const Text('My UFAPE'),
             const CircularProgressIndicator(),
           ],
         ),

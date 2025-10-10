@@ -23,36 +23,7 @@ class _SigaPageState extends State<SigaPage> {
               ),
             ],
           ),
-          actions: [
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert),
-              onSelected: (value) {
-                switch (value) {
-                  case 'reauthenticate':
-                    setState(() {
-                      sigaPageWidget = null;
-                    });
-                    Future.delayed(Duration(milliseconds: 100)).then((value) {
-                      setState(() {
-                        sigaPageWidget = SigaPageWidget();
-                      });
-                    });
-                }
-              },
-              itemBuilder: (context) => [
-                const PopupMenuItem(
-                  value: 'reauthenticate',
-                  child: Row(
-                    children: [
-                      Icon(Icons.replay),
-                      SizedBox(width: 8),
-                      Text('Reautenticar'),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ],
+          actions: [],
         ),
         body: sigaPageWidget ?? Container());
   }

@@ -46,7 +46,7 @@ class _GradesPageState extends State<GradesPage> {
           allDisciplinas = disciplinas;
           _isLoading = false;
           // Identificar e abrir automaticamente o período atual
-          _autoExpandCurrentPeriod();
+          //_autoExpandCurrentPeriod();
         });
       },
       (error) {
