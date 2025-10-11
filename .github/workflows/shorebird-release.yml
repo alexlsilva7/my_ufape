@@ -17,8 +17,8 @@ jobs:
       - name: 🐦 Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: 'stable'
-          cache: true
+          channel: stable
+          flutter-version: 3.35.6
       
       - name: 🏗️ Setup Shorebird
         uses: shorebirdtech/setup-shorebird@v1
