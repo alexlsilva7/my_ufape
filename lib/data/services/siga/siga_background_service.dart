@@ -149,6 +149,10 @@ class SigaBackgroundService extends ChangeNotifier {
     });
   }
 
+  void resetAuthFailure() {
+    _authFailureNotifier.value = false;
+  }
+
   Future<void> goToHome() async {
     if (_controller == null) return;
     try {
@@ -200,11 +204,12 @@ class SigaBackgroundService extends ChangeNotifier {
         final authError =
             await _controller!.runJavaScriptReturningResult(errorScript);
         if (authError == true || authError.toString() == 'true') {
-          // Notifica falha de autenticação global
-          _authFailureNotifier.value = true;
-          // Completa o login ativo com falha
+          // Se for um login ativo, apenas completa o future com falha.
           if (_loginCompleter != null && !_loginCompleter!.isCompleted) {
             _loginCompleter!.complete(false);
+          } else {
+            // Se for uma verificação em segundo plano, notifica globalmente.
+            _authFailureNotifier.value = true;
           }
         }
       }

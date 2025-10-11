@@ -6,6 +6,8 @@ Este documento detalha as fases e tarefas para implementar a melhoria do fluxo d
 
 *   **Fase 2:** Refatorei o `SigaBackgroundService` para incluir a lógica de login ativo com um `Completer`, e adicionei um `ValueNotifier` para notificar sobre falhas de autenticação. Adicionei também o `checkAuthErrorScript` ao `siga_scripts.dart` para detectar senhas inválidas. Executei as ferramentas de formatação e análise, e corrigi um aviso de documentação no `siga_background_service.dart`.
 *   **Fase 3:** Refatorei a `LoginPage` para ser `Stateful` e gerenciar um estado de `_isLoading`. A UI agora exibe um `CircularProgressIndicator` durante o login. O método `_handleLogin` foi atualizado para chamar o `SigaBackgroundService` e aguardar o resultado, e a lógica para carregar credenciais salvas foi removida. Corrigi um aviso de `deprecated_member_use` que surgiu na nova implementação.
+*   **Fase 4:** Adicionei o método `hasUserCredentials()` ao `SettingsRepository` e sua implementação. Refatorei a `SplashViewModel` para usar este método, implementando a lógica de inicialização offline-first que navega diretamente para a Home se as credenciais existirem.
+*   **Fase 5:** Adicionei uma nova tela de debug (`DebugSigaPage`) e um widget de overlay (`DebugOverlayWidget`) para exibir um botão flutuante em modo de debug. Integrei o overlay no `AppWidget` para que o botão apareça em todas as telas. Implementei também o manipulador de falha de autenticação global no `AppWidget`, que força o logout do usuário caso o `SigaBackgroundService` detecte credenciais inválidas. O usuário corrigiu alguns bugs relacionados à geração de rotas do `routefly`.
 
 ---
 
@@ -54,7 +56,7 @@ O objetivo é transformar a `LoginPage` para que ela gerencie o estado de carreg
 - [x] Executar `dart format .`.
 - [x] Executar a análise estática e corrigir problemas.
 - [x] Atualizar a seção "Journal" deste documento.
-- [ ] Apresentar as alterações e a mensagem de commit para sua aprovação.
+- [x] Apresentar as alterações e a mensagem de commit para sua aprovação.
 
 ---
 
@@ -62,16 +64,16 @@ O objetivo é transformar a `LoginPage` para que ela gerencie o estado de carreg
 
 Vamos implementar o fluxo de inicialização offline-first.
 
-- [ ] No `SettingsRepository`, criar um novo método `Future<bool> hasUserCredentials()` que verifica se as chaves 'username' e 'password' existem no `FlutterSecureStorage`.
-- [ ] Refatorar o método `init()` na `SplashViewModel` para seguir a nova lógica offline-first, usando `hasUserCredentials()` para decidir se navega imediatamente para a Home ou para a tela de Login.
+- [x] No `SettingsRepository`, criar um novo método `Future<bool> hasUserCredentials()` que verifica se as chaves 'username' e 'password' existem no `FlutterSecureStorage`.
+- [x] Refatorar o método `init()` na `SplashViewModel` para seguir a nova lógica offline-first, usando `hasUserCredentials()` para decidir se navega imediatamente para a Home ou para a tela de Login.
 
 **Após esta fase:**
 
-- [ ] Executar `dart fix --apply`.
-- [ ] Executar `dart format .`.
-- [ ] Executar a análise estática e corrigir problemas.
-- [ ] Atualizar a seção "Journal" deste documento.
-- [ ] Apresentar as alterações e a mensagem de commit para sua aprovação.
+- [x] Executar `dart fix --apply`.
+- [x] Executar `dart format .`.
+- [x] Executar a análise estática e corrigir problemas.
+- [x] Atualizar a seção "Journal" deste documento.
+- [x] Apresentar as alterações e a mensagem de commit para sua aprovação.
 
 ---
 
@@ -79,9 +81,9 @@ Vamos implementar o fluxo de inicialização offline-first.
 
 Nesta fase final, vamos garantir que o app reaja a uma falha de autenticação em segundo plano e faremos a verificação final.
 
-- [ ] No `AppWidget` (ou em um widget pai adequado que não seja descartado), obter a instância do `SigaBackgroundService`.
-- [ ] Usar um `ValueListenableBuilder` para escutar o `authFailureNotifier` do serviço.
-- [ ] No `builder` do `ValueListenableBuilder`, se o valor for `true`, chamar `Routefly.navigate(routePaths.login)` para forçar o usuário a ir para a tela de login. É importante também resetar o notifier para `false` para não entrar em um loop de navegação.
+- [x] No `AppWidget` (ou em um widget pai adequado que não seja descartado), obter a instância do `SigaBackgroundService`.
+- [x] Usar um `ValueListenableBuilder` para escutar o `authFailureNotifier` do serviço.
+- [x] No `builder` do `ValueListenableBuilder`, se o valor for `true`, chamar `Routefly.navigate(routePaths.login)` para forçar o usuário a ir para a tela de login. É importante também resetar o notifier para `false` para não entrar em um loop de navegação.
 - [ ] **Testes Manuais:**
     - [ ] Testar o login pela primeira vez (online).
     - [ ] Fechar e abrir o app sem internet (deve ir para a Home e mostrar dados locais).

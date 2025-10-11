@@ -86,4 +86,15 @@ class SettingsRepositoryImpl extends ChangeNotifier
       return Failure(AppException('Falha ao salvar credenciais: $e', s));
     }
   }
+
+  @override
+  Future<bool> hasUserCredentials() async {
+    try {
+      final username = await _secureStorage.read(key: 'username');
+      final password = await _secureStorage.read(key: 'password');
+      return username != null && password != null;
+    } catch (_) {
+      return false;
+    }
+  }
 }

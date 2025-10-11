@@ -1,9 +1,6 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
 import 'package:my_ufape/app_widget.dart';
 import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
-import 'package:my_ufape/domain/entities/login.dart';
 import 'package:routefly/routefly.dart';
 
 class SplashViewModel extends ChangeNotifier {
@@ -12,26 +9,17 @@ class SplashViewModel extends ChangeNotifier {
   SplashViewModel(this.settingsRepository);
 
   init() async {
-    Login? login;
-
-    await settingsRepository.getUserCredentials().then((result) {
-      result.fold(
-        (success) {
-          login = success;
-        },
-        (failure) {
-          login = null;
-        },
-      );
-    });
-    log('Login: ${login?.username}, ${login?.password}');
+    // Pequeno delay para a splash ser visível
     await Future.delayed(const Duration(milliseconds: 1200));
-    if (login != null) {
-      Routefly.navigate(routePaths.home, arguments: {
-        'username': login!.username,
-        'password': login!.password,
-      });
+
+    final hasCredentials = await settingsRepository.hasUserCredentials();
+
+    if (hasCredentials) {
+      // Vai direto para a Home, permitindo acesso offline aos dados locais.
+      // O SigaBackgroundService fará a sincronização em segundo plano por conta própria.
+      Routefly.navigate(routePaths.home);
     } else {
+      // Sem credenciais, precisa fazer o login inicial.
       Routefly.navigate(routePaths.login);
     }
     notifyListeners();

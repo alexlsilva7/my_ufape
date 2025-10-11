@@ -11,5 +11,7 @@ abstract interface class SettingsRepository extends ChangeNotifier {
 
   AsyncResult<Login> getUserCredentials();
 
+  Future<bool> hasUserCredentials();
+
   AsyncResult<Unit> deleteUserCredentials();
 }
