@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:my_ufape/app_widget.dart';
-import 'package:my_ufape/ui/siga/widgets/siga_page_widget.dart';
 import 'package:routefly/routefly.dart';
 import '../../core/ui/gen/assets.gen.dart';
 

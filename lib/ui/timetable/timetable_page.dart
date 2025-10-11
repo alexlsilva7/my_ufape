@@ -1,12 +1,8 @@
-import 'dart:developer';
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:my_ufape/config/dependencies.dart';
 import 'package:my_ufape/data/repositories/scheduled_subject/scheduled_subject_repository.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
 import 'package:my_ufape/domain/entities/time_table.dart';
-import 'package:routefly/routefly.dart';
 
 class TimetablePage extends StatefulWidget {
   const TimetablePage({super.key});

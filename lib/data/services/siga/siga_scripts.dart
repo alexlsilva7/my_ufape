@@ -12,6 +12,21 @@ class SigaScripts {
   static String checkLoginScript() =>
       "document.getElementById('lblNomePessoa') != null;";
 
+  static String checkAuthErrorScript() {
+    return """
+    (function() {
+      const listItems = document.querySelectorAll('li');
+      for (let i = 0; i < listItems.length; i++) {
+        if (listItems[i].innerText.trim() === 'Nome de usuário ou senha inválida!') {
+            return true;
+        }
+      }
+      return false;
+    })();
+    """;
+  };
+  }
+
   static String extractGradesScript() => """
 (function() {
   try {

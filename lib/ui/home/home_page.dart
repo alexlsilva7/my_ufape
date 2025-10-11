@@ -6,7 +6,6 @@ import 'package:routefly/routefly.dart';
 import 'package:my_ufape/app_widget.dart';
 import 'package:my_ufape/config/dependencies.dart';
 import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
-import 'package:my_ufape/data/repositories/block_of_profile/block_of_profile_repository.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
 import 'package:my_ufape/domain/entities/time_table.dart';
 

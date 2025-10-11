@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:developer';
 import 'package:flutter/foundation.dart';
 import 'package:my_ufape/domain/entities/time_table.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -17,7 +16,7 @@ import 'package:my_ufape/data/services/siga/siga_scripts.dart';
 
 /// Serviço singleton que mantém um WebViewController em memória
 /// para manter a sessão SIGA viva e expor métodos de extração.
-/// Use injector.get<SigaBackgroundService>() para obter a instância.
+/// Use `injector.get<SigaBackgroundService>()` para obter a instância.
 class SigaBackgroundService extends ChangeNotifier {
   static SigaBackgroundService? _instance;
 
@@ -36,6 +35,13 @@ class SigaBackgroundService extends ChangeNotifier {
 
   WebViewController? _controller;
   WebViewController? get controller => _controller;
+
+  // Completer para o fluxo de login ativo
+  Completer<bool>? _loginCompleter;
+
+  // Notificador para falhas de autenticação em segundo plano
+  final ValueNotifier<bool> _authFailureNotifier = ValueNotifier(false);
+  ValueListenable<bool> get authFailureNotifier => _authFailureNotifier;
 
   // Credenciais obtidas do repositório e usadas para tentar login quando a página de login terminar de carregar
   String? _pendingUsername;
@@ -76,27 +82,27 @@ class SigaBackgroundService extends ChangeNotifier {
             statusMessage = '';
             notifyListeners();
 
-            // Verifica login e, se estivermos na página de login e tivermos credenciais pendentes,
-            // tenta injetar o script de login (evita tentar muito cedo, aguarda onPageFinished).
-            await _checkLoginStatus();
-
-            try {
-              if (url.contains('index.jsp') &&
-                  !_isLoggedIn &&
-                  _pendingUsername != null &&
-                  _pendingPassword != null) {
-                await _injectLoginScript(_pendingUsername!, _pendingPassword!);
-                // limpa credenciais pendentes para evitar tentativas repetidas
-                _pendingUsername = null;
-                _pendingPassword = null;
-              }
-            } catch (_) {
-              // ignore erros de injeção
+            // Tenta injetar o script de login se houver credenciais pendentes.
+            // Isso é acionado tanto pelo login ativo quanto pelo automático.
+            if (url.contains('index.jsp') &&
+                !_isLoggedIn &&
+                _pendingUsername != null &&
+                _pendingPassword != null) {
+              await _injectLoginScript(_pendingUsername!, _pendingPassword!);
+              _pendingUsername = null;
+              _pendingPassword = null;
             }
+
+            // Sempre verifica o status após a página carregar
+            await _checkLoginStatus();
           },
           onWebResourceError: (err) {
             statusMessage = 'Erro ao carregar recurso';
             notifyListeners();
+            // Se houver um login ativo em andamento, falha.
+            if (_loginCompleter != null && !_loginCompleter!.isCompleted) {
+              _loginCompleter!.complete(false);
+            }
           },
         ),
       );
@@ -111,13 +117,35 @@ class SigaBackgroundService extends ChangeNotifier {
       _checkLoginStatus();
     });
 
-    // Obtém credenciais e guarda como pendentes; o login será tentado quando a página de login terminar de carregar.
+    // Obtém credenciais para o login automático em segundo plano.
     final creds = await _settings.getUserCredentials();
     creds.fold((login) {
       _pendingUsername = login.username;
       _pendingPassword = login.password;
     }, (error) {
       // sem credenciais armazenadas
+    });
+  }
+
+  /// Realiza um login ativo, aguardando o resultado.
+  Future<bool> login(String username, String password) async {
+    _loginCompleter = Completer<bool>();
+
+    _pendingUsername = username;
+    _pendingPassword = password;
+
+    // Força o recarregamento da página de login para acionar o onPageFinished
+    await _controller?.loadRequest(
+      Uri.parse('https://siga.ufape.edu.br/ufape/index.jsp'),
+    );
+
+    // Aguarda o completer ser finalizado com um timeout
+    return _loginCompleter!.future.timeout(const Duration(seconds: 30),
+        onTimeout: () {
+      if (!_loginCompleter!.isCompleted) {
+        _loginCompleter!.complete(false);
+      }
+      return false;
     });
   }
 
@@ -137,6 +165,7 @@ class SigaBackgroundService extends ChangeNotifier {
     _controller = null;
     try {
       loginNotifier.dispose();
+      _authFailureNotifier.dispose();
     } catch (_) {}
     // Não chamar notifyListeners depois do dispose
   }
@@ -159,30 +188,57 @@ class SigaBackgroundService extends ChangeNotifier {
   Future<void> _checkLoginStatus() async {
     if (_controller == null) return;
     try {
+      // 1. Verifica se está logado
       final script = SigaScripts.checkLoginScript();
       final result = await _controller!.runJavaScriptReturningResult(script);
-      final bool currently = result == true || result.toString() == 'true';
-      if (currently != _isLoggedIn) {
+      final bool currentlyLoggedIn =
+          result == true || result.toString() == 'true';
+
+      // 2. Se não estiver logado, verifica se é por erro de autenticação
+      if (!currentlyLoggedIn) {
+        final errorScript = SigaScripts.checkAuthErrorScript();
+        final authError =
+            await _controller!.runJavaScriptReturningResult(errorScript);
+        if (authError == true || authError.toString() == 'true') {
+          // Notifica falha de autenticação global
+          _authFailureNotifier.value = true;
+          // Completa o login ativo com falha
+          if (_loginCompleter != null && !_loginCompleter!.isCompleted) {
+            _loginCompleter!.complete(false);
+          }
+        }
+      }
+
+      // 3. Atualiza o estado de login
+      if (currentlyLoggedIn != _isLoggedIn) {
         final previous = _isLoggedIn;
-        _isLoggedIn = currently;
+        _isLoggedIn = currentlyLoggedIn;
         loginNotifier.value = _isLoggedIn;
         notifyListeners();
-        // Se mudou de true para false, iniciou logout inesperado -> programar reconexão
-        if (previous == true && _isLoggedIn == false) {
-          _scheduleReconnect();
-        } else if (_isLoggedIn == true) {
-          // login bem sucedido: cancelar tentativas pendentes
+
+        if (_isLoggedIn) {
+          // Login bem-sucedido: completar o future do login ativo
+          if (_loginCompleter != null && !_loginCompleter!.isCompleted) {
+            _loginCompleter!.complete(true);
+          }
           _reconnectAttempts = 0;
           _cancelReconnectTimer();
+        } else if (previous == true && !_isLoggedIn) {
+          // Logout inesperado: programar reconexão
+          _scheduleReconnect();
         }
       }
     } catch (e) {
-      // Em caso de erro temporário consideramos deslogado e tentamos reconectar
+      // Em caso de erro temporário, consideramos deslogado
       if (_isLoggedIn) {
         _isLoggedIn = false;
         loginNotifier.value = false;
         notifyListeners();
         _scheduleReconnect();
+      }
+      // Se houver um login ativo, falha.
+      if (_loginCompleter != null && !_loginCompleter!.isCompleted) {
+        _loginCompleter!.complete(false);
       }
     }
   }
@@ -460,9 +516,10 @@ class SigaBackgroundService extends ChangeNotifier {
           if (!completer.isCompleted) completer.complete();
         } else if (result.toString().startsWith('error')) {
           timer?.cancel();
-          if (!completer.isCompleted)
+          if (!completer.isCompleted) {
             completer.completeError(Exception(
                 'Não foi possível acessar o conteúdo da página do SIGA.'));
+          }
         }
       } catch (e) {
         // Ignora erros temporários

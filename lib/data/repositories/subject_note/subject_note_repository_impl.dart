@@ -2,8 +2,6 @@ import 'package:my_ufape/data/services/subject_note/subject_note_service.dart';
 import 'package:my_ufape/domain/entities/subject_note.dart';
 import 'package:result_dart/result_dart.dart';
 
-import 'package:result_dart/src/types.dart';
-
 import './subject_note_repository.dart';
 
 class SubjectNoteRepositoryImpl implements SubjectNoteRepository {

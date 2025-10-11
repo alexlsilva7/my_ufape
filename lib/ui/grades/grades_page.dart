@@ -206,10 +206,12 @@ class _GradesPageState extends State<GradesPage> {
     // Não tratar "faltas" ou "freq" como nota negativa
     if (lowerKey.contains('falt') || lowerKey.contains('freq')) {
       final numeric = double.tryParse(value.replaceAll(',', '.'));
-      if (numeric == null)
+      if (numeric == null) {
         return isDark ? const Color(0xFF00B4D8) : Colors.blue.shade700;
-      if (numeric == 0)
+      }
+      if (numeric == 0) {
         return isDark ? Colors.grey.shade500 : Colors.grey.shade700;
+      }
       if (numeric < 3) return Colors.orange.shade600;
       return Colors.green.shade600;
     }
