@@ -1,75 +1,56 @@
-name: Shorebird Development Build
+name: Shorebird Release (main)
+
 permissions:
   contents: write
 
 on:
   push:
-    branches: [main, develop]
-  pull_request:
     branches: [main]
+  workflow_dispatch:
 
 jobs:
-  build-and-release:
+  shorebird-release:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: 📚 Checkout
         uses: actions/checkout@v4
-      
+
       - name: 🐦 Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           channel: stable
           flutter-version: 3.35.6
           cache: true
-      
+
       - name: 🏗️ Setup Shorebird
         uses: shorebirdtech/setup-shorebird@v1
         with:
           cache: true
-      
+
       - name: 📦 Get Dependencies
         run: flutter pub get
-      
-      # - name: 🧪 Run Tests
-      #   run: flutter test
-      
-      # Criar release apenas se for push para main
-      - name: 🚀 Create Shorebird Release
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        run: |
-          shorebird release android --artifact apk
+
+      - name: 🚀 Shorebird Release (Android)
+        run: shorebird release android --artifact apk
         env:
           SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
-      
-      # Upload como artefato para outros branches
-      - name: 🛠️ Build APK (for artifact)
-        if: github.ref != 'refs/heads/main' || github.event_name != 'push'
-        run: flutter build apk --release
-      
-      - name: 📤 Upload APK Artifact
-        if: github.ref != 'refs/heads/main' || github.event_name != 'push'
-        uses: actions/upload-artifact@v4
-        with:
-          name: app-apk-${{ github.sha }}
-          path: build/app/outputs/flutter-apk/*.apk
 
-      # Upload do APK para GitHub Releases
-      - name: 📤 Upload APK to GitHub Release
-        if: github.ref_type == 'tag'
+      # Construir arquivos para anexar no Release
+      - name: 🛠️ Build APK
+        run: flutter build apk --release
+
+      - name: 🛠️ Build AAB
+        run: flutter build appbundle --release
+
+      - name: 📤 Create/Update GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          tag_name: main-${{ github.run_number }}
+          name: Shorebird Release main # opcional
+          generate_release_notes: true
           files: |
             build/app/outputs/flutter-apk/app-release.apk
             build/app/outputs/bundle/release/app-release.aab
-          tag_name: ${{ github.ref_name }}
-          name: Release ${{ github.ref_name }}
-          body: |
-            ## Shorebird Release
-
-            Release Version: ${{ steps.meta.outputs.release_version }}
-            Platform: Android
-            Flutter Channel: stable
-            Flutter Version: 3.35.6
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
