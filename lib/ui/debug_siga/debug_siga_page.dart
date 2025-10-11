@@ -16,14 +16,6 @@ class _DebugSigaPageState extends State<DebugSigaPage> {
 
   @override
   Widget build(BuildContext context) {
-    if (!kDebugMode) {
-      return const Scaffold(
-        body: Center(
-          child: Text('Acesso negado. Esta página é apenas para debug.'),
-        ),
-      );
-    }
-
     if (_sigaService.controller == null) {
       return const Scaffold(
         body: Center(
