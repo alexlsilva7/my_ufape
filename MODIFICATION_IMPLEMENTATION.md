@@ -1,102 +1,72 @@
-# Plano de Implementação da Modificação: Melhoria do Fluxo de Login (Híbrido)
+# Plano de Implementação: Toggle para Overlay de Debug em Release
 
-Este documento detalha as fases e tarefas para implementar a melhoria do fluxo de login, conforme descrito no `MODIFICATION_DESIGN.md`.
+Este documento detalha as fases para implementar a funcionalidade de toggle do overlay de debug.
 
 ## Journal
 
-*   **Fase 2:** Refatorei o `SigaBackgroundService` para incluir a lógica de login ativo com um `Completer`, e adicionei um `ValueNotifier` para notificar sobre falhas de autenticação. Adicionei também o `checkAuthErrorScript` ao `siga_scripts.dart` para detectar senhas inválidas. Executei as ferramentas de formatação e análise, e corrigi um aviso de documentação no `siga_background_service.dart`.
-*   **Fase 3:** Refatorei a `LoginPage` para ser `Stateful` e gerenciar um estado de `_isLoading`. A UI agora exibe um `CircularProgressIndicator` durante o login. O método `_handleLogin` foi atualizado para chamar o `SigaBackgroundService` e aguardar o resultado, e a lógica para carregar credenciais salvas foi removida. Corrigi um aviso de `deprecated_member_use` que surgiu na nova implementação.
-*   **Fase 4:** Adicionei o método `hasUserCredentials()` ao `SettingsRepository` e sua implementação. Refatorei a `SplashViewModel` para usar este método, implementando a lógica de inicialização offline-first que navega diretamente para a Home se as credenciais existirem.
-*   **Fase 5:** Adicionei uma nova tela de debug (`DebugSigaPage`) e um widget de overlay (`DebugOverlayWidget`) para exibir um botão flutuante em modo de debug. Integrei o overlay no `AppWidget` para que o botão apareça em todas as telas. Implementei também o manipulador de falha de autenticação global no `AppWidget`, que força o logout do usuário caso o `SigaBackgroundService` detecte credenciais inválidas. O usuário corrigiu alguns bugs relacionados à geração de rotas do `routefly`.
+*(Esta seção será atualizada ao final de cada fase.)*
 
 ---
 
-## Fase 1: Preparação
+## Fase 1: Lógica de Armazenamento (`LocalStoragePreferencesService`)
 
-O objetivo desta fase é garantir que o projeto esteja em um estado estável antes de iniciarmos as modificações.
+- [ ] No arquivo `lib/data/services/settings/local_storage_preferences_service.dart`:
+  - [ ] Adicionar a chave estática: `static const String _debugOverlayKey = 'debug_overlay_enabled';`
+  - [ ] Adicionar o getter: `bool get isDebugOverlayEnabled => prefs.getBool(_debugOverlayKey) ?? false;`
+  - [ ] Adicionar o método `toggleDebugOverlay` para alterar e persistir o valor booleano.
 
-- [x] *(Nenhuma ação necessária, pois os testes automatizados foram pulados a pedido.)*
-
----
-
-## Fase 2: Refatoração do `SigaBackgroundService`
-
-Nesta fase, vamos adaptar o serviço para orquestrar o login ativo e notificar a aplicação sobre falhas críticas de autenticação.
-
-- [x] Adicionar um `Completer<bool>? _loginCompleter;` à classe `SigaBackgroundService`.
-- [x] Implementar o novo método público `Future<bool> login(String username, String password)` conforme o design.
-- [x] Modificar os métodos `onPageFinished` e `_checkLoginStatus` para interagir com o `_loginCompleter`:
-    - [x] Ao detectar sucesso no login (`_isLoggedIn` se torna `true`), completar o `_loginCompleter` com `true`.
-    - [x] Ao detectar uma falha (ex: timeout, erro na página), completar o `_loginCompleter` com `false`.
-- [x] Adicionar um novo `ValueNotifier<bool> _authFailureNotifier = ValueNotifier(false);` para notificar a aplicação sobre credenciais inválidas detectadas em segundo plano.
-- [x] Criar um getter `ValueListenable<bool> get authFailureNotifier => _authFailureNotifier;` para expor o notifier.
-- [x] No `_checkLoginStatus` ou em um método auxiliar, adicionar lógica para identificar uma falha de autenticação na página do SIGA (ex: procurar por texto como "usuário ou senha inválida") e, se encontrada, atualizar `_authFailureNotifier.value = true;`.
-
-**Após esta fase:**
-
-- [x] Executar `dart fix --apply` para limpar o código.
-- [x] Executar `dart format .` para garantir a formatação correta.
-- [x] Executar a análise estática (`analyze_files`) e corrigir quaisquer problemas.
-- [x] Atualizar a seção "Journal" deste documento.
-- [x] Apresentar as alterações e a mensagem de commit para sua aprovação antes de prosseguir.
+**Pós-fase:**
+- [ ] Executar as ferramentas de formatação e análise (`dart fix`, `dart format`, `analyze_files`).
+- [ ] Atualizar o Journal e apresentar as alterações para aprovação do commit.
 
 ---
 
-## Fase 3: Refatoração da `LoginPage`
+## Fase 2: Lógica de Negócios (`SettingsRepository`)
 
-O objetivo é transformar a `LoginPage` para que ela gerencie o estado de carregamento e utilize o novo método de login do serviço.
+- [ ] No arquivo de interface `lib/data/repositories/settings/settings_repository.dart`:
+  - [ ] Adicionar a propriedade: `bool isDebugOverlayEnabled;`
+  - [ ] Adicionar a assinatura do método: `AsyncResult<Unit> toggleDebugOverlay();`
+- [ ] No arquivo de implementação `lib/data/repositories/settings/settings_repository_impl.dart`:
+  - [ ] Inicializar `isDebugOverlayEnabled` no construtor, buscando o valor do `LocalStoragePreferencesService`.
+  - [ ] Implementar o método `toggleDebugOverlay`, que chama o serviço, atualiza a propriedade local e notifica os listeners.
 
-- [x] Adicionar uma variável de estado `bool _isLoading = false;` no `_LoginPageState`.
-- [x] Envolver o `Scaffold` ou a `Column` principal com um `Stack` para sobrepor um `CircularProgressIndicator` quando `_isLoading` for `true`.
-- [x] Implementar a nova lógica do método `_handleLogin`, que agora será `async`, chamará `injector.get<SigaBackgroundService>().login(...)`, e aguardará o resultado para navegar ou mostrar erro, conforme o design.
-
-**Após esta fase:**
-
-- [x] Executar `dart fix --apply`.
-- [x] Executar `dart format .`.
-- [x] Executar a análise estática e corrigir problemas.
-- [x] Atualizar a seção "Journal" deste documento.
-- [x] Apresentar as alterações e a mensagem de commit para sua aprovação.
+**Pós-fase:**
+- [ ] Executar as ferramentas de formatação e análise.
+- [ ] Atualizar o Journal e apresentar as alterações para aprovação do commit.
 
 ---
 
-## Fase 4: Refatoração da `SplashViewModel` e `SettingsRepository`
+## Fase 3: Interface do Usuário (`SettingsPage`)
 
-Vamos implementar o fluxo de inicialização offline-first.
+- [ ] No arquivo `lib/ui/settings/settings_page.dart`:
+  - [ ] Adicionar um `SwitchListTile` dentro do `Card` de "Preferências".
+  - [ ] O título será "Habilitar Overlay de Debug".
+  - [ ] O valor do switch será vinculado a `_settingsRepository.isDebugOverlayEnabled`.
+  - [ ] O `onChanged` chamará o método `_settingsRepository.toggleDebugOverlay()`.
 
-- [x] No `SettingsRepository`, criar um novo método `Future<bool> hasUserCredentials()` que verifica se as chaves 'username' e 'password' existem no `FlutterSecureStorage`.
-- [x] Refatorar o método `init()` na `SplashViewModel` para seguir a nova lógica offline-first, usando `hasUserCredentials()` para decidir se navega imediatamente para a Home ou para a tela de Login.
-
-**Após esta fase:**
-
-- [x] Executar `dart fix --apply`.
-- [x] Executar `dart format .`.
-- [x] Executar a análise estática e corrigir problemas.
-- [x] Atualizar a seção "Journal" deste documento.
-- [x] Apresentar as alterações e a mensagem de commit para sua aprovação.
+**Pós-fase:**
+- [ ] Executar as ferramentas de formatação e análise.
+- [ ] Atualizar o Journal e apresentar as alterações para aprovação do commit.
 
 ---
 
-## Fase 5: Gestão Global de Falha de Autenticação e Finalização
+## Fase 4: Lógica de Exibição (`DebugOverlayWidget`)
 
-Nesta fase final, vamos garantir que o app reaja a uma falha de autenticação em segundo plano e faremos a verificação final.
+- [ ] No arquivo `lib/ui/widgets/debug_overlay_widget.dart`:
+  - [ ] Injetar o `SettingsRepository`.
+  - [ ] Envolver o widget com um `ListenableBuilder` que escuta o `settingsRepository`.
+  - [ ] Atualizar a condição de visibilidade do `Stack` para `kDebugMode || settingsRepository.isDebugOverlayEnabled`.
 
-- [x] No `AppWidget` (ou em um widget pai adequado que não seja descartado), obter a instância do `SigaBackgroundService`.
-- [x] Usar um `ValueListenableBuilder` para escutar o `authFailureNotifier` do serviço.
-- [x] No `builder` do `ValueListenableBuilder`, se o valor for `true`, chamar `Routefly.navigate(routePaths.login)` para forçar o usuário a ir para a tela de login. É importante também resetar o notifier para `false` para não entrar em um loop de navegação.
-- [ ] **Testes Manuais:**
-    - [ ] Testar o login pela primeira vez (online).
-    - [ ] Fechar e abrir o app sem internet (deve ir para a Home e mostrar dados locais).
-    - [ ] Fechar e abrir o app com internet (deve ir para a Home e sincronizar em segundo plano).
-    - [ ] Testar o login ativo com credenciais erradas (deve mostrar erro).
-    - [ ] Simular uma falha de autenticação em segundo plano (alterando a senha salva para uma incorreta) para garantir que o usuário é redirecionado para a tela de login.
-- [ ] Atualizar o arquivo `README.md` do projeto com informações sobre o novo fluxo de login, se relevante.
-- [ ] Revisar o `MODIFICATION_DESIGN.md` e este `MODIFICATION_IMPLEMENTATION.md` para garantir que estão consistentes com o resultado final.
-- [ ] Perguntar a você se está satisfeito com o resultado final e se alguma outra modificação é necessária.
+**Pós-fase:**
+- [ ] Executar as ferramentas de formatação e análise.
+- [ ] Atualizar o Journal e apresentar as alterações para aprovação do commit.
 
 ---
 
-**Instruções Gerais:**
+## Fase 5: Finalização
 
-*   Após completar uma tarefa, se você adicionou algum `TODO` ao código ou não implementou algo completamente, certifique-se de adicionar novas tarefas para que possamos voltar e completá-las mais tarde.
-*   Ao final de cada fase, aguarde a aprovação da mensagem de commit antes de executá-lo e passar para a próxima fase.
+- [ ] Realizar testes manuais:
+  - [ ] Verificar se o switch na tela de configurações ativa/desativa o botão de debug em modo release (será necessário criar uma build de release para testar 100%).
+  - [ ] Verificar se em modo debug o botão está sempre visível, independentemente do switch.
+- [ ] Atualizar o `README.md` se a nova funcionalidade for relevante para os usuários finais.
+- [ ] Perguntar se você está satisfeito com o resultado final.

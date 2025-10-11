@@ -62,6 +62,17 @@ class _SettingsPageState extends State<SettingsPage> {
                         },
                       ),
                       const Divider(height: 1),
+                      SwitchListTile(
+                        title: const Text('Habilitar Overlay de Debug'),
+                        subtitle: const Text(
+                            'Exibe o botão de debug mesmo em release'),
+                        secondary: const Icon(Icons.bug_report),
+                        value: _settingsRepository.isDebugOverlayEnabled,
+                        onChanged: (value) async {
+                          await _settingsRepository.toggleDebugOverlay();
+                        },
+                      ),
+                      const Divider(height: 1),
                       ListTile(
                         leading: const Icon(Icons.logout, color: Colors.red),
                         title: const Text(

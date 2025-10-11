@@ -20,15 +20,28 @@ class SettingsRepositoryImpl extends ChangeNotifier
     this._secureStorage,
   ) {
     isDarkMode = _localStoragePreferencesService.isDarkMode;
+    isDebugOverlayEnabled =
+        _localStoragePreferencesService.isDebugOverlayEnabled;
   }
 
   @override
   bool isDarkMode = false;
 
   @override
+  bool isDebugOverlayEnabled = false;
+
+  @override
   AsyncResult<Unit> toggleDarkMode() async {
     await _localStoragePreferencesService.toggleDarkMode();
     isDarkMode = !isDarkMode;
+    notifyListeners();
+    return Success(unit);
+  }
+
+  @override
+  AsyncResult<Unit> toggleDebugOverlay() async {
+    await _localStoragePreferencesService.toggleDebugOverlay();
+    isDebugOverlayEnabled = !isDebugOverlayEnabled;
     notifyListeners();
     return Success(unit);
   }

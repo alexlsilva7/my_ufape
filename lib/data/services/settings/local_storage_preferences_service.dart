@@ -5,12 +5,25 @@ import 'package:shared_preferences/shared_preferences.dart';
 class LocalStoragePreferencesService {
   SharedPreferences prefs;
 
+  static const String _debugOverlayKey = 'debug_overlay_enabled';
+
   LocalStoragePreferencesService(this.prefs);
   bool get isDarkMode => prefs.getBool('isDarkMode') ?? false;
+
+  bool get isDebugOverlayEnabled => prefs.getBool(_debugOverlayKey) ?? false;
 
   AsyncResult<Unit> toggleDarkMode() async {
     try {
       await prefs.setBool('isDarkMode', !isDarkMode);
+      return Success(unit);
+    } catch (e, s) {
+      return Failure(AppException(e.toString(), s));
+    }
+  }
+
+  AsyncResult<Unit> toggleDebugOverlay() async {
+    try {
+      await prefs.setBool(_debugOverlayKey, !isDebugOverlayEnabled);
       return Success(unit);
     } catch (e, s) {
       return Failure(AppException(e.toString(), s));

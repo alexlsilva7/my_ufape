@@ -140,7 +140,8 @@ class SigaBackgroundService extends ChangeNotifier {
     );
 
     try {
-      final result = await _loginCompleter!.future.timeout(const Duration(seconds: 30));
+      final result =
+          await _loginCompleter!.future.timeout(const Duration(seconds: 30));
       _loginCompleter = null; // Limpa o completer após o uso
       return result;
     } catch (e) {

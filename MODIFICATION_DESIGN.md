@@ -1,154 +1,130 @@
-# Documento de Design da Modificação: Melhoria do Fluxo de Login (Híbrido)
+# Documento de Design da Modificação: Toggle para Overlay de Debug em Release
 
 ## 1. Visão Geral
 
-Este documento descreve o design para a melhoria do fluxo de login no aplicativo My UFAPE, adotando uma **abordagem híbrida (offline-first)**. O objetivo é duplo:
+Este documento descreve o design para adicionar uma nova funcionalidade que permite habilitar o overlay de debug (o botão flutuante que abre o `WebView` do SIGA) em builds de release. A ativação será feita através de um novo switch na tela de Configurações.
 
-1.  **Resolver o problema do login inicial**: Garantir que um login ativo, via `LoginPage`, aguarde a confirmação do `SigaBackgroundService` antes de navegar para a `HomePage`.
-2.  **Garantir funcionamento offline**: Permitir que o usuário acesse o aplicativo e seus dados já salvos localmente, mesmo sem conexão com a internet, em inicializações subsequentes.
+## 2. Análise Detalhada
 
-## 2. Análise Detalhada do Problema
-
-O fluxo de login original apresentava dois problemas principais:
-
-1.  **Navegação Prematura**: Tanto na `LoginPage` quanto na `SplashPage`, a navegação para a `HomePage` ocorria antes da confirmação do login com o serviço do SIGA, causando inconsistências de estado.
-2.  **Dependência Online**: A primeira versão da solução exigia uma verificação online a cada inicialização, o que impedia o uso offline do aplicativo.
+Atualmente, o `DebugOverlayWidget` só é visível quando a flag `kDebugMode` do Flutter é `true`. Para permitir que ele seja ativado em modo release, precisamos de uma forma de persistir a escolha do usuário. A arquitetura existente já possui um `SettingsRepository` e um `LocalStoragePreferencesService` que usam `SharedPreferences` para persistir configurações simples, como o modo escuro. Usaremos essa mesma estrutura.
 
 ## 3. Design Detalhado da Modificação
 
-A nova arquitetura equilibra a necessidade de verificação online com a de acesso offline.
+A implementação será dividida em quatro partes principais: o serviço de armazenamento local, o repositório de configurações, a página de configurações (UI) e o widget do overlay.
 
-### 3.1. `SplashViewModel`: Acesso Imediato (Offline-First)
+### 3.1. `LocalStoragePreferencesService`
 
-O `SplashViewModel` será o ponto de entrada para o acesso offline.
+Seguindo o padrão existente para o `isDarkMode`, vamos adicionar a lógica para o overlay de debug.
 
-- **Lógica do método `init()`**:
-  1.  Verifica no `FlutterSecureStorage` se existem credenciais salvas.
-  2.  **Se não houver credenciais**: Navega para `routePaths.login`.
-  3.  **Se houver credenciais**: Navega **imediatamente** para `routePaths.home`. Isso dá ao usuário acesso instantâneo aos dados locais (Isar).
-  4.  Após a navegação para a Home, o `SigaBackgroundService` (que é um singleton inicializado em outro ponto) continuará seu ciclo de vida normal: tentará logar em segundo plano e sincronizar os dados se houver conexão.
-
-```dart
-// Lógica conceitual para SplashViewModel.init()
-init() async {
-  final hasCredentials = await settingsRepository.hasUserCredentials(); // Um novo método no repositório
-
-  // Pequeno delay para a splash ser visível
-  await Future.delayed(const Duration(milliseconds: 1200));
-
-  if (hasCredentials) {
-    // Vai direto para a Home, permitindo acesso offline aos dados locais.
-    // O SigaBackgroundService fará a sincronização em segundo plano por conta própria.
-    Routefly.navigate(routePaths.home);
-  } else {
-    // Sem credenciais, precisa fazer o login inicial.
-    Routefly.navigate(routePaths.login);
-  }
-}
-```
-
-### 3.2. `LoginPage`: Login Ativo e Online
-
-A `LoginPage` será responsável pelo login ativo, que **exige conexão com a internet** e confirmação do serviço.
-
-- **Gerenciamento de Estado de Carregamento**: A UI indicará o estado de "carregando" (`_isLoading`) enquanto o login estiver em andamento.
-
-- **Lógica do método `_handleLogin()`**:
-  1.  Valida o formulário.
-  2.  Ativa o estado `_isLoading` (exibindo um `CircularProgressIndicator`).
-  3.  Salva as credenciais no `FlutterSecureStorage`.
-  4.  Chama um método `login()` no `SigaBackgroundService`, passando as credenciais.
-  5.  **Aguarda** o `Future<bool>` retornado pelo método `login()`.
-  6.  Se `true` (sucesso), desativa o `_isLoading` e navega para a `HomePage`.
-  7.  Se `false` (falha), desativa o `_isLoading` e exibe uma `SnackBar` com uma mensagem de erro.
-
-### 3.3. `SigaBackgroundService`: Orquestração e Notificação de Falhas
-
-O serviço será aprimorado para lidar com o login ativo e notificar a aplicação sobre falhas críticas.
-
-- **Novo `Completer` para Login Ativo**: Um `Completer<bool>? _loginCompleter;` será usado para sinalizar a conclusão de um login ativo iniciado pela `LoginPage`.
-
-- **Novo método `login(username, password)`**:
+- **Nova Chave:**
   ```dart
-  Future<bool> login(String username, String password) async {
-    _loginCompleter = Completer<bool>();
-
-    // Guarda as credenciais para o processo de login
-    _pendingUsername = username;
-    _pendingPassword = password;
-
-    // Força o recarregamento da página de login
-    await _controller?.loadRequest(
-      Uri.parse('https://siga.ufape.edu.br/ufape/index.jsp'),
-    );
-
-    // Aguarda o completer ser finalizado pelo onPageFinished/checkLoginStatus
-    return _loginCompleter!.future.timeout(const Duration(seconds: 30), onTimeout: () => false);
+  static const String _debugOverlayKey = 'debug_overlay_enabled';
+  ```
+- **Novo Getter:**
+  ```dart
+  bool get isDebugOverlayEnabled => prefs.getBool(_debugOverlayKey) ?? false;
+  ```
+- **Novo Método de Toggle:**
+  ```dart
+  AsyncResult<Unit> toggleDebugOverlay() async {
+    try {
+      await prefs.setBool(_debugOverlayKey, !isDebugOverlayEnabled);
+      return Success(unit);
+    } catch (e, s) {
+      return Failure(AppException(e.toString(), s));
+    }
   }
   ```
 
-- **Lógica no `onPageFinished` e `_checkLoginStatus`**:
-  - Quando o login for confirmado (`_isLoggedIn` se torna `true`), se `_loginCompleter` não for nulo, ele será completado com `true` (`_loginCompleter!.complete(true)`).
-  - Se um erro definitivo de login for detectado (ex: mensagem de "usuário ou senha inválida" na página), o `_loginCompleter` será completado com `false`.
+### 3.2. `SettingsRepository` (Interface e Implementação)
 
-- **Notificação Global de Falha de Autenticação**:
-  - Se, durante a sincronização em segundo plano, o serviço detectar que as credenciais salvas são inválidas, ele precisa forçar o usuário a fazer login novamente.
-  - Isso pode ser feito através de um `Stream` ou `ValueNotifier` global que a `AppWidget` ou um widget pai escuta. Ao receber a notificação, ele usaria o `Routefly` para navegar à força para a tela de login.
+O repositório irá expor a nova configuração para o resto do aplicativo.
 
-### 3.4. Diagrama de Sequência (Mermaid)
+- **Interface (`settings_repository.dart`):**
+  - Adicionar a propriedade: `bool isDebugOverlayEnabled = false;`
+  - Adicionar a assinatura do método: `AsyncResult<Unit> toggleDebugOverlay();`
 
-#### Fluxo 1: Login Ativo (Online)
+- **Implementação (`settings_repository_impl.dart`):**
+  - No construtor, inicializar a nova propriedade: `isDebugOverlayEnabled = _localStoragePreferencesService.isDebugOverlayEnabled;`
+  - Implementar o método `toggleDebugOverlay` que chamará o método correspondente no `_localStoragePreferencesService` e notificará os listeners.
+  ```dart
+  @override
+  AsyncResult<Unit> toggleDebugOverlay() async {
+    await _localStoragePreferencesService.toggleDebugOverlay();
+    isDebugOverlayEnabled = !isDebugOverlayEnabled;
+    notifyListeners();
+    return Success(unit);
+  }
+  ```
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant LoginPage
-    participant SigaBackgroundService
-    participant SecureStorage
-    participant HomePage
+### 3.3. `SettingsPage`
 
-    User->>LoginPage: Insere CPF e Senha
-    User->>LoginPage: Clica em "Entrar"
-    LoginPage->>LoginPage: Exibe loading
-    LoginPage->>SecureStorage: Salva credenciais
-    LoginPage->>SigaBackgroundService: Chama login(user, pass)
-    SigaBackgroundService->>SigaBackgroundService: Carrega página do SIGA
-    Note right of SigaBackgroundService: onPageFinished aciona a injeção do script de login
-    SigaBackgroundService-->>SigaBackgroundService: Script de login executado
-    SigaBackgroundService->>SigaBackgroundService: Verifica status e completa o Future
-    SigaBackgroundService-->>LoginPage: Retorna sucesso (Future<true>)
-    LoginPage->>LoginPage: Esconde loading
-    LoginPage->>HomePage: Navega para a Home
-```
+A UI será atualizada para incluir o novo switch.
 
-#### Fluxo 2: Inicialização do App (Offline)
+- **Novo `SwitchListTile`:**
+  - Dentro do `Card` de "Preferências", um novo `SwitchListTile` será adicionado.
+  - `title`: `Text('Habilitar Overlay de Debug')`
+  - `subtitle`: `Text('Exibe o botão de debug mesmo em release')`
+  - `value`: Vinculado a `_settingsRepository.isDebugOverlayEnabled`.
+  - `onChanged`: Chamará `_settingsRepository.toggleDebugOverlay()`.
 
-```mermaid
-sequenceDiagram
-    participant User
-    participant SplashPage
-    participant SecureStorage
-    participant HomePage
-    participant SigaBackgroundService
+### 3.4. `DebugOverlayWidget`
 
-    User->>SplashPage: Abre o aplicativo
-    SplashPage->>SecureStorage: Verifica se há credenciais
-    SecureStorage-->>SplashPage: Retorna true
-    SplashPage->>HomePage: Navega imediatamente para a Home
-    User->>HomePage: Interage com dados locais
+O widget será modificado para considerar a nova configuração, além do `kDebugMode`.
 
-    par Paralelamente
-        HomePage->>SigaBackgroundService: (Inicia sincronização em segundo plano)
-        SigaBackgroundService->>SigaBackgroundService: Tenta logar com credenciais salvas
-        alt Login em background com sucesso
-            SigaBackgroundService->>SigaBackgroundService: Busca novos dados e atualiza o banco local
-        else Falha no login em background
-            SigaBackgroundService->>SplashPage: Notifica falha global (ex: senha inválida)
-            SplashPage->>LoginPage: Força navegação para a tela de login
-        end
-    end
-```
+- **Injeção de Dependência:** O `SettingsRepository` será injetado no widget.
+- **Lógica de Visibilidade Atualizada:** O `build` do widget será envolvido por um `ListenableBuilder` que escuta o `settingsRepository`. A condição para exibir o `Stack` com o botão será alterada de `if (!kDebugMode)` para:
+  ```dart
+  final settingsRepository = injector.get<SettingsRepository>();
+  // ... dentro do build method ...
+  return ListenableBuilder(
+    listenable: settingsRepository,
+    builder: (context, child) {
+      final showOverlay = kDebugMode || settingsRepository.isDebugOverlayEnabled;
+      if (!showOverlay) {
+        return widget.child; // Acessando o child do StatefulWidget
+      }
+      // ... resto da lógica do Stack ...
+    },
+  );
+  ```
+  **Correção:** O `DebugOverlayWidget` é um `StatelessWidget`, então a lógica será mais simples, sem `StatefulWidget`.
+
+  ```dart
+  // Lógica final no DebugOverlayWidget
+  @override
+  Widget build(BuildContext context) {
+    final settingsRepository = injector.get<SettingsRepository>();
+
+    return ListenableBuilder(
+      listenable: settingsRepository,
+      builder: (context, _) {
+        final showOverlay = kDebugMode || settingsRepository.isDebugOverlayEnabled;
+
+        if (!showOverlay) {
+          return child;
+        }
+
+        return Stack(
+          children: [
+            child,
+            Positioned(
+              bottom: 16,
+              right: 16,
+              child: FloatingActionButton(
+                onPressed: () {
+                  Routefly.push(routePaths.debugSiga);
+                },
+                child: const Icon(Icons.bug_report),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+  ```
 
 ## 4. Resumo do Design
 
-A nova abordagem híbrida oferece o melhor de dois mundos: a agilidade e a conveniência do acesso offline, permitindo que o usuário veja seus dados imediatamente ao abrir o app, e a robustez de um login online verificado quando o usuário precisa se autenticar ativamente. A sincronização em segundo plano mantém os dados atualizados de forma transparente, e um mecanismo de falha global garante que credenciais inválidas sejam tratadas adequadamente, forçando uma nova autenticação quando necessário.
+A solução é simples e reutiliza a arquitetura de configurações existente. Ao adicionar a flag `isDebugOverlayEnabled` e persisti-la com `SharedPreferences`, permitimos que o `DebugOverlayWidget` reaja a essa configuração em tempo real, além da verificação padrão do `kDebugMode`. A adição do switch na tela de configurações torna a funcionalidade acessível e fácil de usar.

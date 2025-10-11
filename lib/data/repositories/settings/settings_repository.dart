@@ -6,6 +6,7 @@ abstract interface class SettingsRepository extends ChangeNotifier {
   AsyncResult<Unit> toggleDarkMode();
   AsyncResult<Unit> restoreApp();
   bool isDarkMode = false;
+  bool isDebugOverlayEnabled = false;
 
   AsyncResult<Unit> saveUserCredentials(Login login);
 
@@ -14,4 +15,6 @@ abstract interface class SettingsRepository extends ChangeNotifier {
   Future<bool> hasUserCredentials();
 
   AsyncResult<Unit> deleteUserCredentials();
+
+  AsyncResult<Unit> toggleDebugOverlay();
 }
