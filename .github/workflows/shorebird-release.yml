@@ -21,9 +21,7 @@ jobs:
         with:
           channel: stable
           flutter-version: 3.35.6
-      
-      - name: 🏗️ Setup Shorebird
-        uses: shorebirdtech/setup-shorebird@v1
+          cache: true
       
       - name: 📦 Get Dependencies
         run: flutter pub get
