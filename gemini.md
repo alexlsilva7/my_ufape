@@ -1,0 +1,1 @@
+Responda em Português-Brasil.

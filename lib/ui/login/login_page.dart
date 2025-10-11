@@ -1,6 +1,12 @@
+import 'package:brasil_fields/brasil_fields.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:my_ufape/ui/webview/webview_page.dart';
+import 'package:my_ufape/app_widget.dart';
+import 'package:my_ufape/config/dependencies.dart';
+import 'package:my_ufape/data/services/siga/siga_background_service.dart';
+import 'package:routefly/routefly.dart';
+import '../../core/ui/gen/assets.gen.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -14,74 +20,55 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isPasswordVisible = false;
-  bool _savePassword = false;
+  bool _isLoading = false;
 
   // Storage seguro para salvar credenciais
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
-  @override
-  void initState() {
-    super.initState();
-    _loadSavedCredentials();
-  }
-
-  Future<void> _loadSavedCredentials() async {
-    try {
-      final savedUser = await _secureStorage.read(key: 'username');
-      final savedPass = await _secureStorage.read(key: 'password');
-
-      if (savedUser != null && savedPass != null) {
-        _usernameController.text = savedUser;
-        _passwordController.text = savedPass;
-        setState(() {
-          _savePassword = true;
-        });
-
-        // Navega automaticamente após o build completar
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder: (context) => WebViewPage(
-                username: savedUser,
-                password: savedPass,
-              ),
-            ),
-          );
-        });
-      }
-    } catch (e) {
-      // Falha ao ler storage: ignora (não impede o app)
-    }
-  }
-
   Future<void> _handleLogin() async {
     if (_formKey.currentState!.validate()) {
+      setState(() {
+        _isLoading = true;
+      });
+
       final username = _usernameController.text;
       final password = _passwordController.text;
 
       try {
-        if (_savePassword) {
-          await _secureStorage.write(key: 'username', value: username);
-          await _secureStorage.write(key: 'password', value: password);
-        } else {
-          await _secureStorage.delete(key: 'username');
-          await _secureStorage.delete(key: 'password');
-        }
+        await _secureStorage.write(key: 'username', value: username);
+        await _secureStorage.write(key: 'password', value: password);
       } catch (e) {
-        // Ignore storage errors; continue login
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Falha ao salvar credenciais: $e'),
+            ),
+          );
+        }
+        setState(() {
+          _isLoading = false;
+        });
+        return;
       }
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => WebViewPage(
-            username: username,
-            password: password,
-          ),
-        ),
-      );
+      final sigaService = injector.get<SigaBackgroundService>();
+      final success = await sigaService.login(username, password);
+
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+
+        if (success) {
+          Routefly.navigate(routePaths.home);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text(
+                    'Falha no login. Verifique suas credenciais e conexão.')),
+          );
+        }
+      }
     }
   }
 
@@ -95,101 +82,121 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Login Automático - SIGA'),
-        centerTitle: true,
-      ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24.0),
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Image.network(
-                  'https://ufape.edu.br/sites/default/files/BRAS%C3%83O_SITE.fw_.png',
-                  height: 120,
-                  errorBuilder: (context, error, stackTrace) =>
-                      const Icon(Icons.school, size: 80),
-                ),
-                const SizedBox(height: 32),
-                Text(
-                  'Acesse sua conta',
-                  textAlign: TextAlign.center,
-                  style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF004D40),
+      body: Stack(
+        children: [
+          Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24.0),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    ColorFiltered(
+                      colorFilter: ColorFilter.mode(
+                        Theme.of(context).colorScheme.primary,
+                        BlendMode.srcIn,
                       ),
-                ),
-                const SizedBox(height: 24),
-                // Campo de Usuário
-                TextFormField(
-                  controller: _usernameController,
-                  decoration: const InputDecoration(
-                    labelText: 'Usuário (CPF)',
-                    prefixIcon: Icon(Icons.person_outline),
-                  ),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor, insira seu CPF';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                // Campo de Senha
-                TextFormField(
-                  controller: _passwordController,
-                  obscureText: !_isPasswordVisible,
-                  decoration: InputDecoration(
-                    labelText: 'Senha',
-                    prefixIcon: const Icon(Icons.lock_outline),
-                    suffixIcon: IconButton(
-                      icon: Icon(
-                        _isPasswordVisible
-                            ? Icons.visibility_off
-                            : Icons.visibility,
+                      child: Assets.images.myUfapeLogo.image(
+                        width: 150,
+                        height: 150,
                       ),
-                      onPressed: () {
-                        setState(() {
-                          _isPasswordVisible = !_isPasswordVisible;
-                        });
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      'My UFAPE',
+                      textAlign: TextAlign.center,
+                      style:
+                          Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                    ),
+                    const SizedBox(height: 32),
+                    Text(
+                      'Acesse sua conta',
+                      textAlign: TextAlign.center,
+                      style:
+                          Theme.of(context).textTheme.headlineSmall?.copyWith(
+                                fontWeight: FontWeight.bold,
+                              ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Use suas credenciais do SIGA para entrar',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                    const SizedBox(height: 24),
+                    // Campo de Usuário
+                    TextFormField(
+                      controller: _usernameController,
+                      enabled: !_isLoading,
+                      decoration: const InputDecoration(
+                        labelText: 'Usuário (CPF)',
+                        prefixIcon: Icon(Icons.person_outline),
+                      ),
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Por favor, insira seu CPF';
+                        }
+                        return null;
+                      },
+                      inputFormatters: [
+                        FilteringTextInputFormatter.digitsOnly,
+                        CpfInputFormatter(),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    // Campo de Senha
+                    TextFormField(
+                      controller: _passwordController,
+                      enabled: !_isLoading,
+                      obscureText: !_isPasswordVisible,
+                      decoration: InputDecoration(
+                        labelText: 'Senha',
+                        prefixIcon: const Icon(Icons.lock_outline),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _isPasswordVisible
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _isPasswordVisible = !_isPasswordVisible;
+                            });
+                          },
+                        ),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Por favor, insira sua senha';
+                        }
+                        return null;
                       },
                     ),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Por favor, insira sua senha';
-                    }
-                    return null;
-                  },
+                    const SizedBox(height: 8),
+                    const SizedBox(height: 24),
+                    // Botão de Entrar
+                    ElevatedButton(
+                      onPressed: _isLoading ? null : _handleLogin,
+                      child: const Text('Entrar'),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 8),
-                // Salvar senha
-                CheckboxListTile(
-                  title: const Text('Salvar senha e entrar automaticamente'),
-                  value: _savePassword,
-                  onChanged: (v) {
-                    setState(() {
-                      _savePassword = v ?? false;
-                    });
-                  },
-                  controlAffinity: ListTileControlAffinity.leading,
-                  contentPadding: EdgeInsets.zero,
-                ),
-                const SizedBox(height: 24),
-                // Botão de Entrar
-                ElevatedButton(
-                  onPressed: _handleLogin,
-                  child: const Text('Entrar no SIGA'),
-                ),
-              ],
+              ),
             ),
           ),
-        ),
+          if (_isLoading)
+            Container(
+              color: Colors.black54,
+              child: const Center(
+                child: CircularProgressIndicator(),
+              ),
+            ),
+        ],
       ),
     );
   }
