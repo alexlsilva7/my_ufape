@@ -36,18 +36,11 @@ jobs:
         env:
           SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
 
-      # Construir arquivos para anexar no Release
-      - name: 🛠️ Build APK
-        run: flutter build apk --release
-
-      - name: 🛠️ Build AAB
-        run: flutter build appbundle --release
-
-      - name: 📤 Create/Update GitHub Release
+      - name: 📤 Create GitHub Release and Attach APK & AAB
         uses: softprops/action-gh-release@v2
         with:
           tag_name: main-${{ github.run_number }}
-          name: Shorebird Release main # opcional
+          name: Release ${{ github.run_number }}
           generate_release_notes: true
           files: |
             build/app/outputs/flutter-apk/app-release.apk
