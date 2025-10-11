@@ -139,14 +139,18 @@ class SigaBackgroundService extends ChangeNotifier {
       Uri.parse('https://siga.ufape.edu.br/ufape/index.jsp'),
     );
 
-    // Aguarda o completer ser finalizado com um timeout
-    return _loginCompleter!.future.timeout(const Duration(seconds: 30),
-        onTimeout: () {
-      if (!_loginCompleter!.isCompleted) {
+    try {
+      final result = await _loginCompleter!.future.timeout(const Duration(seconds: 30));
+      _loginCompleter = null; // Limpa o completer após o uso
+      return result;
+    } catch (e) {
+      // Garante que o completer seja finalizado e limpo em caso de erro/timeout
+      if (_loginCompleter != null && !_loginCompleter!.isCompleted) {
         _loginCompleter!.complete(false);
       }
+      _loginCompleter = null;
       return false;
-    });
+    }
   }
 
   void resetAuthFailure() {
@@ -207,7 +211,7 @@ class SigaBackgroundService extends ChangeNotifier {
           // Se for um login ativo, apenas completa o future com falha.
           if (_loginCompleter != null && !_loginCompleter!.isCompleted) {
             _loginCompleter!.complete(false);
-          } else {
+          } else if (_loginCompleter == null) {
             // Se for uma verificação em segundo plano, notifica globalmente.
             _authFailureNotifier.value = true;
           }

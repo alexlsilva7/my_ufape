@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:my_ufape/config/dependencies.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
-import 'package:routefly/routefly.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class DebugSigaPage extends StatefulWidget {
