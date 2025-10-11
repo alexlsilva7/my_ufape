@@ -103,6 +103,7 @@ class ProfileParser {
         subject.ementa = ementa;
 
         block.subjectList.add(subject);
+        block.subjects.add(subject);
       }
       blocks.add(block);
     }

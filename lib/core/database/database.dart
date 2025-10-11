@@ -8,6 +8,7 @@ import 'package:my_ufape/domain/entities/user.dart';
 import 'package:my_ufape/domain/entities/subject.dart';
 import 'package:my_ufape/domain/entities/subject_note.dart';
 import 'package:my_ufape/domain/entities/block_of_profile.dart';
+import 'package:my_ufape/domain/entities/time_table.dart';
 
 class Database {
   Isar? _databaseInstance;
@@ -35,6 +36,7 @@ class Database {
           SubjectSchema,
           SubjectNoteSchema,
           BlockOfProfileSchema,
+          ScheduledSubjectSchema,
         ],
         directory: dir.path,
         inspector: kDebugMode,

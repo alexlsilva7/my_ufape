@@ -23,6 +23,7 @@ dependencies:
   isar_community: ^3.3.0-dev.3
   isar_community_flutter_libs: ^3.3.0-dev.3
   path_provider: ^2.1.5
+  calendar_view: ^1.4.0
 
 dev_dependencies:
   flutter_test:

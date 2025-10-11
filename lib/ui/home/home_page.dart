@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:my_ufape/core/ui/gen/assets.gen.dart';
 import 'package:my_ufape/data/repositories/subject_note/subject_note_repository.dart';
+import 'package:my_ufape/data/repositories/scheduled_subject/scheduled_subject_repository.dart';
 import 'package:routefly/routefly.dart';
 import 'package:my_ufape/app_widget.dart';
 import 'package:my_ufape/config/dependencies.dart';
 import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
 import 'package:my_ufape/data/repositories/block_of_profile/block_of_profile_repository.dart';
+import 'package:my_ufape/data/services/siga/siga_background_service.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -16,6 +18,34 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final String _userName = 'Estudante';
+
+  final SigaBackgroundService _sigaService =
+      injector.get<SigaBackgroundService>();
+  bool _isLoggedIn = false;
+  late final VoidCallback _loginListener;
+
+  @override
+  void initState() {
+    super.initState();
+    _isLoggedIn = _sigaService.isLoggedIn;
+    _loginListener = () {
+      if (mounted) {
+        setState(() {
+          _isLoggedIn = _sigaService.loginNotifier.value;
+        });
+      }
+    };
+    _sigaService.loginNotifier.addListener(_loginListener);
+    _sigaService.initialize();
+  }
+
+  @override
+  void dispose() {
+    try {
+      _sigaService.loginNotifier.removeListener(_loginListener);
+    } catch (_) {}
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -60,9 +90,7 @@ class _HomePageState extends State<HomePage> {
                           children: [
                             ColorFiltered(
                               colorFilter: ColorFilter.mode(
-                                isDark
-                                    ? Colors.white
-                                    : Colors.white, // Cor do filtro
+                                Colors.white,
                                 BlendMode.srcIn,
                               ),
                               child: Assets.images.myUfapeLogo.image(
@@ -95,18 +123,10 @@ class _HomePageState extends State<HomePage> {
                         ),
                         Row(
                           children: [
-                            IconButton(
-                              icon: const Icon(Icons.notifications_outlined,
-                                  color: Colors.white),
-                              onPressed: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content:
-                                        Text('Nenhuma notificação no momento'),
-                                    duration: Duration(seconds: 2),
-                                  ),
-                                );
-                              },
+                            Icon(
+                              _isLoggedIn ? Icons.wifi : Icons.wifi_off,
+                              size: 14,
+                              color: _isLoggedIn ? Colors.green : Colors.red,
                             ),
                             IconButton(
                               icon: const Icon(Icons.settings_outlined,
@@ -346,49 +366,15 @@ class _HomePageState extends State<HomePage> {
         'icon': Icons.grade_outlined,
         'color': Colors.green.shade600,
         'onTap': () async {
-          final SubjectNoteRepository subjectNoteRepo =
-              injector.get<SubjectNoteRepository>();
-          final result = await subjectNoteRepo.getAllSubjectNotes();
-          if (context.mounted) {
-            result.fold(
-              (periodos) {
-                if (periodos.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                          'Nenhuma nota no cache. Sincronizando com o SIGA...'),
-                    ),
-                  );
-                  Routefly.push(routePaths.siga);
-                } else {
-                  Routefly.push(routePaths.grades,
-                      arguments: {'periodos': periodos});
-                }
-              },
-              (failure) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                        'Nenhuma nota em cache. Sincronizando com o SIGA...'),
-                  ),
-                );
-                Routefly.push(routePaths.siga);
-              },
-            );
-          }
+          Routefly.push(routePaths.grades);
         },
       },
       {
         'title': 'Horários',
         'icon': Icons.schedule_outlined,
         'color': Colors.orange.shade600,
-        'onTap': () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Funcionalidade em desenvolvimento'),
-              duration: Duration(seconds: 2),
-            ),
-          );
+        'onTap': () async {
+          Routefly.push(routePaths.timetable);
         },
       },
       {
@@ -396,41 +382,7 @@ class _HomePageState extends State<HomePage> {
         'icon': Icons.person_outline,
         'color': Colors.purple.shade600,
         'onTap': () async {
-          try {
-            final BlockOfProfileRepository blockRepo =
-                injector.get<BlockOfProfileRepository>();
-            final result = await blockRepo.getAllBlocks();
-            if (context.mounted) {
-              result.fold((blocks) {
-                if (blocks.isEmpty) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text(
-                          'Perfil curricular não encontrado. Extraia o perfil no SIGA.'),
-                    ),
-                  );
-                  Routefly.push(routePaths.siga);
-                } else {
-                  Routefly.push(routePaths.curricularProfile);
-                }
-              }, (failure) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                        'Erro ao carregar perfil curricular. Abrindo SIGA...'),
-                    backgroundColor: Colors.red,
-                  ),
-                );
-                Routefly.push(routePaths.siga);
-              });
-            }
-          } catch (e) {
-            if (context.mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Erro ao acessar perfil: $e')),
-              );
-            }
-          }
+          Routefly.push(routePaths.curricularProfile);
         },
       },
       {

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:my_ufape/config/dependencies.dart';
 import 'package:my_ufape/data/repositories/block_of_profile/block_of_profile_repository.dart';
+import 'package:my_ufape/data/services/siga/siga_background_service.dart';
 import 'package:my_ufape/domain/entities/block_of_profile.dart';
 import 'package:my_ufape/domain/entities/subject.dart';
 import 'package:my_ufape/ui/curricular_profile/widgets/subject_details_modal.dart';
@@ -14,10 +15,12 @@ class CurricularProfilePage extends StatefulWidget {
 
 class _CurricularProfilePageState extends State<CurricularProfilePage> {
   final BlockOfProfileRepository _blockRepository = injector.get();
+  final SigaBackgroundService _sigaService = injector.get();
   final TextEditingController _searchController = TextEditingController();
 
   List<BlockOfProfile> _blocks = [];
   bool _isLoading = true;
+  bool _isSyncing = false;
   String? _errorMessage;
   String _searchQuery = '';
   String _filterByType = 'todos'; // todos | obrigatorio | optativo | eletivo
@@ -48,11 +51,16 @@ class _CurricularProfilePageState extends State<CurricularProfilePage> {
           await block.subjects.load();
         }
 
-        if (mounted) {
-          setState(() {
-            _blocks = blocks;
-            _isLoading = false;
-          });
+        if (blocks.isEmpty) {
+          // Se não houver blocos, sincronizar automaticamente
+          await _syncFromSiga();
+        } else {
+          if (mounted) {
+            setState(() {
+              _blocks = blocks;
+              _isLoading = false;
+            });
+          }
         }
       },
       (error) {
@@ -64,6 +72,36 @@ class _CurricularProfilePageState extends State<CurricularProfilePage> {
         }
       },
     );
+  }
+
+  Future<void> _syncFromSiga() async {
+    if (_isSyncing) return;
+
+    setState(() {
+      _isSyncing = true;
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final blocks = await _sigaService.navigateAndExtractProfile();
+
+      if (mounted) {
+        setState(() {
+          _blocks = blocks;
+          _isSyncing = false;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Erro ao sincronizar perfil: ${e.toString()}';
+          _isSyncing = false;
+          _isLoading = false;
+        });
+      }
+    }
   }
 
   List<Subject> get _allSubjects {
@@ -151,7 +189,21 @@ class _CurricularProfilePageState extends State<CurricularProfilePage> {
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(title: const Text('Perfil Curricular')),
-        body: const Center(child: CircularProgressIndicator()),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              Text(
+                _isSyncing
+                    ? 'Sincronizando perfil do SIGA...'
+                    : 'Carregando perfil...',
+                style: const TextStyle(fontSize: 16),
+              ),
+            ],
+          ),
+        ),
       );
     }
 
@@ -159,20 +211,44 @@ class _CurricularProfilePageState extends State<CurricularProfilePage> {
       return Scaffold(
         appBar: AppBar(title: const Text('Perfil Curricular')),
         body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error_outline,
-                  size: 64, color: Theme.of(context).colorScheme.error),
-              const SizedBox(height: 16),
-              Text(_errorMessage!, textAlign: TextAlign.center),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: _loadBlocks,
-                icon: const Icon(Icons.refresh),
-                label: const Text('Tentar Novamente'),
-              ),
-            ],
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline,
+                    size: 64, color: Theme.of(context).colorScheme.error),
+                const SizedBox(height: 16),
+                Text(_errorMessage!,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Theme.of(context).colorScheme.error,
+                    )),
+                const SizedBox(height: 24),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  alignment: WrapAlignment.center,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: _loadBlocks,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Tentar Novamente'),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: _syncFromSiga,
+                      icon: const Icon(Icons.sync),
+                      label: const Text('Sincronizar do SIGA'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            Theme.of(context).colorScheme.secondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -193,6 +269,18 @@ class _CurricularProfilePageState extends State<CurricularProfilePage> {
         title: const Text('Perfil Curricular'),
         toolbarHeight: 80,
         actions: [
+          // Botão de sincronização
+          IconButton(
+            onPressed: _isSyncing ? null : _syncFromSiga,
+            icon: _isSyncing
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.sync),
+            tooltip: 'Sincronizar com SIGA',
+          ),
           PopupMenuButton<String>(
             icon: const Icon(Icons.filter_list),
             tooltip: 'Filtrar por Tipo',
@@ -401,18 +489,44 @@ class _CurricularProfilePageState extends State<CurricularProfilePage> {
   }
 
   Widget _buildEmptyState() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.school_outlined, size: 64, color: Colors.grey.shade400),
-          const SizedBox(height: 16),
-          const Text('Nenhum perfil curricular encontrado',
-              style: TextStyle(fontSize: 16)),
-          const SizedBox(height: 8),
-          const Text('Extraia o perfil curricular do SIGA primeiro',
-              style: TextStyle(fontSize: 14)),
-        ],
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 24),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.school_outlined,
+                size: 64,
+                color: isDark ? Colors.grey.shade600 : Colors.grey.shade400),
+            const SizedBox(height: 16),
+            Text('Nenhum perfil curricular cadastrado',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).textTheme.bodyLarge?.color,
+                )),
+            const SizedBox(height: 8),
+            Text('Sincronize com o SIGA para carregar seu perfil curricular',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: isDark ? Colors.grey.shade500 : Colors.grey.shade600,
+                )),
+            const SizedBox(height: 24),
+            ElevatedButton.icon(
+              onPressed: _syncFromSiga,
+              icon: const Icon(Icons.sync),
+              label: const Text('Sincronizar do SIGA'),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 16,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

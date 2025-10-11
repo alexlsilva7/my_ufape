@@ -8,14 +8,14 @@ import 'app_widget.route.dart';
 part 'app_widget.g.dart';
 
 @Main('lib/ui')
-class SigaUfapeApp extends StatefulWidget {
-  const SigaUfapeApp({super.key});
+class MyUfapeApp extends StatefulWidget {
+  const MyUfapeApp({super.key});
 
   @override
-  State<SigaUfapeApp> createState() => _SigaUfapeAppState();
+  State<MyUfapeApp> createState() => _MyUfapeAppState();
 }
 
-class _SigaUfapeAppState extends State<SigaUfapeApp> {
+class _MyUfapeAppState extends State<MyUfapeApp> {
   final settingsRepository = injector.get<SettingsRepository>();
 
   @override
@@ -28,7 +28,7 @@ class _SigaUfapeAppState extends State<SigaUfapeApp> {
               routes: routes,
               initialPath: routePaths.splash,
             ),
-            title: 'Login SIGA UFAPE',
+            title: 'My UFAPE',
             theme: settingsRepository.isDarkMode
                 ? AppConfigUI.darkTheme
                 : AppConfigUI.lightTheme,

@@ -22,6 +22,7 @@ class _SigaPageWidgetState extends State<SigaPageWidget> {
   String _message = '';
   bool _isProcessingGrades = false;
   bool _isProcessingProfile = false;
+  bool _isProcessingTimetable = false;
 
   // Listener chamado quando o serviço notifica mudança de login
   void _onLoginChange() {
@@ -181,6 +182,34 @@ class _SigaPageWidgetState extends State<SigaPageWidget> {
     }
   }
 
+  Future<void> _navigateAndExtractTimetable() async {
+    if (_isProcessingTimetable) return;
+
+    setState(() => _isProcessingTimetable = true);
+    _showLoadingDialog('Extraindo grade de horário...');
+
+    try {
+      final subjects = await _sigaService.navigateAndExtractTimetable();
+      _hideLoadingDialog();
+      _sigaService.goToHome();
+
+      if (subjects.isEmpty) {
+        await _showAlert('Aviso', 'Nenhuma disciplina encontrada na grade.');
+      } else {
+        await Routefly.push(routePaths.timetable,
+            arguments: {'subjects': subjects});
+      }
+    } catch (e) {
+      _hideLoadingDialog();
+      await _showAlert('Erro', 'Erro ao extrair grade: ${e.toString()}',
+          isError: true);
+    } finally {
+      if (mounted) {
+        setState(() => _isProcessingTimetable = false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -204,10 +233,12 @@ class _SigaPageWidgetState extends State<SigaPageWidget> {
             alignment: WrapAlignment.center,
             children: [
               ElevatedButton.icon(
-                onPressed:
-                    _isProcessingGrades || _isProcessingProfile || !_isLoggedIn
-                        ? null
-                        : _navigateAndExtractGrades,
+                onPressed: _isProcessingGrades ||
+                        _isProcessingProfile ||
+                        _isProcessingTimetable ||
+                        !_isLoggedIn
+                    ? null
+                    : _navigateAndExtractGrades,
                 icon: _isProcessingGrades
                     ? const SizedBox(
                         width: 18,
@@ -222,10 +253,12 @@ class _SigaPageWidgetState extends State<SigaPageWidget> {
                 ),
               ),
               ElevatedButton.icon(
-                onPressed:
-                    _isProcessingGrades || _isProcessingProfile || !_isLoggedIn
-                        ? null
-                        : _navigateAndExtractProfile,
+                onPressed: _isProcessingGrades ||
+                        _isProcessingProfile ||
+                        _isProcessingTimetable ||
+                        !_isLoggedIn
+                    ? null
+                    : _navigateAndExtractProfile,
                 icon: _isProcessingProfile
                     ? const SizedBox(
                         width: 18,
@@ -240,6 +273,29 @@ class _SigaPageWidgetState extends State<SigaPageWidget> {
                     )),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Theme.of(context).colorScheme.secondary,
+                ),
+              ),
+              ElevatedButton.icon(
+                onPressed: _isProcessingGrades ||
+                        _isProcessingProfile ||
+                        _isProcessingTimetable || // ADICIONAR CONDIÇÃO
+                        !_isLoggedIn
+                    ? null
+                    : _navigateAndExtractTimetable,
+                icon: _isProcessingTimetable
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                            strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Icon(Icons.grid_on, color: Colors.white),
+                label: const Text('Extrair Grade',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                    )),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.teal, // Cor diferente
                 ),
               ),
             ],

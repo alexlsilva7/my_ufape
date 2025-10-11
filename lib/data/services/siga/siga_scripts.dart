@@ -117,7 +117,7 @@ return JSON.stringify(disciplinas);
       r"""new Promise((resolve,reject)=>{const maxTries=1000;let tries=0;const interval=setInterval(()=>{tries++;const anchors=Array.from(document.querySelectorAll('a'));const el=anchors.find(a=>(a.textContent||'').trim()==='Detalhamento de Discente');if(el){clearInterval(interval);try{el.click();resolve('SUCESSO');}catch(e){try{const evt=new MouseEvent('click',{bubbles:true,cancelable:true,view:window});el.dispatchEvent(evt);resolve('SUCESSO');}catch(err){reject('ERRO:'+err);}}return;}if(tries>=maxTries){clearInterval(interval);reject('ERRO: Menu não encontrado');}},20);});""";
 
   static String scriptInfo() =>
-      r"""new Promise((resolve,reject)=>{const maxTries=40;let tries=0;const interval=setInterval(()=>{const iframe=document.getElementById('Conteudo');if(iframe&&iframe.contentDocument){const infoLink=iframe.contentDocument.getElementById('form:repeatTransacoes:2:outputLinkTransacao');if(infoLink){clearInterval(interval);infoLink.click();resolve('SUCESSO');return;}}tries++;if(tries>=maxTries){clearInterval(interval);reject('ERRO: Link Informacoes não encontrado');}},250);});""";
+      r"""new Promise((resolve,reject)=>{const maxTries=1000;let tries=0;const interval=setInterval(()=>{const iframe=document.getElementById('Conteudo');if(iframe&&iframe.contentDocument){const infoLink=iframe.contentDocument.getElementById('form:repeatTransacoes:2:outputLinkTransacao');if(infoLink){clearInterval(interval);infoLink.click();resolve('SUCESSO');return;}}tries++;if(tries>=maxTries){clearInterval(interval);reject('ERRO: Link Informacoes não encontrado');}},50);});""";
 
   static String scriptPerfil() =>
       r"""new Promise((resolve,reject)=>{const iframe=document.getElementById('Conteudo');if(iframe&&iframe.contentDocument){const sanfonaLinks=iframe.contentDocument.querySelectorAll('ul.sanfona a');for(let i=0;i<sanfonaLinks.length;i++){if(sanfonaLinks[i].innerText.trim()==='Perfil Curricular'){sanfonaLinks[i].click();resolve('SUCESSO');return;}}}reject('ERRO: Perfil Curricular nao encontrado');});""";
@@ -127,4 +127,76 @@ return JSON.stringify(disciplinas);
 
   static String waitForProfilePageReadyScript() =>
       r"""(function(){const mainIframe=document.getElementById('Conteudo');if(!mainIframe||!mainIframe.contentDocument){return 'error_main_iframe';}const profileForm=mainIframe.contentDocument.getElementById('formDetalharPerfilCurricular');return profileForm!=null;})();""";
+
+  static String scriptGradeHorario() =>
+      r"""new Promise((resolve,reject)=>{const iframe=document.getElementById('Conteudo');if(iframe&&iframe.contentDocument){const sanfonaLinks=iframe.contentDocument.querySelectorAll('ul.sanfona a');for(let i=0;i<sanfonaLinks.length;i++){if(sanfonaLinks[i].innerText.trim()==='Grade de Horário'){sanfonaLinks[i].click();resolve('SUCESSO');return;}}}reject('ERRO: Link Grade de Horário não encontrado');});""";
+
+  static String waitForTimetablePageReadyScript() =>
+      r"""(function(){const mainIframe=document.getElementById('Conteudo');if(!mainIframe||!mainIframe.contentDocument){return 'error_main_iframe';}const title=mainIframe.contentDocument.querySelector('font.subtitle');return title!=null && title.innerText.includes('Disciplinas Solicitadas');})();""";
+
+  static String extractTimetableScript() => r"""
+(function() {
+    try {
+        const iframe = document.getElementById('Conteudo');
+        if (!iframe || !iframe.contentDocument) {
+            return JSON.stringify({ "error": "iFrame 'Conteudo' não encontrado." });
+        }
+        const doc = iframe.contentDocument;
+
+        // 1. Extrair detalhes da lista de disciplinas
+        const subjectsMap = new Map();
+        const subjectRows = doc.querySelectorAll('table[width="600"] tr');
+        for (const row of subjectRows) {
+            const cells = row.querySelectorAll('td font.editPesquisa');
+            if (cells.length >= 5) {
+                const code = cells[0].innerText.trim();
+                subjectsMap.set(code, {
+                    code: code,
+                    name: cells[1].innerText.trim(),
+                    className: cells[2].innerText.trim(),
+                    room: cells[4].innerText.trim(),
+                    status: cells[5].innerText.trim(),
+                    timeSlots: []
+                });
+            }
+        }
+        
+        // 2. Extrair horários da tabela de grade
+        const timetableRows = doc.querySelectorAll('table[width="570"] tr');
+        const days = ['SEG', 'TER', 'QUA', 'QUI', 'SEX', 'SAB'];
+
+        for (const row of timetableRows) {
+            const cells = row.querySelectorAll('td.textoTabela');
+            if (cells.length === 6) { // 6 dias da semana
+                for (let i = 0; i < cells.length; i++) {
+                    const cell = cells[i];
+                    const cellHtml = cell.innerHTML;
+                    if (cellHtml.includes('<br>')) {
+                        const parts = cellHtml.split('<br>');
+                        const codeMatch = parts[0].match(/([A-Z0-9]+)\s*-\s*([A-Z0-9]+)/);
+                        const timeMatch = parts[1].match(/(\d{2}:\d{2})\s*às\s*(\d{2}:\d{2})/);
+
+                        if (codeMatch && timeMatch) {
+                            const subjectCode = codeMatch[1];
+                            const subject = subjectsMap.get(subjectCode);
+                            if (subject) {
+                                subject.timeSlots.push({
+                                    day: days[i],
+                                    startTime: timeMatch[1],
+                                    endTime: timeMatch[2]
+                                });
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        return JSON.stringify(Array.from(subjectsMap.values()));
+
+    } catch (e) {
+        return JSON.stringify({ "error": e.toString() });
+    }
+})();
+""";
 }

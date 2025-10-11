@@ -13,6 +13,9 @@ import 'package:my_ufape/data/services/block_of_profile/block_of_profile_service
 import 'package:my_ufape/data/repositories/block_of_profile/block_of_profile_repository.dart';
 import 'package:my_ufape/data/repositories/block_of_profile/block_of_profile_repository_impl.dart';
 import 'package:my_ufape/data/services/subject_note/subject_note_service.dart';
+import 'package:my_ufape/data/services/scheduled_subject/scheduled_subject_service.dart';
+import 'package:my_ufape/data/repositories/scheduled_subject/scheduled_subject_repository.dart';
+import 'package:my_ufape/data/repositories/scheduled_subject/scheduled_subject_repository_impl.dart';
 import 'package:my_ufape/ui/home/home_view_model.dart';
 import 'package:my_ufape/ui/splash/splash_view_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -66,6 +69,18 @@ Future<void> setupDependencies() async {
   injector.addLazySingleton<BlockOfProfileRepository>(
     () => BlockOfProfileRepositoryImpl(
       injector.get<BlockOfProfileService>(),
+    ),
+  );
+
+  injector.addLazySingleton<ScheduledSubjectService>(
+    () => ScheduledSubjectService(
+      injector.get<Database>(),
+    ),
+  );
+
+  injector.addLazySingleton<ScheduledSubjectRepository>(
+    () => ScheduledSubjectRepositoryImpl(
+      injector.get<ScheduledSubjectService>(),
     ),
   );
 

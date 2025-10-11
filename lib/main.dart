@@ -12,5 +12,5 @@ Future<void> main() async {
     DeviceOrientation.portraitDown,
   ]);
   await setupDependencies();
-  runApp(const SigaUfapeApp());
+  runApp(const MyUfapeApp());
 }

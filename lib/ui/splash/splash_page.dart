@@ -25,7 +25,7 @@ class _SplashPageState extends State<SplashPage> {
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          spacing: 16,
+          spacing: 24,
           children: [
             ColorFiltered(
               colorFilter: ColorFilter.mode(
@@ -37,7 +37,6 @@ class _SplashPageState extends State<SplashPage> {
                 height: 150,
               ),
             ),
-            const Text('My UFAPE'),
             const CircularProgressIndicator(),
           ],
         ),

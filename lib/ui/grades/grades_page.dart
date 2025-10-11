@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:my_ufape/app_widget.dart';
 import 'package:my_ufape/config/dependencies.dart';
 import 'package:my_ufape/data/repositories/subject_note/subject_note_repository.dart';
+import 'package:my_ufape/data/services/siga/siga_background_service.dart';
 import 'package:my_ufape/domain/entities/subject_note.dart';
 import 'package:routefly/routefly.dart';
 
@@ -14,13 +15,14 @@ class GradesPage extends StatefulWidget {
 
 class _GradesPageState extends State<GradesPage> {
   final SubjectNoteRepository subjectNoteRepository = injector.get();
+  final SigaBackgroundService _sigaService = injector.get();
   List<SubjectNote> allDisciplinas = [];
   bool _isLoading = true;
+  bool _isSyncing = false;
   String? _errorMessage;
 
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
-  final bool _showOnlyCurrentSemester = false;
   String _sortBy = 'recente'; // recente | antigo | disciplina
   final bool _groupByStatus = false;
   final Set<String> _expandedPeriods = {};
@@ -41,13 +43,16 @@ class _GradesPageState extends State<GradesPage> {
     final result = await subjectNoteRepository.getAllSubjectNotes();
 
     result.fold(
-      (disciplinas) {
-        setState(() {
-          allDisciplinas = disciplinas;
-          _isLoading = false;
-          // Identificar e abrir automaticamente o período atual
-          //_autoExpandCurrentPeriod();
-        });
+      (disciplinas) async {
+        if (disciplinas.isEmpty) {
+          // Se não houver notas, sincronizar automaticamente
+          await _syncFromSiga();
+        } else {
+          setState(() {
+            allDisciplinas = disciplinas;
+            _isLoading = false;
+          });
+        }
       },
       (error) {
         setState(() {
@@ -58,18 +63,32 @@ class _GradesPageState extends State<GradesPage> {
     );
   }
 
-  // Identifica o período com disciplinas "Cursando" e o expande automaticamente
-  void _autoExpandCurrentPeriod() {
-    final periodos = _groupedBySemester;
-    for (final entry in periodos.entries) {
-      final hasCursando = entry.value.any((d) {
-        final situacao = d.situacao.toUpperCase();
-        return !situacao.contains('APROVADO') &&
-            !situacao.contains('REPROVADO');
-      });
-      if (hasCursando) {
-        _expandedPeriods.add(entry.key);
-        break; // Apenas o primeiro período com disciplinas cursando
+  Future<void> _syncFromSiga() async {
+    if (_isSyncing) return;
+
+    setState(() {
+      _isSyncing = true;
+      _isLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final grades = await _sigaService.navigateAndExtractGrades();
+
+      if (mounted) {
+        setState(() {
+          allDisciplinas = grades;
+          _isSyncing = false;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _errorMessage = 'Erro ao sincronizar notas: ${e.toString()}';
+          _isSyncing = false;
+          _isLoading = false;
+        });
       }
     }
   }
@@ -153,10 +172,6 @@ class _GradesPageState extends State<GradesPage> {
       semesters.sort((a, b) => a.compareTo(b));
     }
 
-    if (_showOnlyCurrentSemester && semesters.isNotEmpty) {
-      return [semesters.first];
-    }
-
     return semesters;
   }
 
@@ -216,8 +231,20 @@ class _GradesPageState extends State<GradesPage> {
         appBar: AppBar(
           title: const Text('Minhas Notas'),
         ),
-        body: const Center(
-          child: CircularProgressIndicator(),
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const CircularProgressIndicator(),
+              const SizedBox(height: 16),
+              Text(
+                _isSyncing
+                    ? 'Sincronizando notas do SIGA...'
+                    : 'Carregando notas...',
+                style: const TextStyle(fontSize: 16),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -229,27 +256,46 @@ class _GradesPageState extends State<GradesPage> {
           title: const Text('Minhas Notas'),
         ),
         body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.error_outline,
-                  size: 64, color: Theme.of(context).colorScheme.error),
-              const SizedBox(height: 16),
-              Text(
-                _errorMessage!,
-                style: TextStyle(
-                  fontSize: 16,
-                  color: Theme.of(context).colorScheme.error,
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline,
+                    size: 64, color: Theme.of(context).colorScheme.error),
+                const SizedBox(height: 16),
+                Text(
+                  _errorMessage!,
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                  textAlign: TextAlign.center,
                 ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 16),
-              ElevatedButton.icon(
-                onPressed: _loadDisciplinas,
-                icon: const Icon(Icons.refresh),
-                label: const Text('Tentar Novamente'),
-              ),
-            ],
+                const SizedBox(height: 24),
+                Wrap(
+                  spacing: 12,
+                  runSpacing: 12,
+                  alignment: WrapAlignment.center,
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: _loadDisciplinas,
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Tentar Novamente'),
+                    ),
+                    ElevatedButton.icon(
+                      onPressed: _syncFromSiga,
+                      icon: const Icon(Icons.sync),
+                      label: const Text('Sincronizar do SIGA'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor:
+                            Theme.of(context).colorScheme.secondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
           ),
         ),
       );
@@ -284,6 +330,17 @@ class _GradesPageState extends State<GradesPage> {
         title: const Text('Minhas Notas'),
         toolbarHeight: 80,
         actions: [
+          IconButton(
+            onPressed: _isSyncing ? null : _syncFromSiga,
+            icon: _isSyncing
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.sync),
+            tooltip: 'Sincronizar com SIGA',
+          ),
           // Botão de Gráficos
           IconButton(
             onPressed: () {
@@ -301,106 +358,6 @@ class _GradesPageState extends State<GradesPage> {
             },
             icon: const Icon(Icons.bar_chart),
             tooltip: 'Ver Gráficos de Desempenho',
-          ),
-          // Botão de Filtro por Situação
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.filter_list),
-            tooltip: 'Filtrar por Situação',
-            onSelected: (value) {
-              setState(() {
-                _filterBySituacao = value;
-              });
-            },
-            itemBuilder: (context) => [
-              PopupMenuItem(
-                value: 'todos',
-                child: Row(
-                  children: [
-                    Icon(
-                      _filterBySituacao == 'todos'
-                          ? Icons.radio_button_checked
-                          : Icons.radio_button_unchecked,
-                      color: _filterBySituacao == 'todos'
-                          ? Theme.of(context).primaryColor
-                          : Colors.grey,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    const Text('Todas'),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'aprovado',
-                child: Row(
-                  children: [
-                    Icon(
-                      _filterBySituacao == 'aprovado'
-                          ? Icons.radio_button_checked
-                          : Icons.radio_button_unchecked,
-                      color: _filterBySituacao == 'aprovado'
-                          ? Colors.green.shade700
-                          : Colors.grey,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text('Aprovadas',
-                        style: TextStyle(color: Colors.green.shade700)),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'cursando',
-                child: Row(
-                  children: [
-                    Icon(
-                      _filterBySituacao == 'cursando'
-                          ? Icons.radio_button_checked
-                          : Icons.radio_button_unchecked,
-                      color: _filterBySituacao == 'cursando'
-                          ? Colors.orange.shade700
-                          : Colors.grey,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text('Cursando',
-                        style: TextStyle(color: Colors.orange.shade700)),
-                  ],
-                ),
-              ),
-              PopupMenuItem(
-                value: 'reprovado',
-                child: Row(
-                  children: [
-                    Icon(
-                      _filterBySituacao == 'reprovado'
-                          ? Icons.radio_button_checked
-                          : Icons.radio_button_unchecked,
-                      color: _filterBySituacao == 'reprovado'
-                          ? Colors.red.shade700
-                          : Colors.grey,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text('Reprovadas',
-                        style: TextStyle(color: Colors.red.shade700)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          IconButton(
-            onPressed: () {
-              setState(() {
-                _sortBy = _sortBy == 'recente' ? 'antigo' : 'recente';
-              });
-            },
-            icon: Icon(
-              _sortBy == 'recente' ? Icons.arrow_downward : Icons.arrow_upward,
-            ),
-            tooltip: _sortBy == 'recente'
-                ? 'Ordenado: Mais recente primeiro'
-                : 'Ordenado: Mais antigo primeiro',
           ),
         ],
         bottom: PreferredSize(
@@ -446,30 +403,143 @@ class _GradesPageState extends State<GradesPage> {
                   ],
                 ),
                 const SizedBox(height: 12),
-                // Barra de pesquisa (compacta)
-                TextField(
-                  controller: _searchController,
-                  onChanged: (value) => setState(() => _searchQuery = value),
-                  decoration: InputDecoration(
-                    isDense: true,
-                    hintText: 'Pesquisar disciplinas...',
-                    prefixIcon: const Icon(Icons.search),
-                    suffixIcon: _searchQuery.isNotEmpty
-                        ? IconButton(
-                            icon: const Icon(Icons.clear),
-                            onPressed: () {
-                              _searchController.clear();
-                              setState(() => _searchQuery = '');
-                            },
-                          )
-                        : null,
-                    filled: true,
-                    contentPadding: const EdgeInsets.symmetric(vertical: 8),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      borderSide: BorderSide.none,
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    // Barra de pesquisa (compacta)
+                    Expanded(
+                      child: TextField(
+                        controller: _searchController,
+                        onChanged: (value) =>
+                            setState(() => _searchQuery = value),
+                        decoration: InputDecoration(
+                          isDense: true,
+                          hintText: 'Pesquisar disciplinas...',
+                          prefixIcon: const Icon(Icons.search),
+                          suffixIcon: _searchQuery.isNotEmpty
+                              ? IconButton(
+                                  icon: const Icon(Icons.clear),
+                                  onPressed: () {
+                                    _searchController.clear();
+                                    setState(() => _searchQuery = '');
+                                  },
+                                )
+                              : null,
+                          filled: true,
+                          contentPadding:
+                              const EdgeInsets.symmetric(vertical: 8),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(10),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
+                    // Botão de Filtro por Situação
+                    PopupMenuButton<String>(
+                      icon: const Icon(Icons.filter_list),
+                      tooltip: 'Filtrar por Situação',
+                      onSelected: (value) {
+                        setState(() {
+                          _filterBySituacao = value;
+                        });
+                      },
+                      itemBuilder: (context) => [
+                        PopupMenuItem(
+                          value: 'todos',
+                          child: Row(
+                            children: [
+                              Icon(
+                                _filterBySituacao == 'todos'
+                                    ? Icons.radio_button_checked
+                                    : Icons.radio_button_unchecked,
+                                color: _filterBySituacao == 'todos'
+                                    ? Theme.of(context).primaryColor
+                                    : Colors.grey,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              const Text('Todas'),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: 'aprovado',
+                          child: Row(
+                            children: [
+                              Icon(
+                                _filterBySituacao == 'aprovado'
+                                    ? Icons.radio_button_checked
+                                    : Icons.radio_button_unchecked,
+                                color: _filterBySituacao == 'aprovado'
+                                    ? Colors.green.shade700
+                                    : Colors.grey,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Text('Aprovadas',
+                                  style:
+                                      TextStyle(color: Colors.green.shade700)),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: 'cursando',
+                          child: Row(
+                            children: [
+                              Icon(
+                                _filterBySituacao == 'cursando'
+                                    ? Icons.radio_button_checked
+                                    : Icons.radio_button_unchecked,
+                                color: _filterBySituacao == 'cursando'
+                                    ? Colors.orange.shade700
+                                    : Colors.grey,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Text('Cursando',
+                                  style:
+                                      TextStyle(color: Colors.orange.shade700)),
+                            ],
+                          ),
+                        ),
+                        PopupMenuItem(
+                          value: 'reprovado',
+                          child: Row(
+                            children: [
+                              Icon(
+                                _filterBySituacao == 'reprovado'
+                                    ? Icons.radio_button_checked
+                                    : Icons.radio_button_unchecked,
+                                color: _filterBySituacao == 'reprovado'
+                                    ? Colors.red.shade700
+                                    : Colors.grey,
+                                size: 20,
+                              ),
+                              const SizedBox(width: 8),
+                              Text('Reprovadas',
+                                  style: TextStyle(color: Colors.red.shade700)),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        setState(() {
+                          _sortBy = _sortBy == 'recente' ? 'antigo' : 'recente';
+                        });
+                      },
+                      icon: Icon(
+                        _sortBy == 'recente'
+                            ? Icons.arrow_downward
+                            : Icons.arrow_upward,
+                      ),
+                      tooltip: _sortBy == 'recente'
+                          ? 'Ordenado: Mais recente primeiro'
+                          : 'Ordenado: Mais antigo primeiro',
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -564,7 +634,7 @@ class _GradesPageState extends State<GradesPage> {
                         duration: const Duration(milliseconds: 200),
                         child: ListView.separated(
                           key: ValueKey(
-                              '${_searchQuery}_${_showOnlyCurrentSemester}_${_sortBy}_${_groupByStatus}_$_filterBySituacao'),
+                              '${_searchQuery}_${_sortBy}_${_groupByStatus}_$_filterBySituacao'),
                           padding: const EdgeInsets.symmetric(vertical: 8),
                           itemCount: sortedSemesters.length,
                           separatorBuilder: (_, __) =>
@@ -684,6 +754,8 @@ class _GradesPageState extends State<GradesPage> {
 
   Widget _buildEmptyState() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final hasFilter = _filterBySituacao != 'todos' || _searchQuery.isNotEmpty;
+
     return Center(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
@@ -691,13 +763,15 @@ class _GradesPageState extends State<GradesPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.search_off,
+              hasFilter ? Icons.search_off : Icons.school_outlined,
               size: 64,
               color: isDark ? Colors.grey.shade600 : Colors.grey.shade400,
             ),
             const SizedBox(height: 12),
             Text(
-              'Nenhuma disciplina encontrada',
+              hasFilter
+                  ? 'Nenhuma disciplina encontrada'
+                  : 'Nenhuma nota cadastrada',
               style: TextStyle(
                 fontSize: 18,
                 color: Theme.of(context).textTheme.bodyLarge?.color,
@@ -706,13 +780,29 @@ class _GradesPageState extends State<GradesPage> {
             ),
             const SizedBox(height: 6),
             Text(
-              'Tente ajustar os filtros ou a pesquisa.',
+              hasFilter
+                  ? 'Tente ajustar os filtros ou a pesquisa.'
+                  : 'Sincronize com o SIGA para carregar suas notas.',
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 14,
                 color: isDark ? Colors.grey.shade500 : Colors.grey.shade600,
               ),
             ),
+            if (!hasFilter) ...[
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: _syncFromSiga,
+                icon: const Icon(Icons.sync),
+                label: const Text('Sincronizar do SIGA'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 16,
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),

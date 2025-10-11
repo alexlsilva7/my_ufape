@@ -43,6 +43,11 @@ List<RouteEntity> get routes => [
         uri: Uri.parse('/splash'),
         routeBuilder: b7Builder,
       ),
+      RouteEntity(
+        key: '/timetable',
+        uri: Uri.parse('/timetable'),
+        routeBuilder: b8Builder,
+      ),
     ];
 
 const routePaths = (
@@ -55,4 +60,5 @@ const routePaths = (
   settings: '/settings',
   siga: '/siga',
   splash: '/splash',
+  timetable: '/timetable',
 );

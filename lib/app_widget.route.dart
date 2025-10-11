@@ -11,6 +11,7 @@ import 'ui/login/login_page.dart' as a4;
 import 'ui/settings/settings_page.dart' as a5;
 import 'ui/siga/siga_page.dart' as a6;
 import 'ui/splash/splash_page.dart' as a7;
+import 'ui/timetable/timetable_page.dart' as a8;
 
 Route b0Builder(BuildContext ctx, RouteSettings settings) =>
     Routefly.defaultRouteBuilder(
@@ -59,4 +60,10 @@ Route b7Builder(BuildContext ctx, RouteSettings settings) =>
       ctx,
       settings,
       const a7.SplashPage(),
+    );
+Route b8Builder(BuildContext ctx, RouteSettings settings) =>
+    Routefly.defaultRouteBuilder(
+      ctx,
+      settings,
+      const a8.TimetablePage(),
     );

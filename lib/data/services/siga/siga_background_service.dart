@@ -2,12 +2,14 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 import 'package:flutter/foundation.dart';
+import 'package:my_ufape/domain/entities/time_table.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:my_ufape/config/dependencies.dart';
 import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
 import 'package:my_ufape/data/repositories/subject/subject_repository.dart';
 import 'package:my_ufape/data/repositories/subject_note/subject_note_repository.dart';
 import 'package:my_ufape/data/repositories/block_of_profile/block_of_profile_repository.dart';
+import 'package:my_ufape/data/repositories/scheduled_subject/scheduled_subject_repository.dart';
 import 'package:my_ufape/domain/entities/subject_note.dart';
 import 'package:my_ufape/domain/entities/block_of_profile.dart';
 import 'package:my_ufape/data/parsers/profile_parser.dart';
@@ -30,6 +32,7 @@ class SigaBackgroundService extends ChangeNotifier {
   final SubjectRepository _subjectRepository = injector.get();
   final SubjectNoteRepository _subjectNoteRepository = injector.get();
   final BlockOfProfileRepository _blockRepository = injector.get();
+  final ScheduledSubjectRepository _scheduledSubjectRepository = injector.get();
 
   WebViewController? _controller;
   WebViewController? get controller => _controller;
@@ -519,7 +522,7 @@ class SigaBackgroundService extends ChangeNotifier {
       // 9. Salva no banco de dados
       if (blocks.isNotEmpty) {
         for (final block in blocks) {
-          for (final subject in block.subjects) {
+          for (final subject in block.subjectList) {
             await _subjectRepository.upsertSubject(subject);
           }
           await _blockRepository.upsertBlock(block);
@@ -529,6 +532,100 @@ class SigaBackgroundService extends ChangeNotifier {
       return blocks;
     } catch (e) {
       throw Exception('Erro ao navegar e extrair perfil: $e');
+    }
+  }
+
+  Future<void> _waitForTimetablePageReady(
+      {Duration timeout = const Duration(seconds: 20)}) async {
+    final completer = Completer<void>();
+    Timer? timer;
+    final stopwatch = Stopwatch()..start();
+
+    final script = SigaScripts.waitForTimetablePageReadyScript();
+
+    timer = Timer.periodic(const Duration(milliseconds: 250), (t) async {
+      if (stopwatch.elapsed > timeout) {
+        timer?.cancel();
+        if (!completer.isCompleted) {
+          completer.completeError(Exception(
+              'Tempo esgotado esperando a Grade de Horário carregar.'));
+        }
+        return;
+      }
+
+      try {
+        final result = await _controller!.runJavaScriptReturningResult(script);
+        if (result == true || result.toString() == 'true') {
+          timer?.cancel();
+          if (!completer.isCompleted) completer.complete();
+        }
+      } catch (e) {
+        // Ignora erros
+      }
+    });
+
+    return completer.future;
+  }
+
+  /// Navega e extrai a Grade de Horário.
+  Future<List<ScheduledSubject>> navigateAndExtractTimetable() async {
+    if (_controller == null) throw Exception('Controller não inicializado');
+
+    try {
+      // 1. Navega para o menu de detalhamento
+      await _controller!.runJavaScript(SigaScripts.scriptNav());
+
+      // 2. Clica em Informações do Discente
+      await _controller!.runJavaScriptReturningResult(SigaScripts.scriptInfo());
+
+      // 3. Aguarda a página de informações carregar
+      await _waitForStudentInfoPageReady();
+
+      // 4. Clica em Grade de Horário
+      await _controller!.runJavaScript(SigaScripts.scriptGradeHorario());
+
+      // 5. Aguarda a página da grade carregar
+      await _waitForTimetablePageReady();
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // 6. Extrai os dados
+      final jsonResult = await _controller!.runJavaScriptReturningResult(
+          SigaScripts.extractTimetableScript()) as String;
+
+      if (jsonResult.isEmpty) {
+        throw Exception('Script retornou vazio');
+      }
+
+      dynamic decodedData = jsonDecode(jsonResult);
+      if (decodedData is String) {
+        decodedData = jsonDecode(decodedData);
+      }
+
+      final List<dynamic> decodedList =
+          decodedData is List ? decodedData : jsonDecode(decodedData);
+
+      if (decodedList.isNotEmpty &&
+          decodedList.first is Map &&
+          decodedList.first.containsKey('error')) {
+        final errorMessage = decodedList.first['error'];
+        throw Exception('Erro no script: $errorMessage');
+      }
+
+      final subjects = decodedList
+          .map((d) => ScheduledSubject.fromJson(d as Map<String, dynamic>))
+          .toList();
+
+      if (subjects.isNotEmpty) {
+        await _scheduledSubjectRepository.deleteAllScheduledSubjects();
+      }
+      // 7. Salva no banco de dados
+      for (final subject in subjects) {
+        await _scheduledSubjectRepository.upsertScheduledSubject(subject);
+      }
+
+      return subjects;
+    } catch (e) {
+      throw Exception('Erro ao navegar e extrair grade de horário: $e');
     }
   }
 }
