@@ -23,6 +23,11 @@ jobs:
           flutter-version: 3.35.6
           cache: true
       
+      - name: 🏗️ Setup Shorebird
+        uses: shorebirdtech/setup-shorebird@v1
+        with:
+          cache: true
+      
       - name: 📦 Get Dependencies
         run: flutter pub get
       
