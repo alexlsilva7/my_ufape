@@ -84,7 +84,9 @@ class _CurricularProfilePageState extends State<CurricularProfilePage> {
     });
 
     try {
+      await _sigaService.initialize();
       final blocks = await _sigaService.navigateAndExtractProfile();
+      _sigaService.goToHome();
 
       if (mounted) {
         setState(() {
@@ -231,11 +233,6 @@ class _CurricularProfilePageState extends State<CurricularProfilePage> {
                   runSpacing: 12,
                   alignment: WrapAlignment.center,
                   children: [
-                    ElevatedButton.icon(
-                      onPressed: _loadBlocks,
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Tentar Novamente'),
-                    ),
                     ElevatedButton.icon(
                       onPressed: _syncFromSiga,
                       icon: const Icon(Icons.sync),

@@ -8,6 +8,7 @@ import 'package:my_ufape/config/dependencies.dart';
 import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
 import 'package:my_ufape/data/repositories/block_of_profile/block_of_profile_repository.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
+import 'package:my_ufape/domain/entities/time_table.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -21,8 +22,13 @@ class _HomePageState extends State<HomePage> {
 
   final SigaBackgroundService _sigaService =
       injector.get<SigaBackgroundService>();
+  final ScheduledSubjectRepository _scheduledRepo = injector.get();
   bool _isLoggedIn = false;
+  late final VoidCallback _login_listener;
   late final VoidCallback _loginListener;
+
+  List<Map<String, dynamic>> _nextClasses = [];
+  bool _isLoadingNext = true;
 
   @override
   void initState() {
@@ -37,6 +43,8 @@ class _HomePageState extends State<HomePage> {
     };
     _sigaService.loginNotifier.addListener(_loginListener);
     _sigaService.initialize();
+    // Carregar próximas aulas ao iniciar
+    _loadNextClasses();
   }
 
   @override
@@ -45,6 +53,157 @@ class _HomePageState extends State<HomePage> {
       _sigaService.loginNotifier.removeListener(_loginListener);
     } catch (_) {}
     super.dispose();
+  }
+
+  Future<void> _loadNextClasses() async {
+    setState(() {
+      _isLoadingNext = true;
+    });
+
+    try {
+      final result = await _scheduledRepo.getAllScheduledSubjects();
+      await Future.delayed(const Duration(milliseconds: 500));
+      result.fold(
+        (subjects) {
+          if (!mounted) return;
+
+          final now = DateTime.now();
+
+          // Map DayOfWeek to index (segunda=1 .. domingo=7)
+          int dayIndex(DayOfWeek d) {
+            switch (d) {
+              case DayOfWeek.segunda:
+                return 1;
+              case DayOfWeek.terca:
+                return 2;
+              case DayOfWeek.quarta:
+                return 3;
+              case DayOfWeek.quinta:
+                return 4;
+              case DayOfWeek.sexta:
+                return 5;
+              case DayOfWeek.sabado:
+                return 6;
+              case DayOfWeek.domingo:
+                return 7;
+              default:
+                return 0;
+            }
+          }
+
+          final todayIndex = now.weekday; // Monday=1 .. Sunday=7
+
+          int parseMinutes(String hhmm) {
+            try {
+              final parts = hhmm.split(':');
+              final h = int.tryParse(parts[0]) ?? 0;
+              final m = int.tryParse(parts.length > 1 ? parts[1] : '0') ?? 0;
+              return h * 60 + m;
+            } catch (_) {
+              return 0;
+            }
+          }
+
+          final nowMinutes = now.hour * 60 + now.minute;
+
+          // Agrupar slots por disciplina + dia e mesclar horários contíguos
+          final grouped = <String, List<TimeSlot>>{};
+          final subjectByKey = <String, ScheduledSubject>{};
+
+          for (final s in subjects) {
+            for (final slot in s.timeSlots) {
+              final key = '${s.code}_${slot.day}';
+              subjectByKey[key] = s;
+              grouped.putIfAbsent(key, () => []).add(slot);
+            }
+          }
+
+          final intervals = <Map<String, dynamic>>[];
+
+          for (final entry in grouped.entries) {
+            final key = entry.key;
+            final slots = entry.value;
+            if (slots.isEmpty) continue;
+
+            // ordenar por startTime
+            slots.sort((a, b) => a.startTime.compareTo(b.startTime));
+
+            String currentStart = slots.first.startTime;
+            String currentEnd = slots.first.endTime;
+            final day = slots.first.day;
+            final subject = subjectByKey[key]!;
+
+            for (var i = 1; i < slots.length; i++) {
+              final s = slots[i];
+              // se o próximo começa exatamente quando o atual termina, mesclar
+              if (s.startTime == currentEnd) {
+                currentEnd = s.endTime;
+              } else {
+                // finalizar intervalo atual
+                final mergedSlot = TimeSlot.create(
+                    day: day, startTime: currentStart, endTime: currentEnd);
+                intervals.add({'subject': subject, 'slot': mergedSlot});
+                // iniciar novo intervalo
+                currentStart = s.startTime;
+                currentEnd = s.endTime;
+              }
+            }
+
+            // adicionar último intervalo
+            final lastMerged = TimeSlot.create(
+                day: day, startTime: currentStart, endTime: currentEnd);
+            intervals.add({'subject': subject, 'slot': lastMerged});
+          }
+
+          // Para cada intervalo, calcular score de proximidade (em minutos)
+          final upcoming = <Map<String, dynamic>>[];
+          for (final it in intervals) {
+            final slot = it['slot'] as TimeSlot;
+            final sDayIndex = dayIndex(slot.day);
+            if (sDayIndex == 0) continue;
+
+            final offsetDays = (sDayIndex - todayIndex + 7) % 7;
+            final startMinutes = parseMinutes(slot.startTime);
+
+            final effectiveOffset =
+                (offsetDays == 0 && startMinutes <= nowMinutes)
+                    ? 7
+                    : offsetDays;
+
+            final score = effectiveOffset * 24 * 60 + startMinutes;
+            upcoming
+                .add({'subject': it['subject'], 'slot': slot, 'score': score});
+          }
+
+          // ordenar por score (menor = próximo)
+          upcoming
+              .sort((a, b) => (a['score'] as int).compareTo(b['score'] as int));
+
+          setState(() {
+            _nextClasses = upcoming
+                .take(3)
+                .map((e) => {'subject': e['subject'], 'slot': e['slot']})
+                .toList(growable: false);
+            _isLoadingNext = false;
+          });
+        },
+        (err) {
+          if (mounted) {
+            setState(() {
+              _nextClasses = [];
+              _isLoadingNext = false;
+            });
+          }
+        },
+      );
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _nextClasses = [];
+          _isLoadingNext = false;
+        });
+      }
+    }
   }
 
   @override
@@ -158,7 +317,23 @@ class _HomePageState extends State<HomePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 16),
-                  _buildSectionTitle('Próximas Aulas', Icons.schedule),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Expanded(
+                          child: _buildSectionTitle(
+                              'Próximas Aulas', Icons.schedule)),
+                      IconButton(
+                        icon: Icon(
+                          Icons.refresh,
+                          size: 20,
+                          color: Theme.of(context).primaryColor,
+                        ),
+                        onPressed: _loadNextClasses,
+                        tooltip: 'Atualizar próximas aulas',
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 10),
                   _buildNextClassesSection(isDark),
                 ],
@@ -187,33 +362,57 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildNextClassesSection(bool isDark) {
-    // Dados fictícios de próximas aulas
-    final classes = [
-      {
-        'subject': 'Algoritmos e Programação',
-        'time': '08:00 - 10:00',
-        'room': 'Lab 101',
-        'teacher': 'Prof. João Silva',
-        'color': Colors.blue.shade600,
-      },
-      {
-        'subject': 'Banco de Dados',
-        'time': '10:00 - 12:00',
-        'room': 'Sala 205',
-        'teacher': 'Prof. Maria Santos',
-        'color': Colors.purple.shade600,
-      },
-      {
-        'subject': 'Engenharia de Software',
-        'time': '14:00 - 16:00',
-        'room': 'Sala 301',
-        'teacher': 'Prof. Carlos Souza',
-        'color': Colors.green.shade600,
-      },
-    ];
+    if (_isLoadingNext) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 18.0),
+          child: Column(
+            children: const [
+              CircularProgressIndicator(),
+              SizedBox(height: 10),
+              Text('Carregando próximas aulas...'),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_nextClasses.isEmpty) {
+      return Column(
+        children: [
+          Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: isDark ? Colors.black : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: Theme.of(context).colorScheme.outline.withOpacity(0.08),
+                width: 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Icon(Icons.schedule, color: Theme.of(context).primaryColor),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Nenhuma próxima aula encontrada.',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    }
 
     return Column(
-      children: classes.map((classInfo) {
+      children: _nextClasses.map((item) {
+        final subject = item['subject'] as ScheduledSubject;
+        final slot = item['slot'] as TimeSlot;
+        final color = Colors.blue.shade600;
         return Container(
           margin: const EdgeInsets.only(bottom: 10),
           padding: const EdgeInsets.all(12),
@@ -221,12 +420,12 @@ class _HomePageState extends State<HomePage> {
             color: isDark ? Colors.black : Colors.white,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: (classInfo['color'] as Color).withOpacity(0.3),
-              width: 1.5,
+              color: color.withOpacity(0.25),
+              width: 1.2,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(isDark ? 0.3 : 0.05),
+                color: Colors.black.withOpacity(isDark ? 0.3 : 0.03),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -238,7 +437,7 @@ class _HomePageState extends State<HomePage> {
                 width: 4,
                 height: 55,
                 decoration: BoxDecoration(
-                  color: classInfo['color'] as Color,
+                  color: color,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -248,25 +447,19 @@ class _HomePageState extends State<HomePage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      classInfo['subject'] as String,
+                      subject.name,
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-                    const SizedBox(height: 3),
+                    const SizedBox(height: 6),
                     Row(
                       children: [
-                        Icon(
-                          Icons.access_time,
-                          size: 14,
-                          color: isDark
-                              ? Colors.grey.shade400
-                              : Colors.grey.shade600,
-                        ),
-                        const SizedBox(width: 4),
+                        const Icon(Icons.access_time, size: 14),
+                        const SizedBox(width: 6),
                         Text(
-                          classInfo['time'] as String,
+                          '${slot.startTime} - ${slot.endTime}',
                           style: TextStyle(
                             fontSize: 13,
                             color: isDark
@@ -275,16 +468,10 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        Icon(
-                          Icons.room,
-                          size: 14,
-                          color: isDark
-                              ? Colors.grey.shade400
-                              : Colors.grey.shade600,
-                        ),
-                        const SizedBox(width: 4),
+                        const Icon(Icons.room, size: 14),
+                        const SizedBox(width: 6),
                         Text(
-                          classInfo['room'] as String,
+                          subject.room,
                           style: TextStyle(
                             fontSize: 13,
                             color: isDark
@@ -294,19 +481,15 @@ class _HomePageState extends State<HomePage> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 6),
                     Row(
                       children: [
-                        Icon(
-                          Icons.person,
-                          size: 14,
-                          color: isDark
-                              ? Colors.grey.shade400
-                              : Colors.grey.shade600,
-                        ),
-                        const SizedBox(width: 4),
+                        const Icon(Icons.person, size: 14),
+                        const SizedBox(width: 6),
                         Text(
-                          classInfo['teacher'] as String,
+                          subject.className.isNotEmpty
+                              ? subject.className
+                              : subject.status,
                           style: TextStyle(
                             fontSize: 12,
                             color: isDark

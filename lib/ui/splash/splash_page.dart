@@ -25,7 +25,7 @@ class _SplashPageState extends State<SplashPage> {
       body: Center(
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          spacing: 24,
+          spacing: 48,
           children: [
             ColorFiltered(
               colorFilter: ColorFilter.mode(

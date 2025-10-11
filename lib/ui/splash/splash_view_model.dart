@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:my_ufape/app_widget.dart';
 import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
@@ -10,7 +12,6 @@ class SplashViewModel extends ChangeNotifier {
   SplashViewModel(this.settingsRepository);
 
   init() async {
-    await Future.delayed(const Duration(seconds: 1));
     Login? login;
 
     await settingsRepository.getUserCredentials().then((result) {
@@ -23,7 +24,8 @@ class SplashViewModel extends ChangeNotifier {
         },
       );
     });
-    print('Login: ${login?.username}, ${login?.password}');
+    log('Login: ${login?.username}, ${login?.password}');
+    await Future.delayed(const Duration(milliseconds: 1200));
     if (login != null) {
       Routefly.navigate(routePaths.home, arguments: {
         'username': login!.username,

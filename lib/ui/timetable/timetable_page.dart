@@ -76,7 +76,7 @@ class _TimetablePageState extends State<TimetablePage> {
 
     try {
       final subjects = await _sigaService.navigateAndExtractTimetable();
-      await _sigaService.goToHome();
+      _sigaService.goToHome();
 
       setState(() {
         _subjects = subjects;
