@@ -290,11 +290,6 @@ class _CurricularProfilePageState extends State<CurricularProfilePage> {
               _buildFilterMenuItem('eletivo', 'Eletivas', Icons.extension),
             ],
           ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _loadBlocks,
-            tooltip: 'Recarregar',
-          ),
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(140),
