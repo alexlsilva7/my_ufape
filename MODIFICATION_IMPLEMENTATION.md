@@ -5,6 +5,7 @@ Este documento detalha as fases e tarefas para implementar a melhoria do fluxo d
 ## Journal
 
 *   **Fase 2:** Refatorei o `SigaBackgroundService` para incluir a lógica de login ativo com um `Completer`, e adicionei um `ValueNotifier` para notificar sobre falhas de autenticação. Adicionei também o `checkAuthErrorScript` ao `siga_scripts.dart` para detectar senhas inválidas. Executei as ferramentas de formatação e análise, e corrigi um aviso de documentação no `siga_background_service.dart`.
+*   **Fase 3:** Refatorei a `LoginPage` para ser `Stateful` e gerenciar um estado de `_isLoading`. A UI agora exibe um `CircularProgressIndicator` durante o login. O método `_handleLogin` foi atualizado para chamar o `SigaBackgroundService` e aguardar o resultado, e a lógica para carregar credenciais salvas foi removida. Corrigi um aviso de `deprecated_member_use` que surgiu na nova implementação.
 
 ---
 
@@ -23,8 +24,8 @@ Nesta fase, vamos adaptar o serviço para orquestrar o login ativo e notificar a
 - [x] Adicionar um `Completer<bool>? _loginCompleter;` à classe `SigaBackgroundService`.
 - [x] Implementar o novo método público `Future<bool> login(String username, String password)` conforme o design.
 - [x] Modificar os métodos `onPageFinished` e `_checkLoginStatus` para interagir com o `_loginCompleter`:
-    - Ao detectar sucesso no login (`_isLoggedIn` se torna `true`), completar o `_loginCompleter` com `true`.
-    - Ao detectar uma falha (ex: timeout, erro na página), completar o `_loginCompleter` com `false`.
+    - [x] Ao detectar sucesso no login (`_isLoggedIn` se torna `true`), completar o `_loginCompleter` com `true`.
+    - [x] Ao detectar uma falha (ex: timeout, erro na página), completar o `_loginCompleter` com `false`.
 - [x] Adicionar um novo `ValueNotifier<bool> _authFailureNotifier = ValueNotifier(false);` para notificar a aplicação sobre credenciais inválidas detectadas em segundo plano.
 - [x] Criar um getter `ValueListenable<bool> get authFailureNotifier => _authFailureNotifier;` para expor o notifier.
 - [x] No `_checkLoginStatus` ou em um método auxiliar, adicionar lógica para identificar uma falha de autenticação na página do SIGA (ex: procurar por texto como "usuário ou senha inválida") e, se encontrada, atualizar `_authFailureNotifier.value = true;`.
@@ -43,16 +44,16 @@ Nesta fase, vamos adaptar o serviço para orquestrar o login ativo e notificar a
 
 O objetivo é transformar a `LoginPage` para que ela gerencie o estado de carregamento e utilize o novo método de login do serviço.
 
-- [ ] Adicionar uma variável de estado `bool _isLoading = false;` no `_LoginPageState`.
-- [ ] Envolver o `Scaffold` ou a `Column` principal com um `Stack` para sobrepor um `CircularProgressIndicator` quando `_isLoading` for `true`.
-- [ ] Implementar a nova lógica do método `_handleLogin`, que agora será `async`, chamará `injector.get<SigaBackgroundService>().login(...)`, e aguardará o resultado para navegar ou mostrar erro, conforme o design.
+- [x] Adicionar uma variável de estado `bool _isLoading = false;` no `_LoginPageState`.
+- [x] Envolver o `Scaffold` ou a `Column` principal com um `Stack` para sobrepor um `CircularProgressIndicator` quando `_isLoading` for `true`.
+- [x] Implementar a nova lógica do método `_handleLogin`, que agora será `async`, chamará `injector.get<SigaBackgroundService>().login(...)`, e aguardará o resultado para navegar ou mostrar erro, conforme o design.
 
 **Após esta fase:**
 
-- [ ] Executar `dart fix --apply`.
-- [ ] Executar `dart format .`.
-- [ ] Executar a análise estática e corrigir problemas.
-- [ ] Atualizar a seção "Journal" deste documento.
+- [x] Executar `dart fix --apply`.
+- [x] Executar `dart format .`.
+- [x] Executar a análise estática e corrigir problemas.
+- [x] Atualizar a seção "Journal" deste documento.
 - [ ] Apresentar as alterações e a mensagem de commit para sua aprovação.
 
 ---

@@ -24,7 +24,6 @@ class SigaScripts {
       return false;
     })();
     """;
-  };
   }
 
   static String extractGradesScript() => """
