@@ -32,6 +32,9 @@ dev_dependencies:
   # isar
   isar_community_generator: ^3.3.0-dev.3
   build_runner: any
+  flutter_launcher_icons: ^0.14.4
+  rename_app: ^1.6.5
+  flutter_native_splash: ^2.4.6
 
 flutter:
   uses-material-design: true
