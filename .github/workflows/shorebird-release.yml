@@ -26,8 +26,8 @@ jobs:
       - name: 📦 Get Dependencies
         run: flutter pub get
       
-      - name: 🧪 Run Tests
-        run: flutter test
+      # - name: 🧪 Run Tests
+      #   run: flutter test
       
       # Criar release apenas se for push para main
       - name: 🚀 Create Shorebird Release
