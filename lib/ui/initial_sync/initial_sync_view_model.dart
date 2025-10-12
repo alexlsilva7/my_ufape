@@ -73,19 +73,26 @@ class InitialSyncViewModel extends ChangeNotifier {
     _status.updateAll((key, value) => StepStatus.idle);
     notifyListeners();
 
+    await _sigaService.goToHome();
+    await Future.delayed(const Duration(milliseconds: 500));
+
     // 1. Sincronizar Grade de Horário com retentativas
     if (!await _runSyncStep(SyncStep.timetable,
         _sigaService.navigateAndExtractTimetable, 'grade de horário')) {
       _isSyncing = false;
       return;
     }
-
+    await _sigaService.goToHome();
+    await Future.delayed(const Duration(milliseconds: 500));
     // 2. Sincronizar Notas com retentativas
     if (!await _runSyncStep(
         SyncStep.grades, _sigaService.navigateAndExtractGrades, 'notas')) {
       _isSyncing = false;
       return; // Para a sincronização se uma etapa falhar
     }
+
+    await _sigaService.goToHome();
+    await Future.delayed(const Duration(milliseconds: 500));
 
     // 3. Sincronizar Perfil Curricular com retentativas
     if (!await _runSyncStep(

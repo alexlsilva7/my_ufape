@@ -189,7 +189,7 @@ class _SettingsPageState extends State<SettingsPage> {
       await TerminateRestart.instance.restartApp(
           options: TerminateRestartOptions(
         terminate: true,
-        clearData: false,
+        clearData: true,
         preserveKeychain: false,
         preserveUserDefaults: false,
       ));
