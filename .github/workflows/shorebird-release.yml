@@ -55,7 +55,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.version.outputs.version }}-build-${{ github.run_number }}
-          name: Release v${{ steps.version.outputs.version }} (Build ${{ github.run_number }})
+          name: v${{ steps.version.outputs.version }} (Build ${{ github.run_number }})
           generate_release_notes: true
           files: |
             build/app/outputs/flutter-apk/my_ufape-v${{ steps.version.outputs.version }}.apk
