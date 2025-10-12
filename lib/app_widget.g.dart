@@ -29,34 +29,39 @@ List<RouteEntity> get routes => [
         routeBuilder: b4Builder,
       ),
       RouteEntity(
+        key: '/initial_sync',
+        uri: Uri.parse('/initial_sync'),
+        routeBuilder: b5Builder,
+      ),
+      RouteEntity(
         key: '/login',
         uri: Uri.parse('/login'),
-        routeBuilder: b5Builder,
+        routeBuilder: b6Builder,
       ),
       RouteEntity(
         key: '/settings',
         uri: Uri.parse('/settings'),
-        routeBuilder: b6Builder,
+        routeBuilder: b7Builder,
       ),
       RouteEntity(
         key: '/siga',
         uri: Uri.parse('/siga'),
-        routeBuilder: b7Builder,
+        routeBuilder: b8Builder,
       ),
       RouteEntity(
         key: '/splash',
         uri: Uri.parse('/splash'),
-        routeBuilder: b8Builder,
+        routeBuilder: b9Builder,
       ),
       RouteEntity(
         key: '/subjects',
         uri: Uri.parse('/subjects'),
-        routeBuilder: b9Builder,
+        routeBuilder: b10Builder,
       ),
       RouteEntity(
         key: '/timetable',
         uri: Uri.parse('/timetable'),
-        routeBuilder: b10Builder,
+        routeBuilder: b11Builder,
       ),
     ];
 
@@ -67,6 +72,7 @@ const routePaths = (
   debugSiga: '/debug_siga',
   grades: '/grades',
   home: '/home',
+  initialSync: '/initial_sync',
   login: '/login',
   settings: '/settings',
   siga: '/siga',

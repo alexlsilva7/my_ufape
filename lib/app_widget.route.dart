@@ -8,12 +8,13 @@ import 'ui/curricular_profile/curricular_profile_page.dart' as a1;
 import 'ui/debug_siga/debug_siga_page.dart' as a2;
 import 'ui/grades/grades_page.dart' as a3;
 import 'ui/home/home_page.dart' as a4;
-import 'ui/login/login_page.dart' as a5;
-import 'ui/settings/settings_page.dart' as a6;
-import 'ui/siga/siga_page.dart' as a7;
-import 'ui/splash/splash_page.dart' as a8;
-import 'ui/subjects/subjects_page.dart' as a9;
-import 'ui/timetable/timetable_page.dart' as a10;
+import 'ui/initial_sync/initial_sync_page.dart' as a5;
+import 'ui/login/login_page.dart' as a6;
+import 'ui/settings/settings_page.dart' as a7;
+import 'ui/siga/siga_page.dart' as a8;
+import 'ui/splash/splash_page.dart' as a9;
+import 'ui/subjects/subjects_page.dart' as a10;
+import 'ui/timetable/timetable_page.dart' as a11;
 
 Route b0Builder(BuildContext ctx, RouteSettings settings) =>
     Routefly.defaultRouteBuilder(
@@ -49,35 +50,41 @@ Route b5Builder(BuildContext ctx, RouteSettings settings) =>
     Routefly.defaultRouteBuilder(
       ctx,
       settings,
-      const a5.LoginPage(),
+      const a5.InitialSyncPage(),
     );
 Route b6Builder(BuildContext ctx, RouteSettings settings) =>
     Routefly.defaultRouteBuilder(
       ctx,
       settings,
-      const a6.SettingsPage(),
+      const a6.LoginPage(),
     );
 Route b7Builder(BuildContext ctx, RouteSettings settings) =>
     Routefly.defaultRouteBuilder(
       ctx,
       settings,
-      const a7.SigaPage(),
+      const a7.SettingsPage(),
     );
 Route b8Builder(BuildContext ctx, RouteSettings settings) =>
     Routefly.defaultRouteBuilder(
       ctx,
       settings,
-      const a8.SplashPage(),
+      const a8.SigaPage(),
     );
 Route b9Builder(BuildContext ctx, RouteSettings settings) =>
     Routefly.defaultRouteBuilder(
       ctx,
       settings,
-      const a9.SubjectsPage(),
+      const a9.SplashPage(),
     );
 Route b10Builder(BuildContext ctx, RouteSettings settings) =>
     Routefly.defaultRouteBuilder(
       ctx,
       settings,
-      const a10.TimetablePage(),
+      const a10.SubjectsPage(),
+    );
+Route b11Builder(BuildContext ctx, RouteSettings settings) =>
+    Routefly.defaultRouteBuilder(
+      ctx,
+      settings,
+      const a11.TimetablePage(),
     );

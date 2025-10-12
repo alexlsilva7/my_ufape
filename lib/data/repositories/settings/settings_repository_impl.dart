@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:my_ufape/core/database/database.dart';
 import 'package:my_ufape/core/exceptions/app_exception.dart';
 import 'package:my_ufape/data/services/settings/local_storage_preferences_service.dart';
 import 'package:my_ufape/domain/entities/login.dart';
@@ -13,11 +14,13 @@ class SettingsRepositoryImpl extends ChangeNotifier
   final LocalStoragePreferencesService _localStoragePreferencesService;
   final SharedPreferences _prefs;
   final FlutterSecureStorage _secureStorage;
+  final Database _database;
 
   SettingsRepositoryImpl(
     this._localStoragePreferencesService,
     this._prefs,
     this._secureStorage,
+    this._database,
   ) {
     isDarkMode = _localStoragePreferencesService.isDarkMode;
     isDebugOverlayEnabled =
@@ -49,8 +52,21 @@ class SettingsRepositoryImpl extends ChangeNotifier
   @override
   AsyncResult<Unit> restoreApp() async {
     try {
+      // 1. Limpa o banco de dados Isar
+      final isar = await _database.connection;
+      await isar.writeTxn(() async => await isar.clear());
+
+      // 2. Limpa SharedPreferences (incluindo a flag de sync)
       await _prefs.clear();
+
+      // 3. Limpa Secure Storage (credenciais)
       await _secureStorage.deleteAll();
+
+      // Notifica listeners para atualizar a UI se necessário (ex: modo escuro voltando ao padrão)
+      isDarkMode = false;
+      isDebugOverlayEnabled = false;
+      notifyListeners();
+
       return Success(unit);
     } catch (e, s) {
       return Failure(AppException('Falha ao restaurar o aplicativo: $e', s));
@@ -109,5 +125,17 @@ class SettingsRepositoryImpl extends ChangeNotifier
     } catch (_) {
       return false;
     }
+  }
+
+  @override
+  Future<bool> isInitialSyncCompleted() async {
+    return _localStoragePreferencesService.isInitialSyncCompleted;
+  }
+
+  @override
+  AsyncResult<Unit> setInitialSyncCompleted(bool value) async {
+    final result =
+        await _localStoragePreferencesService.setInitialSyncCompleted(value);
+    return result;
   }
 }

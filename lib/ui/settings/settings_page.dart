@@ -78,13 +78,15 @@ class _SettingsPageState extends State<SettingsPage> {
                       ),
                       const Divider(height: 1),
                       ListTile(
-                        leading: const Icon(Icons.logout, color: Colors.red),
+                        leading: const Icon(Icons.restore,
+                            color: Colors.red), // Ícone alterado
                         title: const Text(
-                          'Sair da Conta',
+                          'Restaurar Aplicativo', // Texto alterado
                           style: TextStyle(color: Colors.red),
                         ),
-                        subtitle: const Text('Remove credenciais salvas'),
-                        onTap: () => _showLogoutDialog(),
+                        subtitle: const Text(
+                            'Apaga todos os dados e credenciais'), // Subtítulo alterado
+                        onTap: () => _showResetDialog(), // Método alterado
                       ),
                     ],
                   ),
@@ -147,14 +149,15 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  void _showLogoutDialog() {
+  void _showResetDialog() {
+    // Renomeado de _showLogoutDialog
     showDialog(
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: const Text('Sair da Conta'),
+          title: const Text('Restaurar Aplicativo'), // Título alterado
           content: const Text(
-              'Tem certeza que deseja sair? Suas credenciais serão removidas.'),
+              'Tem certeza? Todos os dados locais, incluindo suas credenciais salvas, serão apagados. Você precisará fazer login e sincronizar novamente.'), // Mensagem alterada
           actions: [
             TextButton(
               child: const Text('Cancelar'),
@@ -162,12 +165,12 @@ class _SettingsPageState extends State<SettingsPage> {
             ),
             TextButton(
               child: const Text(
-                'Sair',
+                'Restaurar', // Texto alterado
                 style: TextStyle(color: Colors.red),
               ),
               onPressed: () async {
                 Navigator.of(context).pop(); // Fecha o dialog
-                await _performLogout();
+                await _performReset(); // Método alterado
               },
             ),
           ],
@@ -176,17 +179,19 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  Future<void> _performLogout() async {
+  Future<void> _performReset() async {
+    // Renomeado de _performLogout
     try {
-      // Remove credenciais usando o repositório
-      await _settingsRepository.deleteUserCredentials();
+      // Chama o método `restoreApp` que apaga tudo
+      await _settingsRepository.restoreApp();
 
-      // Navega de volta para login
+      // Navega de volta para a tela de login
       Routefly.navigate(routePaths.login);
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Erro ao fazer logout: $e'),
+          content: Text('Erro ao restaurar o aplicativo: $e'),
           backgroundColor: Colors.red,
         ),
       );

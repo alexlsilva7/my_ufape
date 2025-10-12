@@ -17,4 +17,8 @@ abstract interface class SettingsRepository extends ChangeNotifier {
   AsyncResult<Unit> deleteUserCredentials();
 
   AsyncResult<Unit> toggleDebugOverlay();
+
+  Future<bool> isInitialSyncCompleted();
+
+  AsyncResult<Unit> setInitialSyncCompleted(bool value);
 }

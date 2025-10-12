@@ -60,7 +60,7 @@ class _LoginPageState extends State<LoginPage> {
         });
 
         if (success) {
-          Routefly.navigate(routePaths.home);
+          Routefly.navigate(routePaths.initialSync);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(

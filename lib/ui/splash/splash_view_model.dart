@@ -9,19 +9,24 @@ class SplashViewModel extends ChangeNotifier {
   SplashViewModel(this.settingsRepository);
 
   init() async {
-    // Pequeno delay para a splash ser visível
     await Future.delayed(const Duration(milliseconds: 1200));
 
     final hasCredentials = await settingsRepository.hasUserCredentials();
 
     if (hasCredentials) {
-      // Vai direto para a Home, permitindo acesso offline aos dados locais.
-      // O SigaBackgroundService fará a sincronização em segundo plano por conta própria.
-      Routefly.navigate(routePaths.home);
+      // MUDANÇA AQUI: Verificar se a sincronização inicial já foi feita
+      final isSyncComplete = await settingsRepository.isInitialSyncCompleted();
+
+      if (isSyncComplete) {
+        // Se sim, vai para a Home
+        Routefly.navigate(routePaths.home);
+      } else {
+        // Se não, vai para a tela de sincronização
+        Routefly.navigate(routePaths.initialSync);
+      }
     } else {
       // Sem credenciais, precisa fazer o login inicial.
       Routefly.navigate(routePaths.login);
     }
-    notifyListeners();
   }
 }

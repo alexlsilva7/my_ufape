@@ -22,6 +22,7 @@ import 'package:my_ufape/ui/subjects/subjects_view_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
 import 'package:my_ufape/data/services/shorebird/shorebird_service.dart';
+import 'package:my_ufape/ui/initial_sync/initial_sync_view_model.dart';
 
 final injector = AutoInjector();
 
@@ -40,6 +41,7 @@ Future<void> setupDependencies() async {
       injector.get<LocalStoragePreferencesService>(),
       injector.get<SharedPreferences>(),
       injector.get<FlutterSecureStorage>(),
+      injector.get<Database>(),
     ),
   );
 
@@ -94,6 +96,8 @@ Future<void> setupDependencies() async {
       injector.get<SubjectNoteRepository>(),
     ),
   );
+  injector.addLazySingleton(
+      () => InitialSyncViewModel(injector.get(), injector.get()));
 
   // Registrar serviço SIGA em background
   injector.addSingleton<SigaBackgroundService>(() => SigaBackgroundService());
