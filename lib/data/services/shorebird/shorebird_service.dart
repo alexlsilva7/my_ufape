@@ -1,8 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shorebird_code_push/shorebird_code_push.dart';
-import 'package:smart_restart/smart_restart.dart';
+import 'package:terminate_restart/terminate_restart.dart';
 
 class ShorebirdService extends ChangeNotifier {
   final _updater = ShorebirdUpdater();
@@ -14,6 +15,9 @@ class ShorebirdService extends ChangeNotifier {
   int? _currentPatchNumber;
   int? get currentPatchNumber => _currentPatchNumber;
 
+  String? _appVersion;
+  String? get appVersion => _appVersion;
+
   final ValueNotifier<bool> isUpdateReadyToInstall = ValueNotifier(false);
 
   Future<void> init() async {
@@ -22,6 +26,10 @@ class ShorebirdService extends ChangeNotifier {
       _currentPatchNumber = patch?.number;
       notifyListeners();
     });
+
+    // Get app version
+    PackageInfo packageInfo = await PackageInfo.fromPlatform();
+    _appVersion = packageInfo.version;
 
     // Check if a patch is ready to install at startup
     final status = await _updater.checkForUpdate();
@@ -74,7 +82,7 @@ class ShorebirdService extends ChangeNotifier {
           }
           break;
         case UpdateStatus.unavailable:
-        // Handle unavailable case if needed
+          // Handle unavailable case if needed
           break;
       }
     } on UpdateException catch (e) {
@@ -143,22 +151,12 @@ class ShorebirdService extends ChangeNotifier {
   }
 
   void _showRestartDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => AlertDialog(
-        title: const Text('Reinicialização Necessária'),
-        content: const Text(
-            'A atualização foi baixada. Reinicie o app para aplicar as mudanças.'),
-        actions: [
-          ElevatedButton(
-            onPressed: () {
-              SmartRestart.restart();
-            },
-            child: const Text('Reiniciar Agora'),
-          ),
-        ],
-      ),
+    TerminateRestart.instance.restartAppWithConfirmation(
+      context,
+      title: 'Reinicialização Necessária',
+      message:
+          'A atualização foi baixada. Reinicie o app para aplicar as mudanças.',
+      terminate: true,
     );
   }
 

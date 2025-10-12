@@ -102,7 +102,8 @@ class _SettingsPageState extends State<SettingsPage> {
                   child: ListTile(
                     leading: const Icon(Icons.info),
                     title: const Text('Versão'),
-                    subtitle: const Text('1.0.0'),
+                    subtitle:
+                        Text(_shorebirdService.appVersion ?? 'Desconhecida'),
                   ),
                 ),
                 const SizedBox(height: 24),

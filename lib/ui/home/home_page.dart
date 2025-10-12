@@ -9,6 +9,7 @@ import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
 import 'package:my_ufape/data/services/shorebird/shorebird_service.dart';
 import 'package:my_ufape/domain/entities/time_table.dart';
+import 'package:terminate_restart/terminate_restart.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -22,8 +23,7 @@ class _HomePageState extends State<HomePage> {
 
   final SigaBackgroundService _sigaService =
       injector.get<SigaBackgroundService>();
-  final ShorebirdService _shorebirdService =
-      injector.get<ShorebirdService>();
+  final ShorebirdService _shorebirdService = injector.get<ShorebirdService>();
   final ScheduledSubjectRepository _scheduledRepo = injector.get();
   bool _isLoggedIn = false;
   late final VoidCallback _login_listener;
@@ -47,14 +47,113 @@ class _HomePageState extends State<HomePage> {
     _sigaService.initialize();
     // Carregar próximas aulas ao iniciar
     _loadNextClasses();
+
+    // Shorebird update listener
+    _shorebirdService.isUpdateReadyToInstall.addListener(_showUpdateBanner);
+    // Check on init
+    WidgetsBinding.instance.addPostFrameCallback((_) => _showUpdateBanner());
   }
 
   @override
   void dispose() {
     try {
       _sigaService.loginNotifier.removeListener(_loginListener);
+      _shorebirdService.isUpdateReadyToInstall
+          .removeListener(_showUpdateBanner);
     } catch (_) {}
     super.dispose();
+  }
+
+  void _showUpdateBanner() {
+    if (!_shorebirdService.isUpdateReadyToInstall.value || !mounted) return;
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    ScaffoldMessenger.of(context).showMaterialBanner(
+      MaterialBanner(
+        padding: const EdgeInsets.all(16),
+        content: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor.withOpacity(0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.system_update,
+                    color: Theme.of(context).primaryColor,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Nova atualização disponível',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        'Reinicie o app para obter as últimas melhorias',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: isDark
+                              ? Colors.grey.shade400
+                              : Colors.grey.shade700,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        backgroundColor: isDark
+            ? Colors.grey.shade900
+            : Theme.of(context)
+                .colorScheme
+                .primaryContainer
+                .withValues(alpha: 0.3),
+        dividerColor: Colors.transparent,
+        actions: <Widget>[
+          TextButton(
+            onPressed: () {
+              ScaffoldMessenger.of(context).hideCurrentMaterialBanner();
+            },
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).primaryColor,
+            ),
+            child: const Text('Depois'),
+          ),
+          const SizedBox(width: 4),
+          FilledButton.icon(
+            onPressed: () async {
+              await TerminateRestart.instance.restartApp(
+                options: const TerminateRestartOptions(terminate: true),
+              );
+            },
+            icon: const Icon(Icons.refresh, size: 18),
+            label: const Text('Reiniciar'),
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).primaryColor,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _loadNextClasses() async {

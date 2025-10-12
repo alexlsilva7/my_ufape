@@ -1,7 +1,7 @@
 name: my_ufape
 description: "Aplicativo auxiliar para alunos da UFAPE"
 publish_to: 'none'
-version: 0.1.0
+version: 0.1.1
 
 environment:
   sdk: ^3.6.2
@@ -25,7 +25,8 @@ dependencies:
   path_provider: ^2.1.5
   calendar_view: ^1.4.0
   shorebird_code_push: ^2.0.5
-  smart_restart: ^0.1.0
+  terminate_restart: ^1.0.11
+  package_info_plus: ^9.0.0
 
 dev_dependencies:
   flutter_test:
