@@ -20,6 +20,7 @@ import 'package:my_ufape/ui/home/home_view_model.dart';
 import 'package:my_ufape/ui/splash/splash_view_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
+import 'package:my_ufape/data/services/shorebird/shorebird_service.dart';
 
 final injector = AutoInjector();
 
@@ -89,6 +90,7 @@ Future<void> setupDependencies() async {
 
   // Registrar serviço SIGA em background
   injector.addSingleton<SigaBackgroundService>(() => SigaBackgroundService());
+  injector.addSingleton(ShorebirdService.new);
 
   injector.commit();
 
@@ -99,6 +101,13 @@ Future<void> setupDependencies() async {
   // Inicializa o serviço SIGA em background (cria controller e começa verificação)
   try {
     await injector.get<SigaBackgroundService>().initialize();
+  } catch (_) {
+    // não bloquear inicialização do app se falhar
+  }
+
+  // Inicializa o serviço do Shorebird para verificações automáticas
+  try {
+    injector.get<ShorebirdService>().init();
   } catch (_) {
     // não bloquear inicialização do app se falhar
   }

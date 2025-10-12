@@ -7,6 +7,7 @@ import 'package:my_ufape/app_widget.dart';
 import 'package:my_ufape/config/dependencies.dart';
 import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
+import 'package:my_ufape/data/services/shorebird/shorebird_service.dart';
 import 'package:my_ufape/domain/entities/time_table.dart';
 
 class HomePage extends StatefulWidget {
@@ -21,6 +22,8 @@ class _HomePageState extends State<HomePage> {
 
   final SigaBackgroundService _sigaService =
       injector.get<SigaBackgroundService>();
+  final ShorebirdService _shorebirdService =
+      injector.get<ShorebirdService>();
   final ScheduledSubjectRepository _scheduledRepo = injector.get();
   bool _isLoggedIn = false;
   late final VoidCallback _login_listener;
@@ -286,12 +289,22 @@ class _HomePageState extends State<HomePage> {
                               size: 14,
                               color: _isLoggedIn ? Colors.green : Colors.red,
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.settings_outlined,
-                                  color: Colors.white),
-                              onPressed: () {
-                                Routefly.push(routePaths.settings);
+                            ValueListenableBuilder<bool>(
+                              valueListenable:
+                                  _shorebirdService.isUpdateReadyToInstall,
+                              builder: (context, isReady, child) {
+                                return Badge(
+                                  isLabelVisible: isReady,
+                                  child: child,
+                                );
                               },
+                              child: IconButton(
+                                icon: const Icon(Icons.settings_outlined,
+                                    color: Colors.white),
+                                onPressed: () {
+                                  Routefly.push(routePaths.settings);
+                                },
+                              ),
                             ),
                           ],
                         ),

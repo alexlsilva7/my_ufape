@@ -4,6 +4,8 @@ import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
 import 'package:routefly/routefly.dart';
 import 'package:my_ufape/app_widget.dart';
 
+import 'package:my_ufape/data/services/shorebird/shorebird_service.dart';
+
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
 
@@ -13,12 +15,14 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   late SettingsRepository _settingsRepository;
+  late ShorebirdService _shorebirdService;
   bool _isDarkMode = false;
 
   @override
   void initState() {
     super.initState();
     _settingsRepository = injector.get<SettingsRepository>();
+    _shorebirdService = injector.get<ShorebirdService>();
     _isDarkMode = _settingsRepository.isDarkMode;
   }
 
@@ -29,7 +33,7 @@ class _SettingsPageState extends State<SettingsPage> {
         title: const Text('Configurações'),
       ),
       body: ListenableBuilder(
-        listenable: _settingsRepository,
+        listenable: Listenable.merge([_settingsRepository, _shorebirdService]),
         builder: (context, child) {
           return Padding(
             padding: const EdgeInsets.all(16.0),
@@ -85,7 +89,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     ],
                   ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 24),
                 const Text(
                   'Sobre',
                   style: TextStyle(
@@ -99,6 +103,39 @@ class _SettingsPageState extends State<SettingsPage> {
                     leading: const Icon(Icons.info),
                     title: const Text('Versão'),
                     subtitle: const Text('1.0.0'),
+                  ),
+                ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Atualizações do App',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Card(
+                  child: Column(
+                    children: [
+                      ListTile(
+                        leading: const Icon(Icons.system_update),
+                        title: const Text('Verificar atualizações'),
+                        subtitle: Text(
+                            'Patch atual: ${_shorebirdService.currentPatchNumber ?? 'Nenhum'}'),
+                        trailing: _shorebirdService.isCheckingForUpdate
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child:
+                                    CircularProgressIndicator(strokeWidth: 2.5),
+                              )
+                            : const Icon(Icons.refresh),
+                        onTap: _shorebirdService.isCheckingForUpdate
+                            ? null
+                            : () => _shorebirdService
+                                .checkForUpdateFromSettings(context),
+                      ),
+                    ],
                   ),
                 ),
               ],

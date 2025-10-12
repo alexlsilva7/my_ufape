@@ -789,6 +789,14 @@ packages:
     description: flutter
     source: sdk
     version: "0.0.0"
+  smart_restart:
+    dependency: "direct main"
+    description:
+      name: smart_restart
+      sha256: ff7987a94d60f09e3a7e90da0d59a91b6a3729380dd7115b1f36e59eed650b6f
+      url: "https://pub.dev"
+    source: hosted
+    version: "0.1.0"
   source_gen:
     dependency: transitive
     description:
