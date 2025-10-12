@@ -695,4 +695,18 @@ class SigaBackgroundService extends ChangeNotifier {
       throw Exception('Erro ao navegar e extrair grade de horário: $e');
     }
   }
+
+  /// Reseta o serviço para o estado inicial, limpando dados e sessão.
+  Future<void> resetService() async {
+    await disposeService();
+    _isLoggedIn = false;
+    loginNotifier.value = false;
+    _pendingUsername = null;
+    _pendingPassword = null;
+    _loginCompleter = null;
+    _reconnectAttempts = 0;
+    _cancelReconnectTimer();
+    await disposeService();
+    await initialize();
+  }
 }

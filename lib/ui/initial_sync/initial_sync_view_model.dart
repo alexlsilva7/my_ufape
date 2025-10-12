@@ -49,11 +49,6 @@ class InitialSyncViewModel extends ChangeNotifier {
         notifyListeners();
         return true; // Sucesso
       } catch (e) {
-        // Atualiza a mensagem de erro a cada tentativa
-        _errorMessage =
-            "Falha ao sincronizar $errorContext. Tentativa $attempt de $_maxAttempts...";
-        notifyListeners();
-
         if (attempt == _maxAttempts) {
           _status[step] = StepStatus.failure;
           _errorMessage =
@@ -78,23 +73,23 @@ class InitialSyncViewModel extends ChangeNotifier {
     _status.updateAll((key, value) => StepStatus.idle);
     notifyListeners();
 
-    // 1. Sincronizar Notas com retentativas
+    // 1. Sincronizar Grade de Horário com retentativas
+    if (!await _runSyncStep(SyncStep.timetable,
+        _sigaService.navigateAndExtractTimetable, 'grade de horário')) {
+      _isSyncing = false;
+      return;
+    }
+
+    // 2. Sincronizar Notas com retentativas
     if (!await _runSyncStep(
         SyncStep.grades, _sigaService.navigateAndExtractGrades, 'notas')) {
       _isSyncing = false;
       return; // Para a sincronização se uma etapa falhar
     }
 
-    // 2. Sincronizar Perfil Curricular com retentativas
+    // 3. Sincronizar Perfil Curricular com retentativas
     if (!await _runSyncStep(
         SyncStep.profile, _sigaService.navigateAndExtractProfile, 'perfil')) {
-      _isSyncing = false;
-      return;
-    }
-
-    // 3. Sincronizar Grade de Horário com retentativas
-    if (!await _runSyncStep(SyncStep.timetable,
-        _sigaService.navigateAndExtractTimetable, 'grade de horário')) {
       _isSyncing = false;
       return;
     }

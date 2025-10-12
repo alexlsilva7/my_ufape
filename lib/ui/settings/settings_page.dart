@@ -5,6 +5,7 @@ import 'package:routefly/routefly.dart';
 import 'package:my_ufape/app_widget.dart';
 
 import 'package:my_ufape/data/services/shorebird/shorebird_service.dart';
+import 'package:terminate_restart/terminate_restart.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -185,8 +186,13 @@ class _SettingsPageState extends State<SettingsPage> {
       // Chama o método `restoreApp` que apaga tudo
       await _settingsRepository.restoreApp();
 
-      // Navega de volta para a tela de login
-      Routefly.navigate(routePaths.login);
+      await TerminateRestart.instance.restartApp(
+          options: TerminateRestartOptions(
+        terminate: true,
+        clearData: false,
+        preserveKeychain: false,
+        preserveUserDefaults: false,
+      ));
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

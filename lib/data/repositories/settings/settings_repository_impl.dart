@@ -1,11 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:my_ufape/config/dependencies.dart';
 import 'package:my_ufape/core/database/database.dart';
 import 'package:my_ufape/core/exceptions/app_exception.dart';
 import 'package:my_ufape/data/services/settings/local_storage_preferences_service.dart';
 import 'package:my_ufape/domain/entities/login.dart';
 import 'package:result_dart/result_dart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:my_ufape/data/services/siga/siga_background_service.dart';
 
 import './settings_repository.dart';
 
@@ -61,6 +63,8 @@ class SettingsRepositoryImpl extends ChangeNotifier
 
       // 3. Limpa Secure Storage (credenciais)
       await _secureStorage.deleteAll();
+      var sigaBackgroundService = injector.get<SigaBackgroundService>();
+      await sigaBackgroundService.resetService();
 
       // Notifica listeners para atualizar a UI se necessário (ex: modo escuro voltando ao padrão)
       isDarkMode = false;

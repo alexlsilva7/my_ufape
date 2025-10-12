@@ -72,14 +72,14 @@ class _InitialSyncPageState extends State<InitialSyncPage> {
                     style: theme.textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 32),
+                  _buildStepTile('Grade de Horário', SyncStep.timetable,
+                      _viewModel.status[SyncStep.timetable]!),
+                  const SizedBox(height: 12),
                   _buildStepTile('Notas e Histórico', SyncStep.grades,
                       _viewModel.status[SyncStep.grades]!),
                   const SizedBox(height: 12),
-                  _buildStepTile('Perfil Curricular', SyncStep.profile,
+                  _buildStepTile('Disciplinas', SyncStep.profile,
                       _viewModel.status[SyncStep.profile]!),
-                  const SizedBox(height: 12),
-                  _buildStepTile('Grade de Horário', SyncStep.timetable,
-                      _viewModel.status[SyncStep.timetable]!),
                   const SizedBox(height: 32),
                   if (_viewModel.errorMessage != null && !_viewModel.isSyncing)
                     Text(
@@ -142,7 +142,7 @@ class _InitialSyncPageState extends State<InitialSyncPage> {
       case SyncStep.grades:
         return Icons.grade_outlined;
       case SyncStep.profile:
-        return Icons.person_outline;
+        return Icons.menu_book_rounded;
       case SyncStep.timetable:
         return Icons.schedule_outlined;
     }
