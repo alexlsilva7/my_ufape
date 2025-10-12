@@ -20,7 +20,7 @@ jobs:
         uses: subosito/flutter-action@v2
         with:
           channel: stable
-          flutter-version: 3.35.6
+          flutter-version: 3.24.5
           cache: true
 
       - name: 🏗️ Setup Shorebird
@@ -36,14 +36,29 @@ jobs:
         env:
           SHOREBIRD_TOKEN: ${{ secrets.SHOREBIRD_TOKEN }}
 
+      - name: 📝 Get Version Info
+        id: version
+        run: |
+          VERSION=$(grep 'version:' pubspec.yaml | sed 's/version: //' | tr -d '\r')
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "date=$(date +'%Y-%m-%d')" >> $GITHUB_OUTPUT
+
+      - name: 🔄 Rename APK and AAB
+        run: |
+          mv build/app/outputs/flutter-apk/app-release.apk \
+            build/app/outputs/flutter-apk/my_ufape-v${{ steps.version.outputs.version }}.apk
+          
+          mv build/app/outputs/bundle/release/app-release.aab \
+            build/app/outputs/bundle/release/my_ufape-v${{ steps.version.outputs.version }}.aab
+
       - name: 📤 Create GitHub Release and Attach APK & AAB
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: main-${{ github.run_number }}
-          name: Release ${{ github.run_number }}
+          tag_name: v${{ steps.version.outputs.version }}-build-${{ github.run_number }}
+          name: Release v${{ steps.version.outputs.version }} (Build ${{ github.run_number }})
           generate_release_notes: true
           files: |
-            build/app/outputs/flutter-apk/app-release.apk
-            build/app/outputs/bundle/release/app-release.aab
+            build/app/outputs/flutter-apk/my_ufape-v${{ steps.version.outputs.version }}-${{ steps.version.outputs.date }}.apk
+            build/app/outputs/bundle/release/my_ufape-v${{ steps.version.outputs.version }}-${{ steps.version.outputs.date }}.aab
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
