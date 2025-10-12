@@ -1195,6 +1195,24 @@ class _ChartsPageState extends State<ChartsPage> {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
+                  // Mostrar o professor, se disponível
+                  if (professor != null && professor.trim().isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      professor,
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.color
+                            ?.withAlpha(170),
+                        fontStyle: FontStyle.italic,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ],
                   if (periodo != null) ...[
                     const SizedBox(height: 2),
                     Text(
