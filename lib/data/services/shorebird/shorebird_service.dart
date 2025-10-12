@@ -157,6 +157,8 @@ class ShorebirdService extends ChangeNotifier {
       message:
           'A atualização foi baixada. Reinicie o app para aplicar as mudanças.',
       terminate: true,
+      cancelText: 'Mais Tarde',
+      confirmText: 'Reiniciar Agora',
     );
   }
 

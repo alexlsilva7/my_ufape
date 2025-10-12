@@ -680,6 +680,14 @@ class _HomePageState extends State<HomePage> {
         },
       },
       {
+        'title': 'Disciplinas',
+        'icon': Icons.view_list_outlined,
+        'color': Colors.red.shade600,
+        'onTap': () async {
+          Routefly.push(routePaths.subjects);
+        },
+      },
+      {
         'title': 'Gráficos',
         'icon': Icons.bar_chart_outlined,
         'color': Colors.teal.shade600,
