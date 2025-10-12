@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:my_ufape/app_widget.dart';
 import 'package:my_ufape/config/dependencies.dart';
 import 'package:my_ufape/core/ui/gen/assets.gen.dart';
+import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
 import 'package:my_ufape/ui/initial_sync/initial_sync_view_model.dart';
 import 'package:routefly/routefly.dart';
 
@@ -56,12 +57,19 @@ class _InitialSyncPageState extends State<InitialSyncPage> {
                     child: Assets.images.myUfapeLogo.image(height: 100),
                   ),
                   const SizedBox(height: 24),
-                  Text(
-                    showFinishButton
-                        ? 'Sincronização Concluída!'
-                        : 'Sincronização Inicial',
-                    style: theme.textTheme.headlineSmall
-                        ?.copyWith(fontWeight: FontWeight.bold),
+                  GestureDetector(
+                    child: Text(
+                      showFinishButton
+                          ? 'Sincronização Concluída!'
+                          : 'Sincronização Inicial',
+                      style: theme.textTheme.headlineSmall
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    onLongPress: () async {
+                      await injector
+                          .get<SettingsRepository>()
+                          .toggleDebugOverlay();
+                    },
                   ),
                   const SizedBox(height: 8),
                   Text(
