@@ -10,6 +10,8 @@ import 'package:my_ufape/data/services/siga/siga_background_service.dart';
 import 'package:my_ufape/data/services/shorebird/shorebird_service.dart';
 import 'package:my_ufape/domain/entities/time_table.dart';
 import 'package:terminate_restart/terminate_restart.dart';
+import 'package:my_ufape/ui/home/home_view_model.dart';
+import 'package:my_ufape/ui/home/widgets/user_info_dialog.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -19,14 +21,13 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final String _userName = 'Estudante';
+  final HomeViewModel _viewModel = injector.get<HomeViewModel>();
 
   final SigaBackgroundService _sigaService =
       injector.get<SigaBackgroundService>();
   final ShorebirdService _shorebirdService = injector.get<ShorebirdService>();
   final ScheduledSubjectRepository _scheduledRepo = injector.get();
   bool _isLoggedIn = false;
-  late final VoidCallback _login_listener;
   late final VoidCallback _loginListener;
 
   List<Map<String, dynamic>> _nextClasses = [];
@@ -35,6 +36,14 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+
+    _viewModel.loadUser();
+    _viewModel.addListener(() {
+      if (mounted) {
+        setState(() {});
+      }
+    });
+
     _isLoggedIn = _sigaService.isLoggedIn;
     _loginListener = () {
       if (mounted) {
@@ -57,6 +66,7 @@ class _HomePageState extends State<HomePage> {
   @override
   void dispose() {
     try {
+      _viewModel.removeListener(() {});
       _sigaService.loginNotifier.removeListener(_loginListener);
       _shorebirdService.isUpdateReadyToInstall
           .removeListener(_showUpdateBanner);
@@ -361,12 +371,24 @@ class _HomePageState extends State<HomePage> {
                             Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  'Olá, $_userName!',
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 22,
-                                    fontWeight: FontWeight.bold,
+                                GestureDetector(
+                                  onTap: () {
+                                    if (_viewModel.user != null) {
+                                      showDialog(
+                                        context: context,
+                                        builder: (context) => UserInfoDialog(
+                                          user: _viewModel.user!,
+                                        ),
+                                      );
+                                    }
+                                  },
+                                  child: Text(
+                                    'Olá, ${_viewModel.userName}!',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold,
+                                    ),
                                   ),
                                 ),
                                 const SizedBox(height: 2),

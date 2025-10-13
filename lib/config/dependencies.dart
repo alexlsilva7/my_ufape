@@ -16,6 +16,9 @@ import 'package:my_ufape/data/services/subject_note/subject_note_service.dart';
 import 'package:my_ufape/data/services/scheduled_subject/scheduled_subject_service.dart';
 import 'package:my_ufape/data/repositories/scheduled_subject/scheduled_subject_repository.dart';
 import 'package:my_ufape/data/repositories/scheduled_subject/scheduled_subject_repository_impl.dart';
+import 'package:my_ufape/data/repositories/user/user_repository.dart';
+import 'package:my_ufape/data/repositories/user/user_repository_impl.dart';
+import 'package:my_ufape/data/services/user/user_service.dart';
 import 'package:my_ufape/ui/home/home_view_model.dart';
 import 'package:my_ufape/ui/splash/splash_view_model.dart';
 import 'package:my_ufape/ui/subjects/subjects_view_model.dart';
@@ -88,8 +91,24 @@ Future<void> setupDependencies() async {
     ),
   );
 
+  injector.addLazySingleton<UserService>(
+    () => UserService(
+      injector.get<Database>(),
+    ),
+  );
+
+  injector.addLazySingleton<UserRepository>(
+    () => UserRepositoryImpl(
+      injector.get<UserService>(),
+    ),
+  );
+
   injector.addLazySingleton(SplashViewModel.new);
-  injector.addLazySingleton(HomeViewModel.new);
+  injector.addLazySingleton(
+    () => HomeViewModel(
+      injector.get<UserRepository>(),
+    ),
+  );
   injector.addLazySingleton(
     () => SubjectsViewModel(
       injector.get<SubjectRepository>(),

@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
 
-enum SyncStep { grades, profile, timetable }
+enum SyncStep { user, grades, profile, timetable }
 
 enum StepStatus { idle, running, success, failure }
 
@@ -13,6 +13,7 @@ class InitialSyncViewModel extends ChangeNotifier {
   InitialSyncViewModel(this._sigaService, this._settingsRepository);
 
   final Map<SyncStep, StepStatus> _status = {
+    SyncStep.user: StepStatus.idle,
     SyncStep.grades: StepStatus.idle,
     SyncStep.profile: StepStatus.idle,
     SyncStep.timetable: StepStatus.idle,
@@ -76,7 +77,6 @@ class InitialSyncViewModel extends ChangeNotifier {
     await _sigaService.goToHome();
     await Future.delayed(const Duration(milliseconds: 500));
 
-    // 1. Sincronizar Grade de Horário com retentativas
     if (!await _runSyncStep(SyncStep.timetable,
         _sigaService.navigateAndExtractTimetable, 'grade de horário')) {
       _isSyncing = false;
@@ -97,6 +97,13 @@ class InitialSyncViewModel extends ChangeNotifier {
     // 3. Sincronizar Perfil Curricular com retentativas
     if (!await _runSyncStep(
         SyncStep.profile, _sigaService.navigateAndExtractProfile, 'perfil')) {
+      _isSyncing = false;
+      return;
+    }
+
+    // 4. Sincronizar Dados do Usuário
+    if (!await _runSyncStep(SyncStep.user, _sigaService.navigateAndExtractUser,
+        'dados do usuário')) {
       _isSyncing = false;
       return;
     }

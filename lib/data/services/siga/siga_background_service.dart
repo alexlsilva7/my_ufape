@@ -13,6 +13,8 @@ import 'package:my_ufape/domain/entities/subject_note.dart';
 import 'package:my_ufape/domain/entities/block_of_profile.dart';
 import 'package:my_ufape/data/parsers/profile_parser.dart';
 import 'package:my_ufape/data/services/siga/siga_scripts.dart';
+import 'package:my_ufape/domain/entities/user.dart';
+import 'package:my_ufape/data/repositories/user/user_repository.dart';
 
 /// Serviço singleton que mantém um WebViewController em memória
 /// para manter a sessão SIGA viva e expor métodos de extração.
@@ -32,6 +34,7 @@ class SigaBackgroundService extends ChangeNotifier {
   final SubjectNoteRepository _subjectNoteRepository = injector.get();
   final BlockOfProfileRepository _blockRepository = injector.get();
   final ScheduledSubjectRepository _scheduledSubjectRepository = injector.get();
+  final UserRepository _userRepository = injector.get();
 
   WebViewController? _controller;
   WebViewController? get controller => _controller;
@@ -708,5 +711,59 @@ class SigaBackgroundService extends ChangeNotifier {
     _cancelReconnectTimer();
     await disposeService();
     await initialize();
+  }
+
+  Future<User> navigateAndExtractUser() async {
+    if (_controller == null) throw Exception('Controller não inicializado');
+
+    try {
+      // 1. Navega para o menu de detalhamento
+      await _controller!.runJavaScript(SigaScripts.scriptNav());
+
+      // 2. Clica em Informações do Discente
+      await _controller!.runJavaScriptReturningResult(SigaScripts.scriptInfo());
+
+      // 3. Aguarda a página de informações carregar
+      await _waitForStudentInfoPageReady();
+
+      // 4. Extrai os dados do usuário
+      final jsonResult = await _controller!
+          .runJavaScriptReturningResult(SigaScripts.extractUserScript())
+          as String;
+
+      if (jsonResult.isEmpty) {
+        throw Exception('O script de extração de usuário retornou vazio');
+      }
+
+      dynamic decodedData = jsonDecode(jsonResult);
+      if (decodedData is String) {
+        decodedData = jsonDecode(decodedData);
+      }
+
+      if (decodedData is Map && decodedData.containsKey('error')) {
+        final errorMessage = decodedData['error'];
+        throw Exception('Erro no script de extração de usuário: $errorMessage');
+      }
+
+      final user = User(
+        name: decodedData['name'] ?? '',
+        cpf: decodedData['cpf'] ?? '',
+        registration: decodedData['registration'] ?? '',
+        course: decodedData['course'] ?? '',
+        entryPeriod: decodedData['entryPeriod'] ?? '',
+        entryType: decodedData['entryType'] ?? '',
+        profile: decodedData['profile'] ?? '',
+        shift: decodedData['shift'] ?? '',
+        situation: decodedData['situation'] ?? '',
+        currentPeriod: decodedData['currentPeriod'] ?? '',
+      );
+
+      // 5. Salva no banco de dados
+      await _userRepository.upsertUser(user);
+
+      return user;
+    } catch (e) {
+      throw Exception('Erro ao navegar e extrair dados do usuário: $e');
+    }
   }
 }

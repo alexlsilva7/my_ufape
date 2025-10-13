@@ -88,6 +88,9 @@ class _InitialSyncPageState extends State<InitialSyncPage> {
                   const SizedBox(height: 12),
                   _buildStepTile('Disciplinas', SyncStep.profile,
                       _viewModel.status[SyncStep.profile]!),
+                  const SizedBox(height: 12),
+                  _buildStepTile('Usuário', SyncStep.user,
+                      _viewModel.status[SyncStep.user]!),
                   const SizedBox(height: 32),
                   if (_viewModel.errorMessage != null && !_viewModel.isSyncing)
                     Text(
@@ -153,6 +156,8 @@ class _InitialSyncPageState extends State<InitialSyncPage> {
         return Icons.menu_book_rounded;
       case SyncStep.timetable:
         return Icons.schedule_outlined;
+      case SyncStep.user:
+        return Icons.person_outline;
     }
   }
 }

@@ -213,4 +213,48 @@ return JSON.stringify(disciplinas);
     }
 })();
 """;
+
+  static String extractUserScript() => r"""
+(function() {
+    try {
+        const iframe = document.getElementById('Conteudo');
+        if (!iframe || !iframe.contentDocument) {
+            return JSON.stringify({ "error": "iFrame 'Conteudo' não encontrado." });
+        }
+        const doc = iframe.contentDocument;
+
+        const data = {};
+        const rows = doc.querySelectorAll('#tableCabecalho tr');
+
+        const fieldMapping = {
+            'CPF:': 'cpf',
+            'Matrícula:': 'registration',
+            'Nome:': 'name',
+            'Curso:': 'course',
+            'Período de Ingresso:': 'entryPeriod',
+            'Tipo do Ingresso:': 'entryType',
+            'Perfil:': 'profile',
+            'Turno:': 'shift',
+            'Situação:': 'situation',
+            'Período Letivo Corrente:': 'currentPeriod'
+        };
+
+        rows.forEach(row => {
+            const labelEl = row.querySelector('font.edit');
+            const valueEl = row.querySelector('font.editPesquisa');
+            if (labelEl && valueEl) {
+                const label = labelEl.innerText.trim();
+                const key = fieldMapping[label];
+                if (key) {
+                    data[key] = valueEl.innerText.trim().replace(/\s+/g, ' ');
+                }
+            }
+        });
+
+        return JSON.stringify(data);
+    } catch (e) {
+        return JSON.stringify({ "error": e.toString() });
+    }
+})();
+""";
 }
