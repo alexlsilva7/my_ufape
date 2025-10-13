@@ -85,6 +85,18 @@ class SigaBackgroundService extends ChangeNotifier {
             statusMessage = '';
             notifyListeners();
 
+            if (url.contains('siga.ufape.edu.br/ufape/index.jsp')) {
+              try {
+                await _controller
+                    ?.runJavaScript(SigaScripts.loginPageStylesScript);
+              } catch (e) {
+                // Ignora erros de script de estilo para não quebrar a funcionalidade
+                if (kDebugMode) {
+                  print('Erro ao aplicar estilos na página de login: $e');
+                }
+              }
+            }
+
             // Tenta injetar o script de login se houver credenciais pendentes.
             // Isso é acionado tanto pelo login ativo quanto pelo automático.
             if (url.contains('index.jsp') &&
@@ -107,6 +119,21 @@ class SigaBackgroundService extends ChangeNotifier {
               _loginCompleter!.complete(false);
             }
           },
+          onUrlChange: (UrlChange change) {
+            final url = change.url;
+            if (url != null && _isLoggedIn && url.contains('index.jsp')) {
+              // Se estávamos logados e fomos redirecionados para a página de login,
+              // a sessão expirou ou o usuário deslogou.
+              if (_isLoggedIn) {
+                // Verificação dupla para evitar múltiplas notificações
+                _isLoggedIn = false;
+                loginNotifier.value = false;
+                _authFailureNotifier.value =
+                    true; // Notifica a falha de autenticação
+                notifyListeners();
+              }
+            }
+          },
         ),
       );
 
@@ -116,7 +143,7 @@ class SigaBackgroundService extends ChangeNotifier {
     );
 
     // Inicia timer periódico para verificar status de login
-    _statusTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+    _statusTimer = Timer.periodic(const Duration(seconds: 2), (_) {
       _checkLoginStatus();
     });
 
@@ -728,7 +755,7 @@ class SigaBackgroundService extends ChangeNotifier {
 
       // 4. Extrai os dados do usuário
       final jsonResult = await _controller!
-          .runJavaScriptReturningResult(SigaScripts.extractUserScript())
+              .runJavaScriptReturningResult(SigaScripts.extractUserScript())
           as String;
 
       if (jsonResult.isEmpty) {

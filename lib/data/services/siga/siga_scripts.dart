@@ -6,6 +6,142 @@ class SigaScripts {
     return "(function(){try{var u=document.getElementById('cpf')||document.getElementsByName('cpf')[0]||null;var p=document.getElementById('txtPassword')||document.getElementsByName('txtPassword')[0]||null;if(u)u.value='$user';if(p)p.value='$pass';var btn=document.getElementById('btnEntrar');if(btn){btn.click();return;}var form=document.getElementById('formulario')||document.forms[0];if(form)form.submit();}catch(e){} })();";
   }
 
+  /// Script para aplicar estilos customizados na página de login do SIGA
+  static const String loginPageStylesScript = """
+  (function() {
+      'use strict';
+
+      // 1. Função para limpar a interface
+      function limparInterface() {
+          const seletoresParaRemover = [
+              '[id^="subviewTopo:"]', '.coluna-esquerda', '.Rodape', '#espacoVazioRodape',
+              'div[layout="block"]', '#divAvisoNavegador', '#divAvisoFirefox25',
+              '#containerAcessibilidade', '#conteinerAjuda'
+          ];
+          seletoresParaRemover.forEach(seletor => {
+              const elemento = document.querySelector(seletor);
+              if (elemento) elemento.style.display = 'none';
+          });
+      }
+
+      // 2. Função para aplicar os estilos corrigidos
+      function aplicarEstilosResponsivos() {
+          const estiloAntigo = document.getElementById('estilo-responsivo-login');
+          if (estiloAntigo) estiloAntigo.remove();
+
+          const css = `
+              /* -------------------------------------------------- */
+              /* 1. RESET E PREPARAÇÃO DOS CONTAINERS PRINCIPAIS    */
+              /* -------------------------------------------------- */
+
+              body {
+                  display: flex !important;
+                  justify-content: center !important;
+                  align-items: center !important;
+                  height: 100vh !important;
+                  margin: 0 !important;
+                  background-color: #f0f2f5 !important;
+                  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+              }
+
+              /* ✨ CORREÇÃO PRINCIPAL: Neutraliza os estilos problemáticos de #areaTotal */
+              #areaTotal {
+                  width: 100% !important;
+                  min-height: auto !important; /* Remove a altura mínima conflitante */
+                  margin: 0 !important;       /* Remove a margem negativa */
+                  overflow: visible !important; /* Evita que o conteúdo seja cortado */
+                  display: flex !important;
+                  justify-content: center !important;
+                  align-items: center !important; /* Centraliza o formulário verticalmente dentro dele */
+              }
+
+              .Conteudo {
+                  width: 100% !important;
+                  display: flex !important;
+                  justify-content: center !important;
+              }
+
+              /* -------------------------------------------------- */
+              /* 2. ESTILOS PARA CELULAR (MOBILE-FIRST)             */
+              /* -------------------------------------------------- */
+
+              .login.ui-corner-all {
+                  width: 100% !important;
+                  background-color: transparent !important; /* Fundo transparente no celular */
+                  padding: 0 7vw !important;
+                  box-sizing: border-box !important;
+                  border: none !important;
+                  box-shadow: none !important;
+              }
+
+              .login.ui-corner-all label {
+                  font-size: 1rem !important;
+                  font-weight: 600 !important;
+                  margin-bottom: 10px !important;
+                  display: block !important;
+                  color: #333 !important;
+              }
+
+              .login.ui-corner-all input[type="text"],
+              .login.ui-corner-all input[type="password"] {
+                  width: 100% !important;
+                  padding: 18px 16px !important;
+                  margin-bottom: 24px !important;
+                  font-size: 1.1rem !important;
+                  border: 1px solid #ccc !important;
+                  border-radius: 8px !important;
+                  box-sizing: border-box !important;
+              }
+
+              .login.ui-corner-all .esqueceuSenha {
+                  display: block !important;
+                  text-align: center !important;
+                  margin: 20px 0 !important;
+                  font-size: 0.95rem !important;
+                  color: #007bff !important;
+              }
+
+              .login.ui-corner-all .btEntrar {
+                  width: 100% !important;
+                  padding: 18px !important;
+                  font-size: 1.15rem !important;
+                  font-weight: bold !important;
+                  border: none !important;
+                  border-radius: 8px !important;
+                  background-color: #2c8b2c !important;
+                  color: white !important;
+              }
+
+              /* -------------------------------------------------- */
+              /* 3. ESTILOS PARA TELAS MAIORES (TABLET/DESKTOP)     */
+              /* -------------------------------------------------- */
+
+              @media screen and (min-width: 600px) {
+                  .login.ui-corner-all {
+                      width: 90% !important;
+                      max-width: 420px !important;
+                      background-color: #ffffff !important;
+                      padding: 3rem !important;
+                      border: 1px solid #ddd !important;
+                      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1) !important;
+                      border-radius: 12px !important;
+                  }
+              }
+          `;
+
+          const style = document.createElement('style');
+          style.id = 'estilo-responsivo-login';
+          style.type = 'text/css';
+          style.appendChild(document.createTextNode(css));
+          document.head.appendChild(style);
+      }
+
+      limparInterface();
+      aplicarEstilosResponsivos();
+
+  })();
+  """;
+
   static String scriptGoHome() =>
       "document.getElementById('menuTopo:imageHome').click();";
 
