@@ -122,15 +122,11 @@ class SigaBackgroundService extends ChangeNotifier {
           onUrlChange: (UrlChange change) {
             final url = change.url;
             if (url != null && _isLoggedIn && url.contains('index.jsp')) {
-              // Se estávamos logados e fomos redirecionados para a página de login,
-              // a sessão expirou ou o usuário deslogou.
               if (_isLoggedIn) {
-                // Verificação dupla para evitar múltiplas notificações
                 _isLoggedIn = false;
                 loginNotifier.value = false;
-                _authFailureNotifier.value =
-                    true; // Notifica a falha de autenticação
                 notifyListeners();
+                _scheduleReconnect();
               }
             }
           },
@@ -239,13 +235,7 @@ class SigaBackgroundService extends ChangeNotifier {
         final authError =
             await _controller!.runJavaScriptReturningResult(errorScript);
         if (authError == true || authError.toString() == 'true') {
-          // Se for um login ativo, apenas completa o future com falha.
-          if (_loginCompleter != null && !_loginCompleter!.isCompleted) {
-            _loginCompleter!.complete(false);
-          } else if (_loginCompleter == null) {
-            // Se for uma verificação em segundo plano, notifica globalmente.
-            _authFailureNotifier.value = true;
-          }
+          _authFailureNotifier.value = true;
         }
       }
 
@@ -287,28 +277,20 @@ class SigaBackgroundService extends ChangeNotifier {
   Future<bool> reconnect() async {
     if (_controller == null) return false;
     final creds = await _settings.getUserCredentials();
-    bool attempted = false;
     bool success = false;
-    await creds.fold((login) async {
-      attempted = true;
-      // Carrega a página de login antes de injetar, para garantir que os campos existam
-      try {
-        await _controller!.loadRequest(
-            Uri.parse('https://siga.ufape.edu.br/ufape/index.jsp'));
-      } catch (_) {}
-      await _injectLoginScript(login.username, login.password);
-      // Aguarda curto período e checa status
-      await Future.delayed(const Duration(seconds: 2));
-      await _checkLoginStatus();
-      success = _isLoggedIn;
-      if (success) {
-        _reconnectAttempts = 0;
-        _cancelReconnectTimer();
-      }
-    }, (error) {
-      // sem credenciais
-    });
-    return attempted && success;
+
+    await creds.fold(
+      (loginData) async {
+        // Usar o método login que já existe
+        success = await login(loginData.username, loginData.password);
+      },
+      (error) {
+        success = false;
+        _authFailureNotifier.value = true; // Sem credenciais, falha permanente
+      },
+    );
+
+    return success;
   }
 
   void _scheduleReconnect() {

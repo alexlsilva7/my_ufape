@@ -26,31 +26,17 @@ class _MyUfapeAppState extends State<MyUfapeApp> {
     return ListenableBuilder(
       listenable: settingsRepository,
       builder: (context, child) {
-        return ListenableBuilder(
-          listenable: sigaService.authFailureNotifier,
-          builder: (context, child) {
-            if (sigaService.authFailureNotifier.value) {
-              // Força o logout se a autenticação em segundo plano falhar
-              WidgetsBinding.instance.addPostFrameCallback((_) {
-                Routefly.navigate(routePaths.login);
-                // Reseta o notifier para não entrar em loop
-                sigaService.resetAuthFailure();
-              });
-            }
-
-            return MaterialApp.router(
-              routerConfig: Routefly.routerConfig(
-                routes: routes,
-                initialPath: routePaths.splash,
-              ),
-              builder: (context, child) => DebugOverlayWidget(child: child!),
-              title: 'My UFAPE',
-              theme: settingsRepository.isDarkMode
-                  ? AppConfigUI.darkTheme
-                  : AppConfigUI.lightTheme,
-              debugShowCheckedModeBanner: false,
-            );
-          },
+        return MaterialApp.router(
+          routerConfig: Routefly.routerConfig(
+            routes: routes,
+            initialPath: routePaths.splash,
+          ),
+          builder: (context, child) => DebugOverlayWidget(child: child!),
+          title: 'My UFAPE',
+          theme: settingsRepository.isDarkMode
+              ? AppConfigUI.darkTheme
+              : AppConfigUI.lightTheme,
+          debugShowCheckedModeBanner: false,
         );
       },
     );
