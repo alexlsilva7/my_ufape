@@ -109,7 +109,7 @@ class _ChartsPageState extends State<ChartsPage> {
                 'Taxa de Aprovação',
                 '${analytics['approvalRate'].toStringAsFixed(1)}%',
                 Icons.trending_up,
-                analytics['approvalRate'] >= 80
+                analytics['approvalRate'] >= 70
                     ? Colors.green.shade600
                     : analytics['approvalRate'] >= 60
                         ? Colors.orange.shade600

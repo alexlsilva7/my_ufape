@@ -202,6 +202,27 @@ class _HomePageState extends State<HomePage> {
             }
           }
 
+          String dayName(DayOfWeek d) {
+            switch (d) {
+              case DayOfWeek.segunda:
+                return 'Segunda-feira';
+              case DayOfWeek.terca:
+                return 'Terça-feira';
+              case DayOfWeek.quarta:
+                return 'Quarta-feira';
+              case DayOfWeek.quinta:
+                return 'Quinta-feira';
+              case DayOfWeek.sexta:
+                return 'Sexta-feira';
+              case DayOfWeek.sabado:
+                return 'Sábado';
+              case DayOfWeek.domingo:
+                return 'Domingo';
+              default:
+                return '';
+            }
+          }
+
           final todayIndex = now.weekday; // Monday=1 .. Sunday=7
 
           int parseMinutes(String hhmm) {
@@ -275,15 +296,33 @@ class _HomePageState extends State<HomePage> {
 
             final offsetDays = (sDayIndex - todayIndex + 7) % 7;
             final startMinutes = parseMinutes(slot.startTime);
+            final endMinutes = parseMinutes(slot.endTime);
 
-            final effectiveOffset =
-                (offsetDays == 0 && startMinutes <= nowMinutes)
-                    ? 7
-                    : offsetDays;
+            bool isOngoing = false;
+            int effectiveOffset;
+
+            // Se é hoje e está em andamento (já começou mas não terminou)
+            if (offsetDays == 0 &&
+                startMinutes <= nowMinutes &&
+                endMinutes > nowMinutes) {
+              isOngoing = true;
+              effectiveOffset = 0;
+            } else if (offsetDays == 0 && endMinutes <= nowMinutes) {
+              // Se é hoje mas já passou, empurra para próxima semana
+              effectiveOffset = 7;
+            } else {
+              effectiveOffset = offsetDays;
+            }
 
             final score = effectiveOffset * 24 * 60 + startMinutes;
-            upcoming
-                .add({'subject': it['subject'], 'slot': slot, 'score': score});
+            upcoming.add({
+              'subject': it['subject'],
+              'slot': slot,
+              'score': score,
+              'isOngoing': isOngoing,
+              'dayName': dayName(slot.day),
+              'daysUntil': effectiveOffset,
+            });
           }
 
           // ordenar por score (menor = próximo)
@@ -293,7 +332,13 @@ class _HomePageState extends State<HomePage> {
           setState(() {
             _nextClasses = upcoming
                 .take(3)
-                .map((e) => {'subject': e['subject'], 'slot': e['slot']})
+                .map((e) => {
+                      'subject': e['subject'],
+                      'slot': e['slot'],
+                      'isOngoing': e['isOngoing'],
+                      'dayName': e['dayName'],
+                      'daysUntil': e['daysUntil'],
+                    })
                 .toList(growable: false);
             _isLoadingNext = false;
           });
@@ -545,7 +590,21 @@ class _HomePageState extends State<HomePage> {
       children: _nextClasses.map((item) {
         final subject = item['subject'] as ScheduledSubject;
         final slot = item['slot'] as TimeSlot;
-        final color = Colors.blue.shade600;
+        final isOngoing = item['isOngoing'] as bool;
+        final dayName = item['dayName'] as String;
+        final daysUntil = item['daysUntil'] as int;
+
+        final color = isOngoing ? Colors.orange.shade600 : Colors.blue.shade600;
+
+        String dayLabel;
+        if (daysUntil == 0) {
+          dayLabel = isOngoing ? 'AGORA' : 'Hoje';
+        } else if (daysUntil == 1) {
+          dayLabel = 'Amanhã';
+        } else {
+          dayLabel = dayName;
+        }
+
         return Container(
           margin: const EdgeInsets.only(bottom: 10),
           padding: const EdgeInsets.all(12),
@@ -568,7 +627,7 @@ class _HomePageState extends State<HomePage> {
             children: [
               Container(
                 width: 4,
-                height: 55,
+                height: 78,
                 decoration: BoxDecoration(
                   color: color,
                   borderRadius: BorderRadius.circular(2),
@@ -579,12 +638,66 @@ class _HomePageState extends State<HomePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Row(
+                      children: [
+                        if (isOngoing) ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Colors.orange.shade600,
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: const [
+                                Icon(Icons.circle,
+                                    size: 8, color: Colors.white),
+                                SizedBox(width: 6),
+                                Text(
+                                  'EM ANDAMENTO',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ] else ...[
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: color.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                  color: color.withOpacity(0.3), width: 1),
+                            ),
+                            child: Text(
+                              dayLabel.toUpperCase(),
+                              style: TextStyle(
+                                color: color,
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: 0.5,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 6),
                     Text(
                       subject.name,
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 6),
                     Row(
@@ -601,33 +714,35 @@ class _HomePageState extends State<HomePage> {
                           ),
                         ),
                         const SizedBox(width: 12),
-                        const Icon(Icons.room, size: 14),
-                        const SizedBox(width: 6),
-                        Text(
-                          subject.room,
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: isDark
-                                ? Colors.grey.shade400
-                                : Colors.grey.shade600,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
                         const Icon(Icons.person, size: 14),
                         const SizedBox(width: 6),
-                        Text(
-                          subject.className.isNotEmpty
-                              ? subject.className
-                              : subject.status,
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: isDark
-                                ? Colors.grey.shade400
-                                : Colors.grey.shade600,
+                        Flexible(
+                          child: Text(
+                            subject.className.isNotEmpty
+                                ? subject.className
+                                : subject.status,
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: isDark
+                                  ? Colors.grey.shade400
+                                  : Colors.grey.shade600,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Icon(Icons.room, size: 14),
+                        const SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            subject.room,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: isDark
+                                  ? Colors.grey.shade400
+                                  : Colors.grey.shade600,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
