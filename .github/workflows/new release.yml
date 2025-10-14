@@ -58,4 +58,3 @@ jobs:
           files: |
             build/app/outputs/flutter-apk/my_ufape-v${{ steps.version.outputs.version }}.apk
             build/app/outputs/bundle/release/my_ufape-v${{ steps.version.outputs.version }}.aab
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
