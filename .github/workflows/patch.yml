@@ -4,9 +4,7 @@ permissions:
   contents: write
 
 on:
-  push:
-    branches:
-      - patch
+  workflow_dispatch:
 
 jobs:
   shorebird-patch:
