@@ -2,105 +2,89 @@ import 'package:flutter/material.dart';
 import 'package:my_ufape/domain/entities/subject.dart';
 import 'package:my_ufape/ui/subjects/subjects_view_model.dart';
 import 'package:my_ufape/ui/widgets/subject_detail_widgets.dart';
+import 'package:routefly/routefly.dart';
 
-class EnrichedSubjectDetailsModal extends StatelessWidget {
-  final EnrichedSubject enrichedSubject;
+Route routeBuilder(BuildContext context, RouteSettings settings) {
+  return PageRouteBuilder(
+    settings: settings,
+    pageBuilder: (_, a1, a2) => const SubjectDetailsPage(),
+    transitionsBuilder: (_, a1, a2, child) {
+      return SlideTransition(
+          position: Tween<Offset>(
+            begin: const Offset(1, 0),
+            end: Offset.zero,
+          ).animate(a1),
+          child: child);
+    },
+  );
+}
 
-  const EnrichedSubjectDetailsModal({
-    super.key,
-    required this.enrichedSubject,
-  });
+class SubjectDetailsPage extends StatefulWidget {
+  const SubjectDetailsPage({super.key});
 
-  static void show(BuildContext context, EnrichedSubject enrichedSubject) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) =>
-          EnrichedSubjectDetailsModal(enrichedSubject: enrichedSubject),
-    );
-  }
+  @override
+  State<SubjectDetailsPage> createState() => _SubjectDetailsPageState();
+}
+
+class _SubjectDetailsPageState extends State<SubjectDetailsPage> {
+  EnrichedSubject enrichedSubject = Routefly.query.arguments as EnrichedSubject;
 
   Subject get subject => enrichedSubject.subject;
 
   @override
   Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      expand: false,
-      initialChildSize: 0.7,
-      maxChildSize: 0.95,
-      minChildSize: 0.5,
-      builder: (_, scrollController) {
-        return Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).scaffoldBackgroundColor,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-          ),
-          child: Column(
-            children: [
-              Container(
-                margin: const EdgeInsets.only(top: 12, bottom: 8),
-                width: 40,
-                height: 4,
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade300,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-              ),
-              Expanded(
-                child: ListView(
-                  controller: scrollController,
-                  padding: const EdgeInsets.all(20),
-                  children: [
-                    Header(subject: subject),
-                    const SizedBox(height: 20),
-                    TypeBadge(type: subject.type),
-                    const SizedBox(height: 20),
-                    if (enrichedSubject.completionNote != null) ...[
-                      _GradesCard(enrichedSubject: enrichedSubject),
-                      const SizedBox(height: 16),
-                    ],
-                    InfoCard(subject: subject),
-                    const SizedBox(height: 16),
-                    WorkloadCard(subject: subject),
-                    const SizedBox(height: 16),
-                    if (subject.prerequisites.isNotEmpty) ...[
-                      PrerequisitesCard(
-                          title: 'Pré-requisitos',
-                          items: subject.prerequisites,
-                          icon: Icons.lock_outline,
-                          color: Colors.orange),
-                      const SizedBox(height: 16),
-                    ],
-                    if (subject.corequisites.isNotEmpty) ...[
-                      PrerequisitesCard(
-                          title: 'Co-requisitos',
-                          items: subject.corequisites,
-                          icon: Icons.link,
-                          color: Colors.blue),
-                      const SizedBox(height: 16),
-                    ],
-                    if (subject.equivalences.isNotEmpty) ...[
-                      PrerequisitesCard(
-                          title: 'Equivalências',
-                          items: subject.equivalences,
-                          icon: Icons.swap_horiz,
-                          color: Colors.purple),
-                      const SizedBox(height: 16),
-                    ],
-                    if (subject.ementa.isNotEmpty) ...[
-                      EmentaCard(subject: subject),
-                      const SizedBox(height: 20),
-                    ],
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
+    return Scaffold(
+      appBar: AppBar(),
+      body: ListView(
+        padding: const EdgeInsets.all(20),
+        children: [
+          Header(subject: subject),
+          const SizedBox(height: 20),
+          TypeBadge(type: subject.type),
+          const SizedBox(height: 20),
+          if (enrichedSubject.completionNote != null) ...[
+            _GradesCard(enrichedSubject: enrichedSubject),
+            const SizedBox(height: 16),
+          ],
+          InfoCard(subject: subject),
+          const SizedBox(height: 16),
+          WorkloadCard(subject: subject),
+          const SizedBox(height: 16),
+          if (subject.prerequisites.isNotEmpty) ...[
+            PrerequisitesCard(
+              title: 'Pré-requisitos',
+              items: subject.prerequisites,
+              icon: Icons.lock_outline,
+              color: Colors.orange,
+              onTapDetail: true,
+            ),
+            const SizedBox(height: 16),
+          ],
+          if (subject.corequisites.isNotEmpty) ...[
+            PrerequisitesCard(
+              title: 'Co-requisitos',
+              items: subject.corequisites,
+              icon: Icons.link,
+              color: Colors.blue,
+              onTapDetail: true,
+            ),
+            const SizedBox(height: 16),
+          ],
+          if (subject.equivalences.isNotEmpty) ...[
+            PrerequisitesCard(
+              title: 'Equivalências',
+              items: subject.equivalences,
+              icon: Icons.swap_horiz,
+              color: Colors.purple,
+            ),
+            const SizedBox(height: 16),
+          ],
+          if (subject.ementa.isNotEmpty) ...[
+            EmentaCard(subject: subject),
+            const SizedBox(height: 20),
+          ],
+        ],
+      ),
     );
   }
 }

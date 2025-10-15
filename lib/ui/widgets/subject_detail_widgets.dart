@@ -1,6 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:my_ufape/app_widget.dart';
+import 'package:my_ufape/config/dependencies.dart';
+import 'package:my_ufape/data/repositories/subject/subject_repository.dart';
+import 'package:my_ufape/data/repositories/subject_note/subject_note_repository.dart';
 import 'package:my_ufape/domain/entities/prerequisite.dart';
 import 'package:my_ufape/domain/entities/subject.dart';
+import 'package:my_ufape/domain/entities/subject_note.dart';
+import 'package:my_ufape/ui/subjects/subjects_view_model.dart';
+import 'package:result_dart/result_dart.dart';
+import 'package:routefly/routefly.dart';
 
 class Header extends StatelessWidget {
   const Header({super.key, required this.subject});
@@ -283,18 +291,40 @@ class InfoRow extends StatelessWidget {
   }
 }
 
-class PrerequisitesCard extends StatelessWidget {
+class PrerequisitesCard extends StatefulWidget {
   const PrerequisitesCard({
     super.key,
     required this.title,
     required this.items,
     required this.icon,
     required this.color,
+    this.onTapDetail = false,
   });
   final String title;
   final List<Prerequisite> items;
   final IconData icon;
   final Color color;
+  final bool onTapDetail;
+
+  @override
+  State<PrerequisitesCard> createState() => _PrerequisitesCardState();
+}
+
+class _PrerequisitesCardState extends State<PrerequisitesCard> {
+  final subjectsRepository = injector.get<SubjectRepository>();
+  final subjectNoteRepository = injector.get<SubjectNoteRepository>();
+
+  Future<Subject?> _subjectExists(String name) async {
+    Subject? subject;
+    await subjectsRepository.getSubjectsByName(name).onSuccess((result) {
+      if (result.isNotEmpty) {
+        subject = result.first;
+      }
+    });
+
+    return subject;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -308,10 +338,10 @@ class PrerequisitesCard extends StatelessWidget {
           children: [
             Row(
               children: [
-                Icon(icon, size: 20, color: color),
+                Icon(widget.icon, size: 20, color: widget.color),
                 const SizedBox(width: 8),
                 Text(
-                  title,
+                  widget.title,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
@@ -322,20 +352,43 @@ class PrerequisitesCard extends StatelessWidget {
             Wrap(
               spacing: 8,
               runSpacing: 8,
-              children: items.map((item) {
-                return Chip(
-                  avatar: CircleAvatar(
-                    backgroundColor: color.withValues(alpha: 0.2),
-                    child: Icon(Icons.book, size: 16, color: color),
+              children: widget.items.map((item) {
+                return GestureDetector(
+                  onTap: widget.onTapDetail
+                      ? () async {
+                          if (item.name == null) return;
+                          final subject = await _subjectExists(item.name!);
+                          if (subject != null) {
+                            Routefly.push(routePaths.subjects.subjectDetails,
+                                arguments: EnrichedSubject(subject: subject));
+                          } else {
+                            if (mounted) {
+                              // ignore: use_build_context_synchronously
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(
+                                      'Matéria "${item.code}" não encontrada no catálogo.'),
+                                ),
+                              );
+                            }
+                          }
+                        }
+                      : null,
+                  child: Chip(
+                    avatar: CircleAvatar(
+                      backgroundColor: widget.color.withValues(alpha: 0.2),
+                      child: Icon(Icons.book, size: 16, color: widget.color),
+                    ),
+                    label: Text(
+                      '${item.code} - ${item.name}',
+                      style: const TextStyle(fontSize: 12),
+                    ),
+                    backgroundColor: widget.color.withValues(alpha: 0.1),
+                    side:
+                        BorderSide(color: widget.color.withValues(alpha: 0.3)),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
                   ),
-                  label: Text(
-                    '${item.code} - ${item.name}',
-                    style: const TextStyle(fontSize: 12),
-                  ),
-                  backgroundColor: color.withValues(alpha: 0.1),
-                  side: BorderSide(color: color.withValues(alpha: 0.3)),
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
                 );
               }).toList(),
             ),

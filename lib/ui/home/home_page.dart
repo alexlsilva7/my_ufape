@@ -827,7 +827,7 @@ class _HomePageState extends State<HomePage> {
         'icon': Icons.view_list_outlined,
         'color': Colors.red.shade600,
         'onTap': () async {
-          Routefly.push(routePaths.subjects);
+          Routefly.push(routePaths.subjects.path);
         },
       },
       {

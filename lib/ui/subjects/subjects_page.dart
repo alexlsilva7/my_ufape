@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:my_ufape/app_widget.dart';
 import 'package:my_ufape/config/dependencies.dart';
 import 'package:my_ufape/ui/subjects/subjects_view_model.dart';
-import 'package:my_ufape/ui/subjects/widgets/enriched_subject_details_modal.dart';
+
+import 'package:my_ufape/ui/subjects/subject_details/subject_details_page.dart';
+import 'package:routefly/routefly.dart';
 
 class SubjectsPage extends StatefulWidget {
   const SubjectsPage({super.key});
@@ -524,7 +527,10 @@ class _SubjectsPageState extends State<SubjectsPage> {
           Icons.chevron_right,
           color: Colors.grey.shade400,
         ),
-        onTap: () => EnrichedSubjectDetailsModal.show(context, enrichedSubject),
+        onTap: () {
+          Routefly.push(routePaths.subjects.subjectDetails,
+              arguments: enrichedSubject);
+        },
       ),
     );
   }
