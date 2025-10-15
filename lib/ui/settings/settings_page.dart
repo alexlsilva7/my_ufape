@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:my_ufape/config/dependencies.dart';
 import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
-import 'package:routefly/routefly.dart';
-import 'package:my_ufape/app_widget.dart';
 
 import 'package:my_ufape/data/services/shorebird/shorebird_service.dart';
 import 'package:terminate_restart/terminate_restart.dart';
@@ -17,14 +15,12 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   late SettingsRepository _settingsRepository;
   late ShorebirdService _shorebirdService;
-  bool _isDarkMode = false;
 
   @override
   void initState() {
     super.initState();
     _settingsRepository = injector.get<SettingsRepository>();
     _shorebirdService = injector.get<ShorebirdService>();
-    _isDarkMode = _settingsRepository.isDarkMode;
   }
 
   @override

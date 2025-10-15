@@ -364,7 +364,7 @@ class _CurricularProfilePageState extends State<CurricularProfilePage> {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              color: _getFilterColor(_filterByType).withOpacity(0.1),
+              color: _getFilterColor(_filterByType).withValues(alpha: 0.1),
               child: Row(
                 children: [
                   Icon(_getFilterIcon(_filterByType),
@@ -385,7 +385,8 @@ class _CurricularProfilePageState extends State<CurricularProfilePage> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: _getFilterColor(_filterByType).withOpacity(0.2),
+                        color: _getFilterColor(_filterByType)
+                            .withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -688,9 +689,10 @@ class _CurricularProfilePageState extends State<CurricularProfilePage> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: typeColor.withOpacity(0.1),
+                      color: typeColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: typeColor.withOpacity(0.25)),
+                      border:
+                          Border.all(color: typeColor.withValues(alpha: 0.25)),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,

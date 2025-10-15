@@ -89,7 +89,7 @@ class ShorebirdService extends ChangeNotifier {
       // Silently fail on automatic checks
       if (!isAutomatic && context != null && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao verificar atualizações: \$e')),
+          SnackBar(content: Text('Erro ao verificar atualizações: $e')),
         );
       }
     } finally {
@@ -120,7 +120,7 @@ class ShorebirdService extends ChangeNotifier {
     } on UpdateException catch (e) {
       if (context != null && context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao baixar atualização: \$e')),
+          SnackBar(content: Text('Erro ao baixar atualização: $e')),
         );
       }
     }

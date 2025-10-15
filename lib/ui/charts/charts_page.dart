@@ -168,8 +168,8 @@ class _ChartsPageState extends State<ChartsPage> {
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
                 color: isImproving
-                    ? Colors.green.shade600.withOpacity(0.15)
-                    : Colors.orange.shade600.withOpacity(0.15),
+                    ? Colors.green.shade600.withValues(alpha: 0.15)
+                    : Colors.orange.shade600.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(
@@ -208,7 +208,7 @@ class _ChartsPageState extends State<ChartsPage> {
                           .textTheme
                           .bodyMedium
                           ?.color
-                          ?.withOpacity(0.8),
+                          ?.withValues(alpha: 0.8),
                     ),
                   ),
                 ],
@@ -264,7 +264,7 @@ class _ChartsPageState extends State<ChartsPage> {
                     .textTheme
                     .bodySmall
                     ?.color
-                    ?.withOpacity(0.8),
+                    ?.withValues(alpha: 0.8),
                 fontStyle: FontStyle.italic,
               ),
             ),
@@ -328,7 +328,7 @@ class _ChartsPageState extends State<ChartsPage> {
                     .textTheme
                     .bodySmall
                     ?.color
-                    ?.withOpacity(0.8),
+                    ?.withValues(alpha: 0.8),
                 fontStyle: FontStyle.italic,
               ),
             ),
@@ -389,10 +389,10 @@ class _ChartsPageState extends State<ChartsPage> {
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.amber.shade600.withOpacity(0.15),
+                      color: Colors.amber.shade600.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
-                        color: Colors.amber.shade600.withOpacity(0.3),
+                        color: Colors.amber.shade600.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Column(
@@ -442,10 +442,10 @@ class _ChartsPageState extends State<ChartsPage> {
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.blue.shade600.withOpacity(0.15),
+                      color: Colors.blue.shade600.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
-                        color: Colors.blue.shade600.withOpacity(0.3),
+                        color: Colors.blue.shade600.withValues(alpha: 0.3),
                       ),
                     ),
                     child: Column(
@@ -501,7 +501,7 @@ class _ChartsPageState extends State<ChartsPage> {
                     .textTheme
                     .bodySmall
                     ?.color
-                    ?.withOpacity(0.8),
+                    ?.withValues(alpha: 0.8),
                 fontStyle: FontStyle.italic,
               ),
             ),
@@ -750,11 +750,13 @@ class _ChartsPageState extends State<ChartsPage> {
                         show: true,
                         gradient: LinearGradient(
                           colors: [
-                            Theme.of(context).primaryColor.withOpacity(0.15),
+                            Theme.of(context)
+                                .primaryColor
+                                .withValues(alpha: 0.15),
                             Theme.of(context)
                                 .colorScheme
                                 .secondary
-                                .withOpacity(0.05),
+                                .withValues(alpha: 0.05),
                           ],
                           begin: Alignment.topCenter,
                           end: Alignment.bottomCenter,
@@ -949,7 +951,7 @@ class _ChartsPageState extends State<ChartsPage> {
                       .textTheme
                       .bodySmall
                       ?.color
-                      ?.withOpacity(0.8),
+                      ?.withValues(alpha: 0.8),
                   fontStyle: FontStyle.italic),
               textAlign: TextAlign.center,
             ),
@@ -1087,7 +1089,7 @@ class _ChartsPageState extends State<ChartsPage> {
                     .textTheme
                     .bodySmall
                     ?.color
-                    ?.withOpacity(0.8),
+                    ?.withValues(alpha: 0.8),
                 fontStyle: FontStyle.italic,
               ),
             ),
@@ -1156,9 +1158,9 @@ class _ChartsPageState extends State<ChartsPage> {
       child: Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
+          color: color.withValues(alpha: 0.1),
           borderRadius: BorderRadius.circular(8),
-          border: Border.all(color: color.withOpacity(0.3)),
+          border: Border.all(color: color.withValues(alpha: 0.3)),
         ),
         child: Row(
           children: [
@@ -1355,10 +1357,11 @@ class _ChartsPageState extends State<ChartsPage> {
                   child: Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: (insight['color'] as Color).withOpacity(0.1),
+                      color: (insight['color'] as Color).withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: (insight['color'] as Color).withOpacity(0.3),
+                        color:
+                            (insight['color'] as Color).withValues(alpha: 0.3),
                       ),
                     ),
                     child: Row(
@@ -1391,7 +1394,7 @@ class _ChartsPageState extends State<ChartsPage> {
                                       .textTheme
                                       .bodyMedium
                                       ?.color
-                                      ?.withOpacity(0.8),
+                                      ?.withValues(alpha: 0.8),
                                 ),
                               ),
                             ],
@@ -1414,7 +1417,6 @@ class _ChartsPageState extends State<ChartsPage> {
     Color color, {
     String? subtitle,
   }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Card(
       margin: const EdgeInsets.all(8),
       elevation: 2,
@@ -1454,7 +1456,7 @@ class _ChartsPageState extends State<ChartsPage> {
                       .textTheme
                       .bodySmall
                       ?.color
-                      ?.withOpacity(0.7),
+                      ?.withValues(alpha: 0.7),
                   fontStyle: FontStyle.italic,
                 ),
               ),
@@ -1500,7 +1502,7 @@ class _ChartsPageState extends State<ChartsPage> {
                   .textTheme
                   .bodySmall
                   ?.color
-                  ?.withOpacity(0.7),
+                  ?.withValues(alpha: 0.7),
             ),
           ),
         ],

@@ -91,7 +91,8 @@ class _HomePageState extends State<HomePage> {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor.withOpacity(0.15),
+                    color:
+                        Theme.of(context).primaryColor.withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(
@@ -440,7 +441,7 @@ class _HomePageState extends State<HomePage> {
                                 Text(
                                   'Bem-vindo ao My UFAPE',
                                   style: TextStyle(
-                                    color: Colors.white.withOpacity(0.9),
+                                    color: Colors.white.withValues(alpha: 0.9),
                                     fontSize: 14,
                                   ),
                                 ),
@@ -565,7 +566,10 @@ class _HomePageState extends State<HomePage> {
               color: isDark ? Colors.black : Colors.white,
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
-                color: Theme.of(context).colorScheme.outline.withOpacity(0.08),
+                color: Theme.of(context)
+                    .colorScheme
+                    .outline
+                    .withValues(alpha: 0.08),
                 width: 1,
               ),
             ),
@@ -612,12 +616,12 @@ class _HomePageState extends State<HomePage> {
             color: isDark ? Colors.black : Colors.white,
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: color.withOpacity(0.25),
+              color: color.withValues(alpha: 0.25),
               width: 1.2,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(isDark ? 0.3 : 0.03),
+                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.03),
                 blurRadius: 8,
                 offset: const Offset(0, 2),
               ),
@@ -671,10 +675,11 @@ class _HomePageState extends State<HomePage> {
                             padding: const EdgeInsets.symmetric(
                                 horizontal: 8, vertical: 4),
                             decoration: BoxDecoration(
-                              color: color.withOpacity(0.1),
+                              color: color.withValues(alpha: 0.1),
                               borderRadius: BorderRadius.circular(12),
                               border: Border.all(
-                                  color: color.withOpacity(0.3), width: 1),
+                                  color: color.withValues(alpha: 0.3),
+                                  width: 1),
                             ),
                             child: Text(
                               dayLabel.toUpperCase(),
@@ -783,6 +788,7 @@ class _HomePageState extends State<HomePage> {
               },
             );
           } catch (e) {
+            // ignore: use_build_context_synchronously
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
                 content: Text('Erro ao acessar SIGA: $e'),
@@ -887,7 +893,7 @@ class _HomePageState extends State<HomePage> {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(isDark ? 0.3 : 0.1),
+                  color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.1),
                   blurRadius: 8,
                   offset: const Offset(0, 2),
                 ),
@@ -899,7 +905,7 @@ class _HomePageState extends State<HomePage> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: (item['color'] as Color).withOpacity(0.15),
+                    color: (item['color'] as Color).withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
                   child: Icon(

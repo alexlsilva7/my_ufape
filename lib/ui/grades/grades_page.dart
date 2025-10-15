@@ -555,7 +555,7 @@ class _GradesPageState extends State<GradesPage> {
             Container(
               width: double.infinity,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              color: _getFilterColor(_filterBySituacao).withOpacity(0.1),
+              color: _getFilterColor(_filterBySituacao).withValues(alpha: 0.1),
               child: Row(
                 children: [
                   Icon(
@@ -579,8 +579,8 @@ class _GradesPageState extends State<GradesPage> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color:
-                            _getFilterColor(_filterBySituacao).withOpacity(0.2),
+                        color: _getFilterColor(_filterBySituacao)
+                            .withValues(alpha: 0.2),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -866,7 +866,8 @@ class _GradesPageState extends State<GradesPage> {
                     Text(
                       'Média ${periodMedia.toStringAsFixed(2)}',
                       style: TextStyle(
-                          color: Colors.white.withOpacity(0.9), fontSize: 10),
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontSize: 10),
                     ),
                   ],
                 ),
@@ -882,7 +883,7 @@ class _GradesPageState extends State<GradesPage> {
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.orange.shade600.withOpacity(0.3),
+                        color: Colors.orange.shade600.withValues(alpha: 0.3),
                         blurRadius: 8,
                         offset: const Offset(0, 2),
                       ),
@@ -1051,9 +1052,9 @@ class _GradesPageState extends State<GradesPage> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: c.withOpacity(0.12),
+        color: c.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: c.withOpacity(0.35)),
+        border: Border.all(color: c.withValues(alpha: 0.35)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1098,8 +1099,10 @@ class _GradesPageState extends State<GradesPage> {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(
-                  Theme.of(context).brightness == Brightness.dark ? 0.2 : 0.04),
+              color: Colors.black.withValues(
+                  alpha: Theme.of(context).brightness == Brightness.dark
+                      ? 0.2
+                      : 0.04),
               blurRadius: 8,
               offset: const Offset(0, 3),
             ),
@@ -1152,7 +1155,7 @@ class _GradesPageState extends State<GradesPage> {
                               .textTheme
                               .bodyMedium
                               ?.color
-                              ?.withOpacity(0.6),
+                              ?.withValues(alpha: 0.6),
                         ),
                         const SizedBox(width: 4),
                         Expanded(
@@ -1164,7 +1167,7 @@ class _GradesPageState extends State<GradesPage> {
                                   .textTheme
                                   .bodyMedium
                                   ?.color
-                                  ?.withOpacity(0.7),
+                                  ?.withValues(alpha: 0.7),
                               fontWeight: FontWeight.w500,
                             ),
                             maxLines: 1,
@@ -1179,10 +1182,10 @@ class _GradesPageState extends State<GradesPage> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: situacaoColor.withOpacity(0.1),
+                      color: situacaoColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
-                      border:
-                          Border.all(color: situacaoColor.withOpacity(0.25)),
+                      border: Border.all(
+                          color: situacaoColor.withValues(alpha: 0.25)),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -1207,10 +1210,6 @@ class _GradesPageState extends State<GradesPage> {
                       spacing: 8.0,
                       runSpacing: 8.0,
                       children: disciplina.notas.entries.map((entry) {
-                        final isNumericGrade = _isNumericGrade(entry.value);
-                        final gradeValue = isNumericGrade
-                            ? double.tryParse(entry.value.replaceAll(',', '.'))
-                            : null;
                         final isMedia = _isMediaKey(entry.key);
                         final color = _chipColorFor(entry.key, entry.value);
 
@@ -1218,9 +1217,10 @@ class _GradesPageState extends State<GradesPage> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 8),
                           decoration: BoxDecoration(
-                            color: color.withOpacity(0.08),
+                            color: color.withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: color.withOpacity(0.25)),
+                            border: Border.all(
+                                color: color.withValues(alpha: 0.25)),
                           ),
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
@@ -1239,7 +1239,7 @@ class _GradesPageState extends State<GradesPage> {
                                           .textTheme
                                           .bodyMedium
                                           ?.color
-                                          ?.withOpacity(0.8),
+                                          ?.withValues(alpha: 0.8),
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),
@@ -1318,7 +1318,7 @@ class _GradesPageState extends State<GradesPage> {
                           .textTheme
                           .bodyMedium
                           ?.color
-                          ?.withOpacity(0.6),
+                          ?.withValues(alpha: 0.6),
                     ),
                     const SizedBox(width: 6),
                     Expanded(
@@ -1330,7 +1330,7 @@ class _GradesPageState extends State<GradesPage> {
                               .textTheme
                               .bodyMedium
                               ?.color
-                              ?.withOpacity(0.7),
+                              ?.withValues(alpha: 0.7),
                           fontWeight: FontWeight.w500,
                         ),
                       ),
@@ -1362,16 +1362,16 @@ class _GradesPageState extends State<GradesPage> {
                     spacing: 8,
                     runSpacing: 8,
                     children: d.notas.entries.map((e) {
-                      final isMedia = _isMediaKey(e.key);
                       final color = _chipColorFor(e.key, e.value);
                       return Container(
                         constraints: const BoxConstraints(minWidth: 120),
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 10),
                         decoration: BoxDecoration(
-                          color: color.withOpacity(0.08),
+                          color: color.withValues(alpha: 0.08),
                           borderRadius: BorderRadius.circular(10),
-                          border: Border.all(color: color.withOpacity(0.25)),
+                          border:
+                              Border.all(color: color.withValues(alpha: 0.25)),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.center,
@@ -1384,7 +1384,7 @@ class _GradesPageState extends State<GradesPage> {
                                     .textTheme
                                     .bodyMedium
                                     ?.color
-                                    ?.withOpacity(0.8),
+                                    ?.withValues(alpha: 0.8),
                                 fontWeight: FontWeight.w600,
                               ),
                             ),
@@ -1433,7 +1433,7 @@ class _GradesPageState extends State<GradesPage> {
         text: text.substring(index, index + q.length),
         style: baseStyle?.copyWith(
           backgroundColor: Theme.of(context).brightness == Brightness.dark
-              ? const Color(0xFFAA77FF).withOpacity(0.3)
+              ? const Color(0xFFAA77FF).withValues(alpha: 0.3)
               : Colors.yellow.shade200,
           color: Theme.of(context).brightness == Brightness.dark
               ? Colors.white
@@ -1463,10 +1463,6 @@ class _GradesPageState extends State<GradesPage> {
     } else {
       return Icons.hourglass_empty;
     }
-  }
-
-  bool _isNumericGrade(String grade) {
-    return double.tryParse(grade.replaceAll(',', '.')) != null;
   }
 
   bool _isMediaKey(String key) {
@@ -1507,8 +1503,10 @@ class _GradesPageState extends State<GradesPage> {
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(
-                  Theme.of(context).brightness == Brightness.dark ? 0.2 : 0.04),
+              color: Colors.black.withValues(
+                  alpha: Theme.of(context).brightness == Brightness.dark
+                      ? 0.2
+                      : 0.04),
               blurRadius: 2,
               offset: const Offset(0, 3),
             ),
@@ -1534,11 +1532,13 @@ class _GradesPageState extends State<GradesPage> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor.withOpacity(0.1),
+                      color:
+                          Theme.of(context).primaryColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(6),
                       border: Border.all(
-                          color:
-                              Theme.of(context).primaryColor.withOpacity(0.25)),
+                          color: Theme.of(context)
+                              .primaryColor
+                              .withValues(alpha: 0.25)),
                     ),
                     child: Text(
                       periodoNome,
@@ -1575,7 +1575,7 @@ class _GradesPageState extends State<GradesPage> {
                               .textTheme
                               .bodyMedium
                               ?.color
-                              ?.withOpacity(0.6),
+                              ?.withValues(alpha: 0.6),
                         ),
                         const SizedBox(width: 4),
                         Expanded(
@@ -1587,7 +1587,7 @@ class _GradesPageState extends State<GradesPage> {
                                   .textTheme
                                   .bodyMedium
                                   ?.color
-                                  ?.withOpacity(0.7),
+                                  ?.withValues(alpha: 0.7),
                               fontWeight: FontWeight.w500,
                             ),
                             maxLines: 1,
@@ -1604,10 +1604,10 @@ class _GradesPageState extends State<GradesPage> {
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: situacaoColor.withOpacity(0.1),
+                      color: situacaoColor.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(12),
-                      border:
-                          Border.all(color: situacaoColor.withOpacity(0.25)),
+                      border: Border.all(
+                          color: situacaoColor.withValues(alpha: 0.25)),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -1640,9 +1640,10 @@ class _GradesPageState extends State<GradesPage> {
                           padding: const EdgeInsets.symmetric(
                               horizontal: 12, vertical: 8),
                           decoration: BoxDecoration(
-                            color: color.withOpacity(0.08),
+                            color: color.withValues(alpha: 0.08),
                             borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: color.withOpacity(0.25)),
+                            border: Border.all(
+                                color: color.withValues(alpha: 0.25)),
                           ),
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
@@ -1661,7 +1662,7 @@ class _GradesPageState extends State<GradesPage> {
                                           .textTheme
                                           .bodyMedium
                                           ?.color
-                                          ?.withOpacity(0.8),
+                                          ?.withValues(alpha: 0.8),
                                       fontWeight: FontWeight.w600,
                                     ),
                                   ),

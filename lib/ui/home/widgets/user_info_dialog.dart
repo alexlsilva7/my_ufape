@@ -11,6 +11,7 @@ class UserInfoDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     void copyToClipboard(String text, String fieldName) async {
       await FlutterClipboard.copy(text);
+      // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('$fieldName copiada para a área de transferência!'),
@@ -105,7 +106,8 @@ class _InfoRow extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(icon,
-              size: 20, color: theme.colorScheme.primary.withOpacity(0.8)),
+              size: 20,
+              color: theme.colorScheme.primary.withValues(alpha: 0.8)),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
@@ -114,7 +116,8 @@ class _InfoRow extends StatelessWidget {
                 Text(
                   label.toUpperCase(),
                   style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.textTheme.labelSmall?.color?.withOpacity(0.7),
+                    color: theme.textTheme.labelSmall?.color
+                        ?.withValues(alpha: 0.7),
                     letterSpacing: 0.5,
                     fontWeight: FontWeight.bold,
                   ),

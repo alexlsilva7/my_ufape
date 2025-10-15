@@ -27,8 +27,6 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
 import 'package:my_ufape/data/services/shorebird/shorebird_service.dart';
 import 'package:my_ufape/ui/initial_sync/initial_sync_view_model.dart';
-// import da página para registrar o TimetableViewModel declarado em timetable_page.dart
-import 'package:my_ufape/ui/timetable/timetable_page.dart';
 
 final injector = AutoInjector();
 
