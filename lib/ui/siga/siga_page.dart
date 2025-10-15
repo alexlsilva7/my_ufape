@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:my_ufape/config/dependencies.dart';
+import 'package:my_ufape/data/services/siga/siga_background_service.dart';
 import 'package:my_ufape/ui/siga/widgets/siga_page_widget.dart';
 
 class SigaPage extends StatefulWidget {
@@ -22,7 +24,14 @@ class _SigaPageState extends State<SigaPage> {
               ),
             ],
           ),
-          actions: [],
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.refresh),
+              onPressed: () {
+                injector.get<SigaBackgroundService>().reconnect();
+              },
+            ),
+          ],
         ),
         body: sigaPageWidget ?? Container());
   }

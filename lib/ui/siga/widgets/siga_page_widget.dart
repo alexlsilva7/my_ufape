@@ -1,6 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:my_ufape/app_widget.dart';
 import 'package:my_ufape/config/dependencies.dart';
+import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
 import 'package:routefly/routefly.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -17,6 +19,7 @@ class SigaPageWidget extends StatefulWidget {
 class _SigaPageWidgetState extends State<SigaPageWidget> {
   WebViewController? get _controller => _sigaService.controller;
   final _sigaService = injector.get<SigaBackgroundService>();
+  final _settings = injector.get<SettingsRepository>();
   bool _isLoggedIn = false;
 
   String _message = '';
@@ -225,82 +228,83 @@ class _SigaPageWidgetState extends State<SigaPageWidget> {
             ? Expanded(
                 child: WebViewWidget(controller: _sigaService.controller!))
             : const Spacer(),
-        Padding(
-          padding: const EdgeInsets.all(8.0),
-          child: Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            alignment: WrapAlignment.center,
-            children: [
-              ElevatedButton.icon(
-                onPressed: _isProcessingGrades ||
-                        _isProcessingProfile ||
-                        _isProcessingTimetable ||
-                        !_isLoggedIn
-                    ? null
-                    : _navigateAndExtractGrades,
-                icon: _isProcessingGrades
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white),
-                      )
-                    : const Icon(Icons.school, color: Colors.white),
-                label: const Text(
-                  'Extrair Notas',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+        if (_settings.isDebugOverlayEnabled || kDebugMode)
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              alignment: WrapAlignment.center,
+              children: [
+                ElevatedButton.icon(
+                  onPressed: _isProcessingGrades ||
+                          _isProcessingProfile ||
+                          _isProcessingTimetable ||
+                          !_isLoggedIn
+                      ? null
+                      : _navigateAndExtractGrades,
+                  icon: _isProcessingGrades
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Icon(Icons.school, color: Colors.white),
+                  label: const Text(
+                    'Extrair Notas',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
-              ),
-              ElevatedButton.icon(
-                onPressed: _isProcessingGrades ||
-                        _isProcessingProfile ||
-                        _isProcessingTimetable ||
-                        !_isLoggedIn
-                    ? null
-                    : _navigateAndExtractProfile,
-                icon: _isProcessingProfile
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white),
-                      )
-                    : const Icon(Icons.list_alt, color: Colors.white),
-                label: const Text('Extrair Perfil Curricular',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                    )),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Theme.of(context).colorScheme.secondary,
+                ElevatedButton.icon(
+                  onPressed: _isProcessingGrades ||
+                          _isProcessingProfile ||
+                          _isProcessingTimetable ||
+                          !_isLoggedIn
+                      ? null
+                      : _navigateAndExtractProfile,
+                  icon: _isProcessingProfile
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Icon(Icons.list_alt, color: Colors.white),
+                  label: const Text('Extrair Perfil Curricular',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                      )),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Theme.of(context).colorScheme.secondary,
+                  ),
                 ),
-              ),
-              ElevatedButton.icon(
-                onPressed: _isProcessingGrades ||
-                        _isProcessingProfile ||
-                        _isProcessingTimetable || // ADICIONAR CONDIÇÃO
-                        !_isLoggedIn
-                    ? null
-                    : _navigateAndExtractTimetable,
-                icon: _isProcessingTimetable
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                            strokeWidth: 2, color: Colors.white),
-                      )
-                    : const Icon(Icons.grid_on, color: Colors.white),
-                label: const Text('Extrair Grade',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                    )),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.teal, // Cor diferente
+                ElevatedButton.icon(
+                  onPressed: _isProcessingGrades ||
+                          _isProcessingProfile ||
+                          _isProcessingTimetable || // ADICIONAR CONDIÇÃO
+                          !_isLoggedIn
+                      ? null
+                      : _navigateAndExtractTimetable,
+                  icon: _isProcessingTimetable
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                              strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Icon(Icons.grid_on, color: Colors.white),
+                  label: const Text('Extrair Grade',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                      )),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.teal, // Cor diferente
+                  ),
                 ),
-              ),
-            ],
-          ),
-        )
+              ],
+            ),
+          )
       ],
     );
   }

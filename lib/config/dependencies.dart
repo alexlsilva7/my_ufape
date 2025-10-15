@@ -22,10 +22,13 @@ import 'package:my_ufape/data/services/user/user_service.dart';
 import 'package:my_ufape/ui/home/home_view_model.dart';
 import 'package:my_ufape/ui/splash/splash_view_model.dart';
 import 'package:my_ufape/ui/subjects/subjects_view_model.dart';
+import 'package:my_ufape/ui/timetable/timetable_view_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
 import 'package:my_ufape/data/services/shorebird/shorebird_service.dart';
 import 'package:my_ufape/ui/initial_sync/initial_sync_view_model.dart';
+// import da página para registrar o TimetableViewModel declarado em timetable_page.dart
+import 'package:my_ufape/ui/timetable/timetable_page.dart';
 
 final injector = AutoInjector();
 
@@ -117,6 +120,13 @@ Future<void> setupDependencies() async {
   );
   injector.addLazySingleton(
       () => InitialSyncViewModel(injector.get(), injector.get()));
+  // Registrar TimetableViewModel para injeção de dependência
+  injector.addLazySingleton(
+    () => TimetableViewModel(
+      injector.get<ScheduledSubjectRepository>(),
+      injector.get<SigaBackgroundService>(),
+    ),
+  );
 
   // Registrar serviço SIGA em background
   injector.addSingleton<SigaBackgroundService>(() => SigaBackgroundService());
