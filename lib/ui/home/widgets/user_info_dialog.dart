@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:my_ufape/domain/entities/user.dart';
+import 'package:clipboard/clipboard.dart';
 
 class UserInfoDialog extends StatelessWidget {
   final User user;
@@ -8,6 +9,16 @@ class UserInfoDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    void copyToClipboard(String text, String fieldName) async {
+      await FlutterClipboard.copy(text);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('$fieldName copiada para a área de transferência!'),
+          duration: const Duration(seconds: 1),
+        ),
+      );
+    }
+
     return AlertDialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       title: Row(
@@ -24,11 +35,12 @@ class UserInfoDialog extends StatelessWidget {
                 icon: Icons.person_outline,
                 label: 'Nome Completo',
                 value: user.name),
-            _InfoRow(icon: Icons.badge_outlined, label: 'CPF', value: user.cpf),
             _InfoRow(
-                icon: Icons.school_outlined,
-                label: 'Matrícula',
-                value: user.registration),
+              icon: Icons.school_outlined,
+              label: 'Matrícula',
+              value: user.registration,
+              onCopy: () => copyToClipboard(user.registration, 'Matrícula'),
+            ),
             _InfoRow(
                 icon: Icons.book_outlined, label: 'Curso', value: user.course),
             _InfoRow(
@@ -74,11 +86,14 @@ class _InfoRow extends StatelessWidget {
   final IconData icon;
   final String label;
   final String value;
+  // 3. Adicione um callback opcional para a ação de copiar
+  final VoidCallback? onCopy;
 
   const _InfoRow({
     required this.icon,
     required this.label,
     required this.value,
+    this.onCopy, // Adicione ao construtor
   });
 
   @override
@@ -89,7 +104,8 @@ class _InfoRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: 20, color: theme.colorScheme.primary.withValues(alpha: 0.8)),
+          Icon(icon,
+              size: 20, color: theme.colorScheme.primary.withOpacity(0.8)),
           const SizedBox(width: 16),
           Expanded(
             child: Column(
@@ -98,7 +114,7 @@ class _InfoRow extends StatelessWidget {
                 Text(
                   label.toUpperCase(),
                   style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.textTheme.labelSmall?.color?.withValues(alpha: 0.7),
+                    color: theme.textTheme.labelSmall?.color?.withOpacity(0.7),
                     letterSpacing: 0.5,
                     fontWeight: FontWeight.bold,
                   ),
@@ -111,6 +127,15 @@ class _InfoRow extends StatelessWidget {
               ],
             ),
           ),
+          // 4. Mostre o botão de copiar apenas se o callback 'onCopy' for fornecido
+          if (onCopy != null)
+            IconButton(
+              icon: const Icon(Icons.content_copy),
+              iconSize: 20,
+              color: theme.colorScheme.secondary,
+              tooltip: 'Copiar',
+              onPressed: onCopy,
+            ),
         ],
       ),
     );

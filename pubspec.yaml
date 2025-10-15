@@ -27,6 +27,7 @@ dependencies:
   shorebird_code_push: ^2.0.5
   terminate_restart: ^1.0.11
   package_info_plus: ^9.0.0
+  clipboard: ^2.0.2
 
 dev_dependencies:
   flutter_test:
