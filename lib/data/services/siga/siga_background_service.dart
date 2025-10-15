@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
+import 'package:my_ufape/core/debug/logarte.dart';
 import 'package:my_ufape/domain/entities/time_table.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:my_ufape/config/dependencies.dart';
@@ -63,7 +64,7 @@ class SigaBackgroundService extends ChangeNotifier {
   int _reconnectAttempts = 0;
   Timer? _reconnectTimer;
   final int _maxReconnectAttempts = 5;
-  final Duration _reconnectBaseDelay = const Duration(seconds: 3);
+  final Duration _reconnectBaseDelay = const Duration(seconds: 5);
 
   /// Inicializa o WebViewController e começa o timer de verificação de sessão.
   Future<void> initialize() async {
@@ -167,7 +168,7 @@ class SigaBackgroundService extends ChangeNotifier {
 
     try {
       final result =
-          await _loginCompleter!.future.timeout(const Duration(seconds: 30));
+          await _loginCompleter!.future.timeout(const Duration(seconds: 60));
       _loginCompleter = null; // Limpa o completer após o uso
       return result;
     } catch (e) {
@@ -323,7 +324,7 @@ class SigaBackgroundService extends ChangeNotifier {
 
   /// Aguarda a página de notas ser carregada (busca pelo botão Imprimir)
   Future<void> _waitForGradesPageReady(
-      {Duration timeout = const Duration(seconds: 20)}) async {
+      {Duration timeout = const Duration(seconds: 60)}) async {
     final completer = Completer<void>();
     Timer? timer;
     final stopwatch = Stopwatch()..start();
@@ -367,7 +368,7 @@ class SigaBackgroundService extends ChangeNotifier {
 
   /// Aguarda a página de informações do discente carregar
   Future<void> _waitForStudentInfoPageReady(
-      {Duration timeout = const Duration(seconds: 20)}) async {
+      {Duration timeout = const Duration(seconds: 60)}) async {
     final completer = Completer<void>();
     Timer? timer;
     final stopwatch = Stopwatch()..start();
@@ -416,6 +417,7 @@ class SigaBackgroundService extends ChangeNotifier {
   /// Navega até a página de notas e extrai os dados
   Future<List<SubjectNote>> navigateAndExtractGrades() async {
     if (_controller == null) throw Exception('Controller não inicializado');
+    logarte.log('Starting grade extraction from SIGA...');
 
     // Script para clicar no link de notas dentro do iframe
     const script2 = """
@@ -454,7 +456,7 @@ class SigaBackgroundService extends ChangeNotifier {
       await _controller!.runJavaScriptReturningResult(script2);
 
       // 3. Aguarda a página carregar
-      await _waitForGradesPageReady(timeout: const Duration(seconds: 25));
+      await _waitForGradesPageReady(timeout: const Duration(seconds: 60));
 
       // 5. Extrai as notas
       final grades = await extractGrades();
@@ -463,9 +465,14 @@ class SigaBackgroundService extends ChangeNotifier {
       for (final grade in grades) {
         await _subjectNoteRepository.upsertSubjectNote(grade);
       }
+      logarte
+          .log('Grade extraction successful. Found ${grades.length} subjects.');
 
       return grades;
     } catch (e) {
+      logarte.log(
+        'Failed to navigate and extract grades: $e, isLoggedIn=$_isLoggedIn',
+      );
       throw Exception('Erro ao navegar e extrair notas: $e');
     }
   }
@@ -514,7 +521,7 @@ class SigaBackgroundService extends ChangeNotifier {
 
   /// Aguarda a página de Perfil Curricular dentro do iframe ficar pronta.
   Future<void> _waitForProfilePageReady(
-      {Duration timeout = const Duration(seconds: 30)}) async {
+      {Duration timeout = const Duration(seconds: 60)}) async {
     final completer = Completer<void>();
     Timer? timer;
     final stopwatch = Stopwatch()..start();
@@ -554,6 +561,7 @@ class SigaBackgroundService extends ChangeNotifier {
   /// Navega e extrai o Perfil Curricular, salvando no banco e retornando os blocos.
   Future<List<BlockOfProfile>> navigateAndExtractProfile() async {
     if (_controller == null) throw Exception('Controller não inicializado');
+    logarte.log('Starting profile extraction from SIGA...');
 
     try {
       // 1. Navega para o menu de detalhamento
@@ -563,14 +571,14 @@ class SigaBackgroundService extends ChangeNotifier {
       await _controller!.runJavaScriptReturningResult(SigaScripts.scriptInfo());
 
       // 3. Aguarda a página de informações carregar
-      await _waitForStudentInfoPageReady(timeout: const Duration(seconds: 25));
+      await _waitForStudentInfoPageReady(timeout: const Duration(seconds: 60));
 
       // 4. Clica em Perfil Curricular
       await _controller!
           .runJavaScriptReturningResult(SigaScripts.scriptPerfil());
 
       // 5. Aguarda o perfil carregar
-      await _waitForProfilePageReady(timeout: const Duration(seconds: 25));
+      await _waitForProfilePageReady(timeout: const Duration(seconds: 60));
 
       // 6. Pequeno delay para garantir renderização
       await Future.delayed(const Duration(milliseconds: 500));
@@ -607,9 +615,14 @@ class SigaBackgroundService extends ChangeNotifier {
           await _blockRepository.upsertBlock(block);
         }
       }
+      logarte
+          .log('Profile extraction successful. Found ${blocks.length} blocks.');
 
       return blocks;
     } catch (e) {
+      logarte.log(
+        'Failed to navigate and extract profile: $e, isLoggedIn=$_isLoggedIn',
+      );
       throw Exception('Erro ao navegar e extrair perfil: $e');
     }
   }
@@ -649,6 +662,7 @@ class SigaBackgroundService extends ChangeNotifier {
   /// Navega e extrai a Grade de Horário.
   Future<List<ScheduledSubject>> navigateAndExtractTimetable() async {
     if (_controller == null) throw Exception('Controller não inicializado');
+    logarte.log('Starting timetable extraction from SIGA...');
 
     try {
       // 1. Navega para o menu de detalhamento
@@ -672,12 +686,14 @@ class SigaBackgroundService extends ChangeNotifier {
           SigaScripts.extractTimetableScript()) as String;
 
       if (jsonResult.isEmpty) {
+        logarte.log('Timetable extraction returned empty result.');
         throw Exception('Script retornou vazio');
       }
 
       dynamic decodedData = jsonDecode(jsonResult);
       if (decodedData is String) {
         decodedData = jsonDecode(decodedData);
+        logarte.log('Timetable extraction script result: $decodedData');
       }
 
       final List<dynamic> decodedList =
@@ -687,6 +703,7 @@ class SigaBackgroundService extends ChangeNotifier {
           decodedList.first is Map &&
           decodedList.first.containsKey('error')) {
         final errorMessage = decodedList.first['error'];
+        logarte.log('Timetable extraction error: $errorMessage');
         throw Exception('Erro no script: $errorMessage');
       }
 
@@ -701,9 +718,14 @@ class SigaBackgroundService extends ChangeNotifier {
       for (final subject in subjects) {
         await _scheduledSubjectRepository.upsertScheduledSubject(subject);
       }
+      logarte.log(
+          'Timetable extraction successful. Found ${subjects.length} subjects.');
 
       return subjects;
     } catch (e) {
+      logarte.log(
+        'Failed to navigate and extract timetable: $e, isLoggedIn=$_isLoggedIn',
+      );
       throw Exception('Erro ao navegar e extrair grade de horário: $e');
     }
   }
@@ -724,6 +746,7 @@ class SigaBackgroundService extends ChangeNotifier {
 
   Future<User> navigateAndExtractUser() async {
     if (_controller == null) throw Exception('Controller não inicializado');
+    logarte.log('Starting user data extraction from SIGA...');
 
     try {
       // 1. Navega para o menu de detalhamento
@@ -769,9 +792,13 @@ class SigaBackgroundService extends ChangeNotifier {
 
       // 5. Salva no banco de dados
       await _userRepository.upsertUser(user);
+      logarte.log('User data extraction successful for ${user.name}.');
 
       return user;
     } catch (e) {
+      logarte.log(
+        'Failed to navigate and extract user data: $e, isLoggedIn=$_isLoggedIn',
+      );
       throw Exception('Erro ao navegar e extrair dados do usuário: $e');
     }
   }

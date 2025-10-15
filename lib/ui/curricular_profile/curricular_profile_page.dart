@@ -85,24 +85,38 @@ class _CurricularProfilePageState extends State<CurricularProfilePage> {
 
     try {
       await _sigaService.initialize();
-      final blocks = await _sigaService.navigateAndExtractProfile();
+      await _sigaService.navigateAndExtractProfile();
       _sigaService.goToHome();
 
-      if (mounted) {
-        setState(() {
-          _blocks = blocks;
-          _isSyncing = false;
-          _isLoading = false;
-        });
-      }
+      final result = await _blockRepository.getAllBlocks();
+
+      result.fold(
+        (blocks) async {
+          for (final block in blocks) {
+            await block.subjects.load();
+          }
+
+          setState(() {
+            _blocks = blocks;
+            _isLoading = false;
+            _isSyncing = false;
+          });
+        },
+        (error) {
+          if (mounted) {
+            setState(() {
+              _errorMessage = 'Erro ao carregar perfil curricular: $error';
+              _isLoading = false;
+            });
+          }
+        },
+      );
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _errorMessage = 'Erro ao sincronizar perfil: ${e.toString()}';
-          _isSyncing = false;
-          _isLoading = false;
-        });
-      }
+      setState(() {
+        _errorMessage = 'Erro ao sincronizar perfil: ${e.toString()}';
+        _isSyncing = false;
+        _isLoading = false;
+      });
     }
   }
 

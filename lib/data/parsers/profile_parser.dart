@@ -1,5 +1,7 @@
 import 'package:html/parser.dart' show parse;
 import 'package:html/dom.dart';
+import 'package:logarte/logarte.dart';
+import 'package:my_ufape/core/debug/logarte.dart';
 import 'package:my_ufape/domain/entities/block_of_profile.dart';
 import 'package:my_ufape/domain/entities/subject.dart';
 import 'package:my_ufape/domain/entities/prerequisite.dart';
@@ -11,11 +13,16 @@ class ProfileParser {
   ProfileParser(String htmlContent) : _document = parse(htmlContent);
 
   List<BlockOfProfile> parseProfile() {
+    logarte.log('Starting to parse curricular profile HTML...');
     final List<BlockOfProfile> blocks = [];
 
     final mainTable =
         _document.querySelector('#formDetalharPerfilCurricular\\:tabelas');
     if (mainTable == null) {
+      logarte.log(
+        'Main profile table not found in HTML.',
+        source: 'ProfileParser.parseProfile',
+      );
       return blocks;
     }
 
@@ -107,6 +114,8 @@ class ProfileParser {
       }
       blocks.add(block);
     }
+    logarte.log('Finished parsing curricular profile HTML.',
+        source: 'ProfileParser.parseProfile');
     return blocks;
   }
 

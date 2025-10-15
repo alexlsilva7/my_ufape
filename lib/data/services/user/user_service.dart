@@ -1,4 +1,5 @@
 import 'package:my_ufape/core/database/database.dart';
+import 'package:my_ufape/core/debug/logarte.dart';
 import 'package:my_ufape/domain/entities/user.dart';
 import 'package:result_dart/result_dart.dart';
 import 'package:isar_community/isar.dart';
@@ -15,8 +16,18 @@ class UserService {
         await isar.users.clear(); // Garante que apenas um usuário exista
         await isar.users.put(user);
       });
+      logarte.database(
+        source: 'Isar',
+        target: 'User',
+        value: 'WRITE - User upserted: ${user.name}',
+      );
       return Success(user);
     } catch (e) {
+      logarte.database(
+        source: 'Isar',
+        target: 'User',
+        value: 'WRITE - Error: $e',
+      );
       return Failure(Exception('Erro ao salvar usuário: $e'));
     }
   }
@@ -26,11 +37,26 @@ class UserService {
       final isar = await _database.connection;
       final user = await isar.users.where().findFirst();
       if (user != null) {
+        logarte.database(
+          source: 'Isar',
+          target: 'User',
+          value: 'READ - User found: ${user.name}',
+        );
         return Success(user);
       } else {
+        logarte.database(
+          source: 'Isar',
+          target: 'User',
+          value: 'READ - User not found.',
+        );
         return Failure(Exception('Usuário não encontrado no banco de dados.'));
       }
     } catch (e) {
+      logarte.database(
+        source: 'Isar',
+        target: 'User',
+        value: 'READ - Error: $e',
+      );
       return Failure(Exception('Erro ao buscar usuário: $e'));
     }
   }

@@ -27,7 +27,20 @@ class _SettingsPageState extends State<SettingsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Configurações'),
+        title: GestureDetector(
+          onLongPress: () {
+            _settingsRepository.toggleDebugOverlay();
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(_settingsRepository.isDebugOverlayEnabled
+                    ? 'Modo de debug ativado'
+                    : 'Modo de debug desativado'),
+                duration: const Duration(seconds: 2),
+              ),
+            );
+          },
+          child: const Text('Configurações'),
+        ),
       ),
       body: ListenableBuilder(
         listenable: Listenable.merge([_settingsRepository, _shorebirdService]),
@@ -62,17 +75,17 @@ class _SettingsPageState extends State<SettingsPage> {
                           await _settingsRepository.toggleDarkMode();
                         },
                       ),
-                      const Divider(height: 1),
-                      SwitchListTile(
-                        title: const Text('Habilitar Overlay de Debug'),
-                        subtitle: const Text(
-                            'Exibe o botão de debug mesmo em release'),
-                        secondary: const Icon(Icons.bug_report),
-                        value: _settingsRepository.isDebugOverlayEnabled,
-                        onChanged: (value) async {
-                          await _settingsRepository.toggleDebugOverlay();
-                        },
-                      ),
+                      if (_settingsRepository.isDebugOverlayEnabled) ...[
+                        const Divider(height: 1),
+                        SwitchListTile(
+                          title: const Text('Habilitar Debug'),
+                          secondary: Icon(Icons.bug_report),
+                          value: _settingsRepository.isDebugOverlayEnabled,
+                          onChanged: (value) async {
+                            await _settingsRepository.toggleDebugOverlay();
+                          },
+                        ),
+                      ],
                       const Divider(height: 1),
                       ListTile(
                         leading: const Icon(Icons.restore,

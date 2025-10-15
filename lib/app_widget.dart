@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:logarte/logarte.dart';
 import 'package:my_ufape/config/dependencies.dart';
+import 'package:my_ufape/core/debug/logarte.dart';
 import 'package:my_ufape/core/ui/app_config_ui.dart';
 import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
@@ -30,6 +32,9 @@ class _MyUfapeAppState extends State<MyUfapeApp> {
           routerConfig: Routefly.routerConfig(
             routes: routes,
             initialPath: routePaths.splash,
+            observers: [
+              LogarteNavigatorObserver(logarte),
+            ],
           ),
           builder: (context, child) => DebugOverlayWidget(child: child!),
           title: 'My UFAPE',

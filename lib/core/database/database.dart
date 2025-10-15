@@ -1,6 +1,7 @@
 import 'dart:developer';
 
 import 'package:isar_community/isar.dart';
+import 'package:my_ufape/core/debug/logarte.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
@@ -25,7 +26,7 @@ class Database {
 
   Future<void> _openConnection() async {
     if (_databaseInstance != null && _databaseInstance!.isOpen) {
-      log('Database connection already open.');
+      logarte.log('Database connection already open.');
       return;
     }
     try {
@@ -42,9 +43,9 @@ class Database {
         inspector: kDebugMode,
         name: 'my_ufape_db',
       );
-      log('Database connection opened successfully at ${dir.path}');
+      logarte.log('Database connection opened successfully at ${dir.path}');
     } catch (e) {
-      log('Error opening database connection: $e');
+      logarte.log('Error opening database connection: $e');
       rethrow;
     }
   }
@@ -52,17 +53,29 @@ class Database {
   Future<void> seed() async {
     const seededKey = 'database_seeded_v1';
     if (prefs.getBool(seededKey) ?? false) {
-      log('Database already seeded.');
+      logarte.database(
+        target: 'Database',
+        source: 'seed',
+        value: 'Database already seeded. Skipping seeding process.',
+      );
       return;
     }
 
-    log('Starting database seeding...');
+    logarte.database(
+      target: 'Database',
+      source: 'seed',
+      value: 'Starting database seeding process...',
+    );
     try {
       await _seedFromStructuredData();
       await prefs.setBool(seededKey, true);
-      log('Database seeding completed successfully.');
+      logarte.database(
+        target: 'Database',
+        source: 'seed',
+        value: 'Database seeding completed successfully.',
+      );
     } catch (e) {
-      log('Error during database seeding: $e');
+      logarte.log('Error during database seeding: $e');
     }
   }
 
@@ -70,16 +83,24 @@ class Database {
     SharedPreferences? prefs,
     bool clearSeedingFlag = false,
   }) async {
-    log('Starting database reset and seed...');
+    logarte.log('Starting database reset and seed...');
     await _resetData();
     await _seedFromStructuredData();
 
     if (clearSeedingFlag && prefs != null) {
       const seededKey = 'database_seeded_v1';
       await prefs.remove(seededKey);
-      log('Seeding flag cleared from SharedPreferences.');
+      logarte.database(
+        target: 'Database',
+        source: 'resetAndSeedDatabase',
+        value: 'Seeding flag cleared in SharedPreferences.',
+      );
     }
-    log('Database reset and seed completed successfully.');
+    logarte.database(
+      target: 'Database',
+      source: 'resetAndSeedDatabase',
+      value: 'Database reset and reseeded successfully.',
+    );
   }
 
   Future<void> _seedFromStructuredData() async {
@@ -88,16 +109,24 @@ class Database {
     await isar.writeTxn(() async {
       // Aqui você pode adicionar a lógica para popular o banco de dados
     });
-    log('Finished seeding data from structured source.');
+    logarte.database(
+      target: 'Database',
+      source: '_seedFromStructuredData',
+      value: 'Database seeded with initial data.',
+    );
   }
 
   Future<void> _resetData() async {
-    log('Resetting database data...');
+    logarte.log('Resetting database data...');
     final isar = await connection;
     await isar.writeTxn(() async {
       // Limpa todas as coleções do banco de dados
       await isar.clear();
-      log('Database collections cleared successfully.');
+      logarte.database(
+        target: 'Database',
+        source: '_resetData',
+        value: 'All collections cleared.',
+      );
     });
   }
 
@@ -105,7 +134,11 @@ class Database {
     if (_databaseInstance != null && _databaseInstance!.isOpen) {
       await _databaseInstance!.close();
       _databaseInstance = null;
-      log('Database connection closed.');
+      logarte.database(
+        target: 'Database',
+        source: 'close',
+        value: 'Database connection closed.',
+      );
     }
   }
 }

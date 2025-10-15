@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_ufape/core/debug/logarte.dart';
 import 'package:my_ufape/core/ui/gen/assets.gen.dart';
 import 'package:my_ufape/data/repositories/subject_note/subject_note_repository.dart';
 import 'package:my_ufape/data/repositories/scheduled_subject/scheduled_subject_repository.dart';
@@ -46,6 +47,7 @@ class _HomePageState extends State<HomePage> {
 
     _isLoggedIn = _sigaService.isLoggedIn;
     _loginListener = () {
+      logarte.log('LOGIN STATUS CHANGED: ${_sigaService.loginNotifier.value}');
       if (mounted) {
         setState(() {
           _isLoggedIn = _sigaService.loginNotifier.value;
