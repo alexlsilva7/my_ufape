@@ -54,6 +54,8 @@ class SigaBackgroundService extends ChangeNotifier {
   bool _isLoggedIn = false;
   bool get isLoggedIn => _isLoggedIn;
 
+  bool isSyncing = false;
+
   String statusMessage = '';
 
   Timer? _statusTimer;
@@ -68,7 +70,7 @@ class SigaBackgroundService extends ChangeNotifier {
 
   /// Realiza a sincronização automática se as condições forem atendidas.
   Future<void> performAutomaticSyncIfNeeded(
-      {Duration syncInterval = const Duration(hours: 1)}) async {
+      {Duration syncInterval = const Duration(seconds: 1)}) async {
     // 1. Verifica se a funcionalidade está habilitada pelo usuário
     if (!_settings.isAutoSyncEnabled) {
       logarte.log('Auto-sync is disabled by the user.');
@@ -94,6 +96,8 @@ class SigaBackgroundService extends ChangeNotifier {
     }
 
     logarte.log('Starting automatic background sync...');
+    isSyncing = true;
+    notifyListeners();
 
     try {
       // Executa a extração de notas e grade
@@ -105,9 +109,12 @@ class SigaBackgroundService extends ChangeNotifier {
       // Atualiza o timestamp da última sincronização bem-sucedida
       await _settings.updateLastSyncTimestamp();
       logarte.log('Automatic background sync successful.');
+      isSyncing = false;
+      notifyListeners();
     } catch (e) {
       logarte.log('Automatic background sync failed: $e');
-      // A falha é silenciosa para não interromper o usuário
+      isSyncing = false;
+      notifyListeners();
     }
   }
 
@@ -673,7 +680,7 @@ class SigaBackgroundService extends ChangeNotifier {
   }
 
   Future<void> _waitForTimetablePageReady(
-      {Duration timeout = const Duration(seconds: 20)}) async {
+      {Duration timeout = const Duration(seconds: 60)}) async {
     final completer = Completer<void>();
     Timer? timer;
     final stopwatch = Stopwatch()..start();
@@ -727,22 +734,38 @@ class SigaBackgroundService extends ChangeNotifier {
       await Future.delayed(const Duration(milliseconds: 500));
 
       // 6. Extrai os dados
-      final jsonResult = await _controller!.runJavaScriptReturningResult(
-          SigaScripts.extractTimetableScript()) as String;
+      final dynamic jsonResult = await _controller!
+          .runJavaScriptReturningResult(SigaScripts.extractTimetableScript());
 
-      if (jsonResult.isEmpty) {
+      if (jsonResult == null || jsonResult.toString().isEmpty) {
         logarte.log('Timetable extraction returned empty result.');
         throw Exception('Script retornou vazio');
       }
 
-      dynamic decodedData = jsonDecode(jsonResult);
-      if (decodedData is String) {
-        decodedData = jsonDecode(decodedData);
-        logarte.log('Timetable extraction script result: $decodedData');
+      dynamic decodedData;
+      if (jsonResult is String) {
+        decodedData = jsonDecode(jsonResult);
+      } else {
+        decodedData = jsonResult; // Já pode ser um Map/List
       }
 
-      final List<dynamic> decodedList =
-          decodedData is List ? decodedData : jsonDecode(decodedData);
+      if (decodedData is String) {
+        decodedData = jsonDecode(decodedData);
+      }
+      // --- FIM DA CORREÇÃO ---
+
+      logarte.log('Timetable extraction script result: $decodedData');
+
+      // Verifica se o resultado é um objeto de erro
+      if (decodedData is Map && decodedData.containsKey('error')) {
+        final errorMessage = decodedData['error'];
+        logarte.log('Timetable extraction error: $errorMessage');
+        throw Exception('Erro no script: $errorMessage');
+      }
+
+      final List<dynamic> decodedList = decodedData is List
+          ? decodedData
+          : jsonDecode(decodedData.toString());
 
       if (decodedList.isNotEmpty &&
           decodedList.first is Map &&

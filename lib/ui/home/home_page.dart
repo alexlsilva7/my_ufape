@@ -458,11 +458,29 @@ class _HomePageState extends State<HomePage> {
                         ),
                         Row(
                           children: [
-                            Icon(
-                              _isLoggedIn ? Icons.wifi : Icons.wifi_off,
-                              size: 14,
-                              color: _isLoggedIn ? Colors.green : Colors.red,
-                            ),
+                            ListenableBuilder(
+                                listenable: _sigaService,
+                                builder: (context, child) {
+                                  if (_sigaService.isSyncing) {
+                                    return AnimatedRotation(
+                                      turns: 1,
+                                      duration: const Duration(seconds: 60),
+                                      child: Icon(
+                                        Icons.sync_rounded,
+                                        size: 20,
+                                        color: Colors.greenAccent.shade200,
+                                      ),
+                                    );
+                                  } else {
+                                    return Icon(
+                                      _isLoggedIn ? Icons.wifi : Icons.wifi_off,
+                                      size: 20,
+                                      color: _isLoggedIn
+                                          ? Colors.greenAccent.shade200
+                                          : Colors.red,
+                                    );
+                                  }
+                                }),
                             ValueListenableBuilder<bool>(
                               valueListenable:
                                   _shorebirdService.isUpdateReadyToInstall,

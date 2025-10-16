@@ -73,7 +73,7 @@ class _TimetablePageState extends State<TimetablePage> {
           : viewModel.errorMessage != null
               ? TimetableError(
                   message: viewModel.errorMessage,
-                  onRetry: viewModel.loadSubjects,
+                  onRetry: viewModel.syncFromSiga,
                 )
               : Padding(
                   padding:
@@ -109,6 +109,7 @@ class TimetableLoading extends StatelessWidget {
 class TimetableError extends StatelessWidget {
   final String? message;
   final VoidCallback onRetry;
+
   const TimetableError(
       {required this.message, required this.onRetry, super.key});
 

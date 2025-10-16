@@ -289,26 +289,37 @@ return JSON.stringify(disciplinas);
     try {
         const iframe = document.getElementById('Conteudo');
         if (!iframe || !iframe.contentDocument) {
-            return JSON.stringify({ "error": "iFrame 'Conteudo' não encontrado." });
+            return JSON.stringify([{ "error": "iFrame 'Conteudo' não encontrado." }]);
         }
         const doc = iframe.contentDocument;
 
         // 1. Extrair detalhes da lista de disciplinas
         const subjectsMap = new Map();
         const subjectRows = doc.querySelectorAll('table[width="600"] tr');
+        
         for (const row of subjectRows) {
             const cells = row.querySelectorAll('td font.editPesquisa');
-            if (cells.length >= 5) {
-                const code = cells[0].innerText.trim();
-                subjectsMap.set(code, {
-                    code: code,
-                    name: cells[1].innerText.trim(),
-                    className: cells[2].innerText.trim(),
-                    room: cells[4].innerText.trim(),
-                    status: cells[5].innerText.trim(),
-                    timeSlots: []
-                });
+            
+            // Se a linha não tiver 6 colunas, ela não é uma disciplina válida.
+            // Isso ignora linhas de aviso como "não há vagas".
+            if (cells.length < 6) {
+                continue; // Pula para a próxima iteração do loop
             }
+
+            const code = cells[0].innerText.trim();
+            // Ignora linhas de cabeçalho ou inválidas que possam ter 6 colunas
+            if (!code || code === 'CÓDIGO') {
+                continue;
+            }
+
+            subjectsMap.set(code, {
+                code: code,
+                name: cells[1].innerText.trim(),
+                className: cells[2].innerText.trim(),
+                room: cells[4].innerText.trim(),
+                status: cells[5].innerText.trim(),
+                timeSlots: []
+            });
         }
         
         // 2. Extrair horários da tabela de grade
@@ -345,7 +356,7 @@ return JSON.stringify(disciplinas);
         return JSON.stringify(Array.from(subjectsMap.values()));
 
     } catch (e) {
-        return JSON.stringify({ "error": e.toString() });
+        return JSON.stringify([{ "error": e.toString() }]);
     }
 })();
 """;
