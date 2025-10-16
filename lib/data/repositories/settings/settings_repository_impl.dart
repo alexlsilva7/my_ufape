@@ -73,8 +73,7 @@ class SettingsRepositoryImpl extends ChangeNotifier
       return await _localAuth.authenticate(
         localizedReason: 'Por favor, autentique-se para acessar o aplicativo',
         options: const AuthenticationOptions(
-          biometricOnly: true, // Força o uso de biometria
-          stickyAuth: true,
+          biometricOnly: false, // Permite outros métodos de autenticação
         ),
       );
     } catch (e) {
