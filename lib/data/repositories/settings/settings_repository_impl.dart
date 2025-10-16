@@ -8,6 +8,7 @@ import 'package:my_ufape/domain/entities/login.dart';
 import 'package:result_dart/result_dart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
+import 'package:local_auth/local_auth.dart';
 
 import './settings_repository.dart';
 
@@ -17,6 +18,7 @@ class SettingsRepositoryImpl extends ChangeNotifier
   final SharedPreferences _prefs;
   final FlutterSecureStorage _secureStorage;
   final Database _database;
+  final LocalAuthentication _localAuth = LocalAuthentication();
 
   SettingsRepositoryImpl(
     this._localStoragePreferencesService,
@@ -28,6 +30,9 @@ class SettingsRepositoryImpl extends ChangeNotifier
     isDebugOverlayEnabled =
         _localStoragePreferencesService.isDebugOverlayEnabled;
     isAutoSyncEnabled = _localStoragePreferencesService.isAutoSyncEnabled;
+    isBiometricAuthEnabled =
+        _localStoragePreferencesService.isBiometricAuthEnabled;
+    initBiometricAuth();
   }
 
   @override
@@ -35,6 +40,48 @@ class SettingsRepositoryImpl extends ChangeNotifier
 
   @override
   bool isDebugOverlayEnabled = false;
+
+  @override
+  bool isBiometricAuthEnabled = false;
+
+  @override
+  bool isBiometricAvailable = false;
+
+  Future<void> initBiometricAuth() async {
+    bool canAuthenticateWithBiometrics = await _localAuth.canCheckBiometrics;
+    bool isDeviceSupported = await _localAuth.isDeviceSupported();
+    isBiometricAvailable = canAuthenticateWithBiometrics || isDeviceSupported;
+  }
+
+  @override
+  AsyncResult<Unit> toggleBiometricAuth() async {
+    await _localStoragePreferencesService.toggleBiometricAuth();
+    isBiometricAuthEnabled = !isBiometricAuthEnabled;
+    notifyListeners();
+    return Success(unit);
+  }
+
+  @override
+  Future<bool> authenticateWithBiometrics() async {
+    try {
+      final bool canAuthenticate = await _localAuth.canCheckBiometrics ||
+          await _localAuth.isDeviceSupported();
+      if (!canAuthenticate) {
+        return false;
+      }
+
+      return await _localAuth.authenticate(
+        localizedReason: 'Por favor, autentique-se para acessar o aplicativo',
+        options: const AuthenticationOptions(
+          biometricOnly: true, // Força o uso de biometria
+          stickyAuth: true,
+        ),
+      );
+    } catch (e) {
+      // Trata exceções, como o usuário não ter biometria configurada
+      return false;
+    }
+  }
 
   @override
   AsyncResult<Unit> toggleDarkMode() async {

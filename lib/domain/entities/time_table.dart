@@ -111,6 +111,27 @@ enum DayOfWeek {
     }
   }
 
+  static DayOfWeek fromDateTimeWeekday(int weekday) {
+    switch (weekday) {
+      case DateTime.monday:
+        return DayOfWeek.segunda;
+      case DateTime.tuesday:
+        return DayOfWeek.terca;
+      case DateTime.wednesday:
+        return DayOfWeek.quarta;
+      case DateTime.thursday:
+        return DayOfWeek.quinta;
+      case DateTime.friday:
+        return DayOfWeek.sexta;
+      case DateTime.saturday:
+        return DayOfWeek.sabado;
+      case DateTime.sunday:
+        return DayOfWeek.domingo;
+      default:
+        return DayOfWeek.desconhecido;
+    }
+  }
+
   String toShortString() {
     switch (this) {
       case DayOfWeek.segunda:

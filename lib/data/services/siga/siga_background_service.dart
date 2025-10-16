@@ -70,7 +70,7 @@ class SigaBackgroundService extends ChangeNotifier {
 
   /// Realiza a sincronização automática se as condições forem atendidas.
   Future<void> performAutomaticSyncIfNeeded(
-      {Duration syncInterval = const Duration(seconds: 1)}) async {
+      {Duration syncInterval = const Duration(hours: 1)}) async {
     // 1. Verifica se a funcionalidade está habilitada pelo usuário
     if (!_settings.isAutoSyncEnabled) {
       logarte.log('Auto-sync is disabled by the user.');
