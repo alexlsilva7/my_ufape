@@ -19,6 +19,7 @@ import 'package:my_ufape/data/repositories/scheduled_subject/scheduled_subject_r
 import 'package:my_ufape/data/repositories/user/user_repository.dart';
 import 'package:my_ufape/data/repositories/user/user_repository_impl.dart';
 import 'package:my_ufape/data/services/user/user_service.dart';
+import 'package:my_ufape/ui/charts/charts_view_model.dart';
 import 'package:my_ufape/ui/home/home_view_model.dart';
 import 'package:my_ufape/ui/splash/splash_view_model.dart';
 import 'package:my_ufape/ui/subjects/subjects_view_model.dart';
@@ -125,6 +126,8 @@ Future<void> setupDependencies() async {
       injector.get<SigaBackgroundService>(),
     ),
   );
+
+  injector.addLazySingleton(ChartsViewModel.new);
 
   // Registrar serviço SIGA em background
   injector.addSingleton<SigaBackgroundService>(() => SigaBackgroundService());
