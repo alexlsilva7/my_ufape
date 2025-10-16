@@ -66,6 +66,51 @@ class SigaBackgroundService extends ChangeNotifier {
   final int _maxReconnectAttempts = 5;
   final Duration _reconnectBaseDelay = const Duration(seconds: 5);
 
+  /// Realiza a sincronização automática se as condições forem atendidas.
+  Future<void> performAutomaticSyncIfNeeded(
+      {Duration syncInterval = const Duration(hours: 1)}) async {
+    // 1. Verifica se a funcionalidade está habilitada pelo usuário
+    if (!_settings.isAutoSyncEnabled) {
+      logarte.log('Auto-sync is disabled by the user.');
+      return;
+    }
+
+    // 2. Verifica se o usuário está logado no SIGA
+    if (!isLoggedIn) {
+      logarte.log('Not logged in. Skipping auto-sync.');
+      return;
+    }
+
+    // 3. Define o intervalo mínimo para a sincronização (ex: 1 hora)
+    final lastSync =
+        DateTime.fromMillisecondsSinceEpoch(_settings.lastSyncTimestamp);
+    final now = DateTime.now();
+
+    // 4. Verifica se o tempo desde a última sincronização é maior que o intervalo
+    if (now.difference(lastSync) < syncInterval) {
+      logarte.log(
+          'Skipping auto-sync. Last sync was less than ${syncInterval.inHours} hours ago.');
+      return;
+    }
+
+    logarte.log('Starting automatic background sync...');
+
+    try {
+      // Executa a extração de notas e grade
+      await navigateAndExtractGrades();
+      await goToHome();
+      await Future.delayed(const Duration(seconds: 2));
+      await navigateAndExtractTimetable();
+
+      // Atualiza o timestamp da última sincronização bem-sucedida
+      await _settings.updateLastSyncTimestamp();
+      logarte.log('Automatic background sync successful.');
+    } catch (e) {
+      logarte.log('Automatic background sync failed: $e');
+      // A falha é silenciosa para não interromper o usuário
+    }
+  }
+
   /// Inicializa o WebViewController e começa o timer de verificação de sessão.
   Future<void> initialize() async {
     if (_controller != null) return;

@@ -48,10 +48,15 @@ class _HomePageState extends State<HomePage> {
     _isLoggedIn = _sigaService.isLoggedIn;
     _loginListener = () {
       logarte.log('LOGIN STATUS CHANGED: ${_sigaService.loginNotifier.value}');
+
       if (mounted) {
         setState(() {
           _isLoggedIn = _sigaService.loginNotifier.value;
         });
+      }
+
+      if (_isLoggedIn) {
+        _sigaService.performAutomaticSyncIfNeeded();
       }
     };
     _sigaService.loginNotifier.addListener(_loginListener);

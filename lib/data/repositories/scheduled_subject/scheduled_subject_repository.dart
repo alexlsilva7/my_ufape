@@ -1,6 +1,8 @@
+import 'package:flutter/material.dart'; // Adicione este import
 import 'package:my_ufape/domain/entities/time_table.dart';
 import 'package:result_dart/result_dart.dart';
 
+// Adicione "extends ChangeNotifier"
 abstract interface class ScheduledSubjectRepository {
   AsyncResult<List<ScheduledSubject>> getAllScheduledSubjects();
   AsyncResult<ScheduledSubject> getScheduledSubjectById(int id);

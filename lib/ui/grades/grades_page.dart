@@ -34,6 +34,11 @@ class _GradesPageState extends State<GradesPage> {
     _loadDisciplinas();
   }
 
+  @override
+  void dispose() {
+    super.dispose();
+  }
+
   Future<void> _loadDisciplinas() async {
     setState(() {
       _isLoading = true;

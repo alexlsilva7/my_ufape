@@ -8,7 +8,7 @@ final Logarte logarte = Logarte(
   // Skip password in debug mode
   ignorePassword: true,
 
-  // Share network request
+  // Share network request'
   onShare: (String content) {
     SharePlus.instance
         .share(ShareParams(text: content, title: 'My UFAPE Logs'));

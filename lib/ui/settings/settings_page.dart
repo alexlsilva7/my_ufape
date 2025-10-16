@@ -75,6 +75,21 @@ class _SettingsPageState extends State<SettingsPage> {
                           await _settingsRepository.toggleDarkMode();
                         },
                       ),
+                      // Adicione o novo SwitchListTile aqui
+                      const Divider(height: 1),
+                      SwitchListTile(
+                        title: const Text('Sincronização Automática'),
+                        subtitle: const Text('Atualizar dados ao abrir o app'),
+                        secondary: Icon(
+                          _settingsRepository.isAutoSyncEnabled
+                              ? Icons.sync
+                              : Icons.sync_disabled,
+                        ),
+                        value: _settingsRepository.isAutoSyncEnabled,
+                        onChanged: (value) async {
+                          await _settingsRepository.toggleAutoSync();
+                        },
+                      ),
                       if (_settingsRepository.isDebugOverlayEnabled) ...[
                         const Divider(height: 1),
                         SwitchListTile(
