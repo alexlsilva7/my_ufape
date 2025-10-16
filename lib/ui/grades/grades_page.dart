@@ -195,13 +195,23 @@ class _GradesPageState extends State<GradesPage> {
   }
 
   double _computeOverallAverage() {
-    final medias = <double>[];
+    final allMedias = <double>[];
     for (final disciplinas in _preparedPeriodos.values) {
-      final m = _computeSemesterAverage(disciplinas);
-      if (m > 0) medias.add(m);
+      for (final d in disciplinas) {
+        final situacao = d.situacao.toUpperCase();
+        if (!situacao.contains('APROVADO') && !situacao.contains('REPROVADO')) {
+          continue;
+        }
+        for (final e in d.notas.entries) {
+          if (_isMediaKey(e.key)) {
+            final v = double.tryParse(e.value.replaceAll(',', '.'));
+            if (v != null) allMedias.add(v);
+          }
+        }
+      }
     }
-    if (medias.isEmpty) return 0.0;
-    return medias.reduce((a, b) => a + b) / medias.length;
+    if (allMedias.isEmpty) return 0.0;
+    return allMedias.reduce((a, b) => a + b) / allMedias.length;
   }
 
   Color _chipColorFor(String key, String value) {

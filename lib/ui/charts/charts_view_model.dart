@@ -230,6 +230,10 @@ class ChartsViewModel {
       final disciplinas =
           (periodoData['disciplinas'] as List<dynamic>).cast<SubjectNote>();
       for (final disciplina in disciplinas) {
+        final situacao = (disciplina.situacao).toUpperCase();
+        if (!situacao.contains('APROVADO') && !situacao.contains('REPROVADO')) {
+          continue;
+        }
         for (final entry in disciplina.notas.entries) {
           if (_isMediaKey(entry.key)) {
             final value = double.tryParse(entry.value.replaceAll(',', '.'));
