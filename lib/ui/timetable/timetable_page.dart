@@ -14,9 +14,15 @@ class TimetablePage extends StatefulWidget {
 class _TimetablePageState extends State<TimetablePage> {
   TimetableViewModel viewModel = injector.get<TimetableViewModel>();
 
+  final ScrollController _scrollController = ScrollController();
+  final Map<DayOfWeek, GlobalKey> _dayKeys = {};
+
   @override
   void initState() {
     super.initState();
+    for (var day in DayOfWeek.values) {
+      _dayKeys[day] = GlobalKey();
+    }
     viewModel.addListener(_onVmChanged);
     viewModel.loadSubjects();
   }
@@ -24,12 +30,37 @@ class _TimetablePageState extends State<TimetablePage> {
   @override
   void dispose() {
     viewModel.removeListener(_onVmChanged);
+    _scrollController.dispose();
     super.dispose();
   }
 
   void _onVmChanged() {
-    // rebuild quando o view model notificar
-    if (mounted) setState(() {});
+    if (mounted) {
+      setState(() {
+        // Se o carregamento terminou e não há erros, chama a função de rolagem
+        if (!viewModel.isLoading && viewModel.errorMessage == null) {
+          WidgetsBinding.instance
+              .addPostFrameCallback((_) => _scrollToCurrentDay());
+        }
+      });
+    }
+  }
+
+  void _scrollToCurrentDay() {
+    final today = DateTime.now();
+    final currentDayOfWeek = DayOfWeek.fromDateTimeWeekday(today.weekday);
+
+    final key = _dayKeys[currentDayOfWeek];
+    final context = key?.currentContext;
+
+    if (context != null) {
+      Scrollable.ensureVisible(
+        context,
+        duration: const Duration(milliseconds: 500),
+        curve: Curves.easeInOut,
+        alignment: 0.05, // Alinha um pouco antes do topo da tela
+      );
+    }
   }
 
   @override
@@ -78,7 +109,12 @@ class _TimetablePageState extends State<TimetablePage> {
               : Padding(
                   padding:
                       const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  child: TimetableBody(grouped: grouped, viewModel: viewModel),
+                  child: TimetableBody(
+                    grouped: grouped,
+                    viewModel: viewModel,
+                    scrollController: _scrollController,
+                    dayKeys: _dayKeys,
+                  ),
                 ),
     );
   }
@@ -160,9 +196,15 @@ class TimetableError extends StatelessWidget {
 class TimetableBody extends StatelessWidget {
   final Map<DayOfWeek, List<ScheduledSubject>> grouped;
   final TimetableViewModel viewModel;
+  final ScrollController scrollController;
+  final Map<DayOfWeek, GlobalKey> dayKeys;
 
   const TimetableBody(
-      {required this.grouped, required this.viewModel, super.key});
+      {required this.grouped,
+      required this.viewModel,
+      required this.scrollController,
+      required this.dayKeys,
+      super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -211,12 +253,22 @@ class TimetableBody extends StatelessWidget {
         .where((d) => (grouped[d]?.isNotEmpty ?? false))
         .toList();
 
+    final today = DateTime.now();
+    final currentDay = DayOfWeek.fromDateTimeWeekday(today.weekday);
+
     return ListView.separated(
+      controller: scrollController,
       itemCount: visibleDays.length,
       separatorBuilder: (_, __) => const SizedBox(height: 12),
       itemBuilder: (context, index) {
         final day = visibleDays[index];
-        return DayColumn(day: day, subjects: grouped[day] ?? []);
+        final isToday = day == currentDay;
+        return DayColumn(
+          key: dayKeys[day],
+          day: day,
+          subjects: grouped[day] ?? [],
+          isToday: isToday,
+        );
       },
     );
   }
