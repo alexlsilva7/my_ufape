@@ -1,147 +1,21 @@
 import 'package:flutter/material.dart';
+import 'package:my_ufape/app_widget.dart';
+import 'package:my_ufape/config/dependencies.dart';
+import 'package:my_ufape/data/repositories/subject/subject_repository.dart';
+import 'package:my_ufape/data/repositories/subject_note/subject_note_repository.dart';
+import 'package:my_ufape/domain/entities/subject.dart';
 import 'package:my_ufape/domain/entities/time_table.dart';
+import 'package:my_ufape/ui/subjects/subjects_view_model.dart';
+import 'package:routefly/routefly.dart';
 
-class SubjectCard extends StatelessWidget {
+class SubjectCard extends StatefulWidget {
   final ScheduledSubject subject;
   final List<TimeSlot> daySlots;
 
   const SubjectCard({required this.subject, required this.daySlots, super.key});
 
-  String _getGroupedTimeText(List<TimeSlot> slots) {
-    if (slots.isEmpty) return '';
-
-    final slotsByDay = <DayOfWeek, List<TimeSlot>>{};
-    for (final slot in slots) {
-      slotsByDay.putIfAbsent(slot.day, () => []).add(slot);
-    }
-
-    final grouped = <String>[];
-    for (final daySlots in slotsByDay.values) {
-      if (daySlots.isEmpty) continue;
-      daySlots.sort((a, b) => a.startTime.compareTo(b.startTime));
-      final firstStart = daySlots.first.startTime;
-      final lastEnd = daySlots.last.endTime;
-      grouped.add('$firstStart–$lastEnd');
-    }
-
-    return grouped.join(', ');
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final timesText = _getGroupedTimeText(daySlots);
-    final colorScheme = Theme.of(context).colorScheme;
-
-    return Material(
-      color: Colors.transparent,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(8),
-        onTap: () => _showDetails(context),
-        child: Ink(
-          decoration: BoxDecoration(
-            color: colorScheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      subject.name,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                            height: 1.3,
-                          ),
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        Text(
-                          subject.code,
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: colorScheme.onSurfaceVariant,
-                                    fontSize: 11,
-                                  ),
-                        ),
-                        Text(
-                          ' • ',
-                          style: TextStyle(
-                            color: colorScheme.onSurfaceVariant
-                                .withValues(alpha: 0.5),
-                          ),
-                        ),
-                        Text(
-                          subject.className,
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: colorScheme.onSurfaceVariant,
-                                    fontSize: 11,
-                                  ),
-                        ),
-                        Text(
-                          ' • ',
-                          style: TextStyle(
-                            color: colorScheme.onSurfaceVariant
-                                .withValues(alpha: 0.5),
-                          ),
-                        ),
-                        Expanded(
-                          child: Text(
-                            subject.room,
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: colorScheme.onSurfaceVariant,
-                                      fontSize: 11,
-                                    ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (timesText.isNotEmpty) ...[
-                      const SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.schedule,
-                            size: 12,
-                            color: colorScheme.primary.withValues(alpha: 0.7),
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            timesText,
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: colorScheme.primary,
-                                      fontWeight: FontWeight.w500,
-                                      fontSize: 11,
-                                    ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-              Icon(
-                Icons.chevron_right,
-                size: 18,
-                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  void _showDetails(BuildContext context) {
+  static void showDetailsForScheduleSubject(BuildContext context,
+      {required ScheduledSubject subject}) {
     final colorScheme = Theme.of(context).colorScheme;
 
     showModalBottomSheet(
@@ -240,6 +114,35 @@ class SubjectCard extends StatelessWidget {
                             const SizedBox(height: 10),
                             GroupedTimeSlots(slots: subject.timeSlots),
                           ],
+                          const SizedBox(height: 20),
+                          OutlinedButton(
+                            onPressed: () async {
+                              final subjectFind =
+                                  await _subjectExists(subject.name);
+                              if (subjectFind != null) {
+                                Routefly.push(
+                                    routePaths.subjects.subjectDetails,
+                                    arguments:
+                                        EnrichedSubject(subject: subjectFind));
+                              } else {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text(
+                                        'Matéria "${subject.name}" não encontrada.'),
+                                  ),
+                                );
+                              }
+                            },
+                            style: OutlinedButton.styleFrom(
+                              minimumSize: const Size.fromHeight(40),
+                              side: BorderSide(
+                                color: colorScheme.primary.withValues(
+                                  alpha: 0.5,
+                                ),
+                              ),
+                            ),
+                            child: const Text('Ver disciplina'),
+                          ),
                         ],
                       ),
                     ),
@@ -252,6 +155,161 @@ class SubjectCard extends StatelessWidget {
       },
     );
   }
+
+  @override
+  State<SubjectCard> createState() => _SubjectCardState();
+}
+
+class _SubjectCardState extends State<SubjectCard> {
+  String _getGroupedTimeText(List<TimeSlot> slots) {
+    if (slots.isEmpty) return '';
+
+    final slotsByDay = <DayOfWeek, List<TimeSlot>>{};
+    for (final slot in slots) {
+      slotsByDay.putIfAbsent(slot.day, () => []).add(slot);
+    }
+
+    final grouped = <String>[];
+    for (final daySlots in slotsByDay.values) {
+      if (daySlots.isEmpty) continue;
+      daySlots.sort((a, b) => a.startTime.compareTo(b.startTime));
+      final firstStart = daySlots.first.startTime;
+      final lastEnd = daySlots.last.endTime;
+      grouped.add('$firstStart–$lastEnd');
+    }
+
+    return grouped.join(', ');
+  }
+
+  final subjectsRepository = injector.get<SubjectRepository>();
+  final subjectNoteRepository = injector.get<SubjectNoteRepository>();
+
+  @override
+  Widget build(BuildContext context) {
+    final timesText = _getGroupedTimeText(widget.daySlots);
+    final colorScheme = Theme.of(context).colorScheme;
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(8),
+        onTap: () => SubjectCard.showDetailsForScheduleSubject(context,
+            subject: widget.subject),
+        child: Ink(
+          decoration: BoxDecoration(
+            color: colorScheme.surfaceContainerLow,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.subject.name,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            height: 1.3,
+                          ),
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Text(
+                          widget.subject.code,
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                    fontSize: 11,
+                                  ),
+                        ),
+                        Text(
+                          ' • ',
+                          style: TextStyle(
+                            color: colorScheme.onSurfaceVariant
+                                .withValues(alpha: 0.5),
+                          ),
+                        ),
+                        Text(
+                          widget.subject.className,
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: colorScheme.onSurfaceVariant,
+                                    fontSize: 11,
+                                  ),
+                        ),
+                        Text(
+                          ' • ',
+                          style: TextStyle(
+                            color: colorScheme.onSurfaceVariant
+                                .withValues(alpha: 0.5),
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            widget.subject.room,
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: colorScheme.onSurfaceVariant,
+                                      fontSize: 11,
+                                    ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
+                    ),
+                    if (timesText.isNotEmpty) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.schedule,
+                            size: 12,
+                            color: colorScheme.primary.withValues(alpha: 0.7),
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            timesText,
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: colorScheme.primary,
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 11,
+                                    ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                size: 18,
+                color: colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+Future<Subject?> _subjectExists(String name) async {
+  Subject? subject;
+  (await injector.get<SubjectRepository>().getSubjectsByName(name))
+      .onSuccess((result) {
+    if (result.isNotEmpty) {
+      subject = result.first;
+    }
+  });
+
+  return subject;
 }
 
 class SimpleChip extends StatelessWidget {

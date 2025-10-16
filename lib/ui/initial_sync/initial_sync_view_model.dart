@@ -111,6 +111,7 @@ class InitialSyncViewModel extends ChangeNotifier {
     // Finalização
     await _sigaService.goToHome();
     await _settingsRepository.setInitialSyncCompleted(true);
+    await _settingsRepository.updateLastSyncTimestamp();
     _isSyncing = false;
     notifyListeners();
 

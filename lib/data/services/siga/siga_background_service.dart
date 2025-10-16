@@ -16,6 +16,7 @@ import 'package:my_ufape/data/parsers/profile_parser.dart';
 import 'package:my_ufape/data/services/siga/siga_scripts.dart';
 import 'package:my_ufape/domain/entities/user.dart';
 import 'package:my_ufape/data/repositories/user/user_repository.dart';
+import 'package:async/async.dart';
 
 /// Serviço singleton que mantém um WebViewController em memória
 /// para manter a sessão SIGA viva e expor métodos de extração.
@@ -54,7 +55,14 @@ class SigaBackgroundService extends ChangeNotifier {
   bool _isLoggedIn = false;
   bool get isLoggedIn => _isLoggedIn;
 
-  bool isSyncing = false;
+  bool _isSyncing = false;
+  bool get isSyncing => _isSyncing;
+  set isSyncing(bool value) {
+    if (_isSyncing != value) {
+      _isSyncing = value;
+      notifyListeners();
+    }
+  }
 
   String statusMessage = '';
 
@@ -67,6 +75,8 @@ class SigaBackgroundService extends ChangeNotifier {
   Timer? _reconnectTimer;
   final int _maxReconnectAttempts = 5;
   final Duration _reconnectBaseDelay = const Duration(seconds: 5);
+
+  CancelableOperation<void>? _syncOp;
 
   /// Realiza a sincronização automática se as condições forem atendidas.
   Future<void> performAutomaticSyncIfNeeded(
@@ -97,26 +107,49 @@ class SigaBackgroundService extends ChangeNotifier {
 
     logarte.log('Starting automatic background sync...');
     isSyncing = true;
-    notifyListeners();
+
+    _syncOp = CancelableOperation.fromFuture(_runSync(), onCancel: () async {
+      // Sinaliza fim e faz limpeza
+      isSyncing = false;
+      _reconnectTimer?.cancel();
+      _statusTimer?.cancel();
+    });
 
     try {
-      // Executa a extração de notas e grade
-      await navigateAndExtractGrades();
-      await goToHome();
-      await Future.delayed(const Duration(seconds: 2));
-      await navigateAndExtractTimetable();
-      goToHome();
-
-      // Atualiza o timestamp da última sincronização bem-sucedida
-      await _settings.updateLastSyncTimestamp();
-      logarte.log('Automatic background sync successful.');
-      isSyncing = false;
-      notifyListeners();
+      await _syncOp!.value;
     } catch (e) {
-      logarte.log('Automatic background sync failed: $e');
+      logarte.log('Automatic sync failed: $e');
+    } finally {
+      _syncOp = null;
+      // _cts = null;
+    }
+  }
+
+  Future<void> _runSync() async {
+    try {
+      if (!isSyncing) return;
+      await navigateAndExtractGrades(); // cheque interno de isSyncing/tokens
+      if (!isSyncing) return;
+      await goToHome();
+      if (!isSyncing) return;
+      await Future.delayed(const Duration(seconds: 2));
+      if (!isSyncing) return;
+      await navigateAndExtractTimetable();
+      if (!isSyncing) return;
+      await goToHome();
+      if (!isSyncing) return;
+      await _settings.updateLastSyncTimestamp();
+    } finally {
+      // Estado final garantido
       isSyncing = false;
-      goToHome();
-      notifyListeners();
+    }
+  }
+
+  Future<void> cancelSync() async {
+    isSyncing = false;
+    if (_syncOp != null) {
+      await _syncOp!.cancel();
+      _syncOp = null;
     }
   }
 

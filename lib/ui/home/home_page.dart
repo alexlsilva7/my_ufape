@@ -3,6 +3,7 @@ import 'package:my_ufape/core/debug/logarte.dart';
 import 'package:my_ufape/core/ui/gen/assets.gen.dart';
 import 'package:my_ufape/data/repositories/subject_note/subject_note_repository.dart';
 import 'package:my_ufape/data/repositories/scheduled_subject/scheduled_subject_repository.dart';
+import 'package:my_ufape/ui/timetable/widgets/subject_card.dart';
 import 'package:routefly/routefly.dart';
 import 'package:my_ufape/app_widget.dart';
 import 'package:my_ufape/config/dependencies.dart';
@@ -508,7 +509,7 @@ class _HomePageState extends State<HomePage> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: _buildQuickAccessGrid(context, isDark),
                   ),
-                  const SizedBox(height: 24),
+                  const SizedBox(height: 12),
                 ],
               ),
             ),
@@ -623,7 +624,7 @@ class _HomePageState extends State<HomePage> {
         final dayName = item['dayName'] as String;
         final daysUntil = item['daysUntil'] as int;
 
-        final color = isOngoing ? Colors.orange.shade600 : Colors.blue.shade600;
+        final color = isOngoing ? Colors.orange.shade700 : Colors.blue.shade600;
 
         String dayLabel;
         if (daysUntil == 0) {
@@ -634,153 +635,159 @@ class _HomePageState extends State<HomePage> {
           dayLabel = dayName;
         }
 
-        return Container(
-          margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: isDark ? Colors.black : Colors.white,
-            borderRadius: BorderRadius.circular(12),
-            border: Border.all(
-              color: color.withValues(alpha: 0.25),
-              width: 1.2,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.03),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
+        return GestureDetector(
+          onTap: () {
+            SubjectCard.showDetailsForScheduleSubject(context,
+                subject: subject);
+          },
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isDark ? Colors.black : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: color.withValues(alpha: 0.25),
+                width: 1.2,
               ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 4,
-                height: 78,
-                decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: BorderRadius.circular(2),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.03),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        if (isOngoing) ...[
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Colors.orange.shade600,
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: const [
-                                Icon(Icons.circle,
-                                    size: 8, color: Colors.white),
-                                SizedBox(width: 6),
-                                Text(
-                                  'EM ANDAMENTO',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.bold,
-                                    letterSpacing: 0.5,
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 4,
+                  height: 78,
+                  decoration: BoxDecoration(
+                    color: color,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          if (isOngoing) ...[
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: Colors.orange.shade700,
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: const [
+                                  Icon(Icons.circle,
+                                      size: 8, color: Colors.white),
+                                  SizedBox(width: 6),
+                                  Text(
+                                    'EM ANDAMENTO',
+                                    style: TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 9,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 0.5,
+                                    ),
                                   ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ] else ...[
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: color.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                  color: color.withValues(alpha: 0.3),
-                                  width: 1),
-                            ),
-                            child: Text(
-                              dayLabel.toUpperCase(),
-                              style: TextStyle(
-                                color: color,
-                                fontSize: 11,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0.5,
+                                ],
                               ),
                             ),
-                          ),
-                        ],
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      subject.name,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.bold,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        const Icon(Icons.access_time, size: 14),
-                        const SizedBox(width: 6),
-                        Text(
-                          '${slot.startTime} - ${slot.endTime}',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: isDark
-                                ? Colors.grey.shade400
-                                : Colors.grey.shade600,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        const Icon(Icons.person, size: 14),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(
-                            subject.className.isNotEmpty
-                                ? subject.className
-                                : subject.status,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: isDark
-                                  ? Colors.grey.shade400
-                                  : Colors.grey.shade600,
+                          ] else ...[
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 4),
+                              decoration: BoxDecoration(
+                                color: color.withValues(alpha: 0.1),
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(
+                                    color: color.withValues(alpha: 0.3),
+                                    width: 1),
+                              ),
+                              child: Text(
+                                dayLabel.toUpperCase(),
+                                style: TextStyle(
+                                  color: color,
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.bold,
+                                  letterSpacing: 0.5,
+                                ),
+                              ),
                             ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        subject.name,
+                        style: const TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
                         ),
-                        const SizedBox(width: 12),
-                        const Icon(Icons.room, size: 14),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(
-                            subject.room,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          const Icon(Icons.access_time, size: 14),
+                          const SizedBox(width: 6),
+                          Text(
+                            '${slot.startTime} - ${slot.endTime}',
                             style: TextStyle(
                               fontSize: 13,
                               color: isDark
                                   ? Colors.grey.shade400
                                   : Colors.grey.shade600,
                             ),
-                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                      ],
-                    ),
-                  ],
+                          const SizedBox(width: 12),
+                          const Icon(Icons.person, size: 14),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              subject.className.isNotEmpty
+                                  ? subject.className
+                                  : subject.status,
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: isDark
+                                    ? Colors.grey.shade400
+                                    : Colors.grey.shade600,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const Icon(Icons.room, size: 14),
+                          const SizedBox(width: 6),
+                          Flexible(
+                            child: Text(
+                              subject.room,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: isDark
+                                    ? Colors.grey.shade400
+                                    : Colors.grey.shade600,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         );
       }).toList(),
@@ -799,8 +806,18 @@ class _HomePageState extends State<HomePage> {
             final credentials = await settingsRepo.getUserCredentials();
 
             await credentials.fold(
-              (login) {
-                Routefly.push(routePaths.siga);
+              (login) async {
+                // 1) Cancela a sync atual de forma robusta
+                await _sigaService.cancelSync();
+                _sigaService.goToHome();
+                // 3) Libera navegações e vai para home do SIGA
+                _sigaService.isSyncing = false;
+                await _sigaService.goToHome();
+                // 4) Entra na página do SIGA
+                await Routefly.push(routePaths.siga).then((_) {
+                  // Quando voltar do SIGA, retomar sync automática se necessário
+                  _sigaService.performAutomaticSyncIfNeeded();
+                });
               },
               (login) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -840,7 +857,7 @@ class _HomePageState extends State<HomePage> {
         },
       },
       {
-        'title': 'Perfil Curricular do Curso',
+        'title': 'Perfil Curricular',
         'icon': Icons.person_outline,
         'color': Colors.purple.shade600,
         'onTap': () async {
