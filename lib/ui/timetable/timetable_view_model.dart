@@ -64,6 +64,8 @@ class TimetableViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
+      await _sigaService.goToHome();
+      await Future.delayed(const Duration(seconds: 2));
       final subjects = await _sigaService.navigateAndExtractTimetable();
       await _sigaService.goToHome();
 

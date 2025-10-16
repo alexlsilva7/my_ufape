@@ -105,6 +105,7 @@ class SigaBackgroundService extends ChangeNotifier {
       await goToHome();
       await Future.delayed(const Duration(seconds: 2));
       await navigateAndExtractTimetable();
+      goToHome();
 
       // Atualiza o timestamp da última sincronização bem-sucedida
       await _settings.updateLastSyncTimestamp();
@@ -114,6 +115,7 @@ class SigaBackgroundService extends ChangeNotifier {
     } catch (e) {
       logarte.log('Automatic background sync failed: $e');
       isSyncing = false;
+      goToHome();
       notifyListeners();
     }
   }
@@ -220,7 +222,7 @@ class SigaBackgroundService extends ChangeNotifier {
 
     try {
       final result =
-          await _loginCompleter!.future.timeout(const Duration(seconds: 60));
+          await _loginCompleter!.future.timeout(const Duration(seconds: 30));
       _loginCompleter = null; // Limpa o completer após o uso
       return result;
     } catch (e) {
@@ -376,7 +378,7 @@ class SigaBackgroundService extends ChangeNotifier {
 
   /// Aguarda a página de notas ser carregada (busca pelo botão Imprimir)
   Future<void> _waitForGradesPageReady(
-      {Duration timeout = const Duration(seconds: 60)}) async {
+      {Duration timeout = const Duration(seconds: 30)}) async {
     final completer = Completer<void>();
     Timer? timer;
     final stopwatch = Stopwatch()..start();
@@ -420,7 +422,7 @@ class SigaBackgroundService extends ChangeNotifier {
 
   /// Aguarda a página de informações do discente carregar
   Future<void> _waitForStudentInfoPageReady(
-      {Duration timeout = const Duration(seconds: 60)}) async {
+      {Duration timeout = const Duration(seconds: 30)}) async {
     final completer = Completer<void>();
     Timer? timer;
     final stopwatch = Stopwatch()..start();
@@ -508,7 +510,7 @@ class SigaBackgroundService extends ChangeNotifier {
       await _controller!.runJavaScriptReturningResult(script2);
 
       // 3. Aguarda a página carregar
-      await _waitForGradesPageReady(timeout: const Duration(seconds: 60));
+      await _waitForGradesPageReady(timeout: const Duration(seconds: 30));
 
       // 5. Extrai as notas
       final grades = await extractGrades();
@@ -573,7 +575,7 @@ class SigaBackgroundService extends ChangeNotifier {
 
   /// Aguarda a página de Perfil Curricular dentro do iframe ficar pronta.
   Future<void> _waitForProfilePageReady(
-      {Duration timeout = const Duration(seconds: 60)}) async {
+      {Duration timeout = const Duration(seconds: 30)}) async {
     final completer = Completer<void>();
     Timer? timer;
     final stopwatch = Stopwatch()..start();
@@ -623,14 +625,14 @@ class SigaBackgroundService extends ChangeNotifier {
       await _controller!.runJavaScriptReturningResult(SigaScripts.scriptInfo());
 
       // 3. Aguarda a página de informações carregar
-      await _waitForStudentInfoPageReady(timeout: const Duration(seconds: 60));
+      await _waitForStudentInfoPageReady(timeout: const Duration(seconds: 30));
 
       // 4. Clica em Perfil Curricular
       await _controller!
           .runJavaScriptReturningResult(SigaScripts.scriptPerfil());
 
       // 5. Aguarda o perfil carregar
-      await _waitForProfilePageReady(timeout: const Duration(seconds: 60));
+      await _waitForProfilePageReady(timeout: const Duration(seconds: 30));
 
       // 6. Pequeno delay para garantir renderização
       await Future.delayed(const Duration(milliseconds: 500));
@@ -680,14 +682,14 @@ class SigaBackgroundService extends ChangeNotifier {
   }
 
   Future<void> _waitForTimetablePageReady(
-      {Duration timeout = const Duration(seconds: 60)}) async {
+      {Duration timeout = const Duration(seconds: 30)}) async {
     final completer = Completer<void>();
     Timer? timer;
     final stopwatch = Stopwatch()..start();
 
     final script = SigaScripts.waitForTimetablePageReadyScript();
 
-    timer = Timer.periodic(const Duration(milliseconds: 250), (t) async {
+    timer = Timer.periodic(const Duration(milliseconds: 50), (t) async {
       if (stopwatch.elapsed > timeout) {
         timer?.cancel();
         if (!completer.isCompleted) {
