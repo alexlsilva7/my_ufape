@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:my_ufape/core/debug/logarte.dart';
 import 'package:my_ufape/data/repositories/scheduled_subject/scheduled_subject_repository.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
 import 'package:my_ufape/domain/entities/time_table.dart';
@@ -63,14 +64,19 @@ class TimetableViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
+      await _sigaService.goToHome();
+      await Future.delayed(const Duration(seconds: 2));
       final subjects = await _sigaService.navigateAndExtractTimetable();
-      _sigaService.goToHome();
+      await _sigaService.goToHome();
 
       this.subjects = subjects;
       isLoading = false;
       isSyncing = false;
       notifyListeners();
     } catch (e) {
+      logarte.log('Erro ao sincronizar com SIGA: $e',
+          source: 'TimetableViewModel');
+      await _sigaService.goToHome();
       errorMessage = 'Erro ao sincronizar: ${e.toString()}';
       isLoading = false;
       isSyncing = false;

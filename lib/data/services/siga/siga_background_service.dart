@@ -54,6 +54,8 @@ class SigaBackgroundService extends ChangeNotifier {
   bool _isLoggedIn = false;
   bool get isLoggedIn => _isLoggedIn;
 
+  bool isSyncing = false;
+
   String statusMessage = '';
 
   Timer? _statusTimer;
@@ -68,7 +70,7 @@ class SigaBackgroundService extends ChangeNotifier {
 
   /// Realiza a sincronização automática se as condições forem atendidas.
   Future<void> performAutomaticSyncIfNeeded(
-      {Duration syncInterval = const Duration(hours: 1)}) async {
+      {Duration syncInterval = const Duration(seconds: 1)}) async {
     // 1. Verifica se a funcionalidade está habilitada pelo usuário
     if (!_settings.isAutoSyncEnabled) {
       logarte.log('Auto-sync is disabled by the user.');
@@ -94,6 +96,8 @@ class SigaBackgroundService extends ChangeNotifier {
     }
 
     logarte.log('Starting automatic background sync...');
+    isSyncing = true;
+    notifyListeners();
 
     try {
       // Executa a extração de notas e grade
@@ -101,13 +105,18 @@ class SigaBackgroundService extends ChangeNotifier {
       await goToHome();
       await Future.delayed(const Duration(seconds: 2));
       await navigateAndExtractTimetable();
+      goToHome();
 
       // Atualiza o timestamp da última sincronização bem-sucedida
       await _settings.updateLastSyncTimestamp();
       logarte.log('Automatic background sync successful.');
+      isSyncing = false;
+      notifyListeners();
     } catch (e) {
       logarte.log('Automatic background sync failed: $e');
-      // A falha é silenciosa para não interromper o usuário
+      isSyncing = false;
+      goToHome();
+      notifyListeners();
     }
   }
 
@@ -213,7 +222,7 @@ class SigaBackgroundService extends ChangeNotifier {
 
     try {
       final result =
-          await _loginCompleter!.future.timeout(const Duration(seconds: 60));
+          await _loginCompleter!.future.timeout(const Duration(seconds: 30));
       _loginCompleter = null; // Limpa o completer após o uso
       return result;
     } catch (e) {
@@ -369,7 +378,7 @@ class SigaBackgroundService extends ChangeNotifier {
 
   /// Aguarda a página de notas ser carregada (busca pelo botão Imprimir)
   Future<void> _waitForGradesPageReady(
-      {Duration timeout = const Duration(seconds: 60)}) async {
+      {Duration timeout = const Duration(seconds: 30)}) async {
     final completer = Completer<void>();
     Timer? timer;
     final stopwatch = Stopwatch()..start();
@@ -413,7 +422,7 @@ class SigaBackgroundService extends ChangeNotifier {
 
   /// Aguarda a página de informações do discente carregar
   Future<void> _waitForStudentInfoPageReady(
-      {Duration timeout = const Duration(seconds: 60)}) async {
+      {Duration timeout = const Duration(seconds: 30)}) async {
     final completer = Completer<void>();
     Timer? timer;
     final stopwatch = Stopwatch()..start();
@@ -501,7 +510,7 @@ class SigaBackgroundService extends ChangeNotifier {
       await _controller!.runJavaScriptReturningResult(script2);
 
       // 3. Aguarda a página carregar
-      await _waitForGradesPageReady(timeout: const Duration(seconds: 60));
+      await _waitForGradesPageReady(timeout: const Duration(seconds: 30));
 
       // 5. Extrai as notas
       final grades = await extractGrades();
@@ -566,7 +575,7 @@ class SigaBackgroundService extends ChangeNotifier {
 
   /// Aguarda a página de Perfil Curricular dentro do iframe ficar pronta.
   Future<void> _waitForProfilePageReady(
-      {Duration timeout = const Duration(seconds: 60)}) async {
+      {Duration timeout = const Duration(seconds: 30)}) async {
     final completer = Completer<void>();
     Timer? timer;
     final stopwatch = Stopwatch()..start();
@@ -616,14 +625,14 @@ class SigaBackgroundService extends ChangeNotifier {
       await _controller!.runJavaScriptReturningResult(SigaScripts.scriptInfo());
 
       // 3. Aguarda a página de informações carregar
-      await _waitForStudentInfoPageReady(timeout: const Duration(seconds: 60));
+      await _waitForStudentInfoPageReady(timeout: const Duration(seconds: 30));
 
       // 4. Clica em Perfil Curricular
       await _controller!
           .runJavaScriptReturningResult(SigaScripts.scriptPerfil());
 
       // 5. Aguarda o perfil carregar
-      await _waitForProfilePageReady(timeout: const Duration(seconds: 60));
+      await _waitForProfilePageReady(timeout: const Duration(seconds: 30));
 
       // 6. Pequeno delay para garantir renderização
       await Future.delayed(const Duration(milliseconds: 500));
@@ -673,14 +682,14 @@ class SigaBackgroundService extends ChangeNotifier {
   }
 
   Future<void> _waitForTimetablePageReady(
-      {Duration timeout = const Duration(seconds: 20)}) async {
+      {Duration timeout = const Duration(seconds: 30)}) async {
     final completer = Completer<void>();
     Timer? timer;
     final stopwatch = Stopwatch()..start();
 
     final script = SigaScripts.waitForTimetablePageReadyScript();
 
-    timer = Timer.periodic(const Duration(milliseconds: 250), (t) async {
+    timer = Timer.periodic(const Duration(milliseconds: 50), (t) async {
       if (stopwatch.elapsed > timeout) {
         timer?.cancel();
         if (!completer.isCompleted) {
@@ -727,22 +736,38 @@ class SigaBackgroundService extends ChangeNotifier {
       await Future.delayed(const Duration(milliseconds: 500));
 
       // 6. Extrai os dados
-      final jsonResult = await _controller!.runJavaScriptReturningResult(
-          SigaScripts.extractTimetableScript()) as String;
+      final dynamic jsonResult = await _controller!
+          .runJavaScriptReturningResult(SigaScripts.extractTimetableScript());
 
-      if (jsonResult.isEmpty) {
+      if (jsonResult == null || jsonResult.toString().isEmpty) {
         logarte.log('Timetable extraction returned empty result.');
         throw Exception('Script retornou vazio');
       }
 
-      dynamic decodedData = jsonDecode(jsonResult);
-      if (decodedData is String) {
-        decodedData = jsonDecode(decodedData);
-        logarte.log('Timetable extraction script result: $decodedData');
+      dynamic decodedData;
+      if (jsonResult is String) {
+        decodedData = jsonDecode(jsonResult);
+      } else {
+        decodedData = jsonResult; // Já pode ser um Map/List
       }
 
-      final List<dynamic> decodedList =
-          decodedData is List ? decodedData : jsonDecode(decodedData);
+      if (decodedData is String) {
+        decodedData = jsonDecode(decodedData);
+      }
+      // --- FIM DA CORREÇÃO ---
+
+      logarte.log('Timetable extraction script result: $decodedData');
+
+      // Verifica se o resultado é um objeto de erro
+      if (decodedData is Map && decodedData.containsKey('error')) {
+        final errorMessage = decodedData['error'];
+        logarte.log('Timetable extraction error: $errorMessage');
+        throw Exception('Erro no script: $errorMessage');
+      }
+
+      final List<dynamic> decodedList = decodedData is List
+          ? decodedData
+          : jsonDecode(decodedData.toString());
 
       if (decodedList.isNotEmpty &&
           decodedList.first is Map &&

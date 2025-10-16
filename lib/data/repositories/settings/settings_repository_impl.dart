@@ -27,7 +27,6 @@ class SettingsRepositoryImpl extends ChangeNotifier
     isDarkMode = _localStoragePreferencesService.isDarkMode;
     isDebugOverlayEnabled =
         _localStoragePreferencesService.isDebugOverlayEnabled;
-    // Adicione esta linha
     isAutoSyncEnabled = _localStoragePreferencesService.isAutoSyncEnabled;
   }
 
@@ -78,12 +77,13 @@ class SettingsRepositoryImpl extends ChangeNotifier
       return Failure(AppException('Falha ao restaurar o aplicativo: $e', s));
     }
   }
-  
+
   @override
   bool isAutoSyncEnabled = true;
 
   @override
-  int get lastSyncTimestamp => _localStoragePreferencesService.lastSyncTimestamp;
+  int get lastSyncTimestamp =>
+      _localStoragePreferencesService.lastSyncTimestamp;
 
   @override
   AsyncResult<Unit> toggleAutoSync() async {
