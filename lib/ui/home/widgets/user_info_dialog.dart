@@ -94,7 +94,7 @@ class _InfoRow extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.value,
-    this.onCopy, // Adicione ao construtor
+    this.onCopy,
   });
 
   @override

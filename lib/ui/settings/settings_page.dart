@@ -4,6 +4,7 @@ import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
 
 import 'package:my_ufape/data/services/shorebird/shorebird_service.dart';
 import 'package:terminate_restart/terminate_restart.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -21,6 +22,19 @@ class _SettingsPageState extends State<SettingsPage> {
     super.initState();
     _settingsRepository = injector.get<SettingsRepository>();
     _shorebirdService = injector.get<ShorebirdService>();
+  }
+
+  Future<void> _launchURL(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } else {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Não foi possível abrir o link: $url')),
+        );
+      }
+    }
   }
 
   @override
@@ -75,7 +89,6 @@ class _SettingsPageState extends State<SettingsPage> {
                           await _settingsRepository.toggleDarkMode();
                         },
                       ),
-                      // Adicione o novo SwitchListTile aqui
                       const Divider(height: 1),
                       SwitchListTile(
                         title: const Text('Sincronização Automática'),
@@ -126,25 +139,31 @@ class _SettingsPageState extends State<SettingsPage> {
                 ),
                 const SizedBox(height: 16),
                 Card(
-                  child: ListTile(
-                    leading: const Icon(Icons.info),
-                    title: const Text('Versão'),
-                    subtitle:
-                        Text(_shorebirdService.appVersion ?? 'Desconhecida'),
-                  ),
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'Atualizações do App',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Card(
                   child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
+                      ListTile(
+                        leading: const Icon(Icons.code),
+                        title: const Text('Código Fonte'),
+                        subtitle: const Text('Veja o projeto no GitHub'),
+                        onTap: () => _launchURL(
+                            'https://github.com/alexlsilva7/my_ufape'),
+                      ),
+                      const Divider(height: 1),
+                      ListTile(
+                        leading: const Icon(Icons.person),
+                        title: const Text('Desenvolvido por'),
+                        subtitle: const Text('Alex Silva'),
+                        onTap: () =>
+                            _launchURL('https://github.com/alexlsilva7'),
+                      ),
+                      const Divider(height: 1),
+                      ListTile(
+                        leading: const Icon(Icons.info),
+                        title: const Text('Versão'),
+                        subtitle: Text(
+                            _shorebirdService.appVersion ?? 'Desconhecida'),
+                      ),
                       ListTile(
                         leading: const Icon(Icons.system_update),
                         title: const Text('Verificar atualizações'),

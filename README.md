@@ -12,6 +12,15 @@ O aplicativo se integra ao portal SIGA (Sistema Integrado de Gestão de Atividad
 
 ---
 
+## 👨‍💻 Autor
+
+Desenvolvido por **Alex Silva**.
+
+- **GitHub:** [alexlsilva7](https://github.com/alexlsilva7)
+- **Repositório do Projeto:** [my_ufape](https://github.com/alexlsilva7/my_ufape)
+
+---
+
 ## ✨ Funcionalidades Principais
 
 - **🎓 Histórico de Notas Detalhado:** Acompanhe seu desempenho acadêmico com todas as notas, faltas e situação em cada disciplina, agrupadas por período.

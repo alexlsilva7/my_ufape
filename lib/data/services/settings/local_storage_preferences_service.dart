@@ -7,7 +7,6 @@ class LocalStoragePreferencesService {
 
   static const String _debugOverlayKey = 'debug_overlay_enabled';
   static const String _initialSyncKey = 'initial_sync_completed';
-  // Adicione estas novas chaves
   static const String _autoSyncKey = 'auto_sync_enabled';
   static const String _lastSyncTimestampKey = 'last_sync_timestamp';
 
@@ -18,8 +17,8 @@ class LocalStoragePreferencesService {
 
   bool get isInitialSyncCompleted => prefs.getBool(_initialSyncKey) ?? false;
 
-  // Adicione estes getters
-  bool get isAutoSyncEnabled => prefs.getBool(_autoSyncKey) ?? true; // Padrão para ativado
+  bool get isAutoSyncEnabled =>
+      prefs.getBool(_autoSyncKey) ?? true; // Padrão para ativado
   int get lastSyncTimestamp => prefs.getInt(_lastSyncTimestampKey) ?? 0;
 
   AsyncResult<Unit> toggleDarkMode() async {
@@ -49,7 +48,6 @@ class LocalStoragePreferencesService {
     }
   }
 
-  // Adicione estes métodos
   AsyncResult<Unit> toggleAutoSync() async {
     try {
       await prefs.setBool(_autoSyncKey, !isAutoSyncEnabled);
@@ -61,7 +59,8 @@ class LocalStoragePreferencesService {
 
   AsyncResult<Unit> updateLastSyncTimestamp() async {
     try {
-      await prefs.setInt(_lastSyncTimestampKey, DateTime.now().millisecondsSinceEpoch);
+      await prefs.setInt(
+          _lastSyncTimestampKey, DateTime.now().millisecondsSinceEpoch);
       return Success(unit);
     } catch (e, s) {
       return Failure(AppException(e.toString(), s));
