@@ -9,6 +9,7 @@ class LocalStoragePreferencesService {
   static const String _initialSyncKey = 'initial_sync_completed';
   static const String _autoSyncKey = 'auto_sync_enabled';
   static const String _lastSyncTimestampKey = 'last_sync_timestamp';
+  static const String _biometricAuthKey = 'biometric_auth_enabled';
 
   LocalStoragePreferencesService(this.prefs);
   bool get isDarkMode => prefs.getBool('isDarkMode') ?? false;
@@ -20,6 +21,8 @@ class LocalStoragePreferencesService {
   bool get isAutoSyncEnabled =>
       prefs.getBool(_autoSyncKey) ?? true; // Padrão para ativado
   int get lastSyncTimestamp => prefs.getInt(_lastSyncTimestampKey) ?? 0;
+
+  bool get isBiometricAuthEnabled => prefs.getBool(_biometricAuthKey) ?? false;
 
   AsyncResult<Unit> toggleDarkMode() async {
     try {
@@ -61,6 +64,15 @@ class LocalStoragePreferencesService {
     try {
       await prefs.setInt(
           _lastSyncTimestampKey, DateTime.now().millisecondsSinceEpoch);
+      return Success(unit);
+    } catch (e, s) {
+      return Failure(AppException(e.toString(), s));
+    }
+  }
+
+  AsyncResult<Unit> toggleBiometricAuth() async {
+    try {
+      await prefs.setBool(_biometricAuthKey, !isBiometricAuthEnabled);
       return Success(unit);
     } catch (e, s) {
       return Failure(AppException(e.toString(), s));

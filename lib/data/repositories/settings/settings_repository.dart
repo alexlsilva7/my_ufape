@@ -7,10 +7,16 @@ abstract interface class SettingsRepository extends ChangeNotifier {
   AsyncResult<Unit> restoreApp();
   bool isDarkMode = false;
   bool isDebugOverlayEnabled = false;
+
+  int get lastSyncTimestamp;
   bool isAutoSyncEnabled = true;
   AsyncResult<Unit> toggleAutoSync();
   AsyncResult<Unit> updateLastSyncTimestamp();
-  int get lastSyncTimestamp;
+
+  bool isBiometricAuthEnabled = false;
+  bool isBiometricAvailable = false;
+  AsyncResult<Unit> toggleBiometricAuth();
+  Future<bool> authenticateWithBiometrics();
 
   AsyncResult<Unit> saveUserCredentials(Login login);
 

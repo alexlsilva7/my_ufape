@@ -22,25 +22,48 @@ class _SplashPageState extends State<SplashPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          spacing: 48,
-          children: [
-            ColorFiltered(
-              colorFilter: ColorFilter.mode(
-                Theme.of(context).colorScheme.primary,
-                BlendMode.srcIn,
+      body: ListenableBuilder(
+          listenable: viewModel,
+          builder: (context, child) {
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                spacing: 48,
+                children: [
+                  ColorFiltered(
+                    colorFilter: ColorFilter.mode(
+                      Theme.of(context).colorScheme.primary,
+                      BlendMode.srcIn,
+                    ),
+                    child: Assets.images.myUfapeLogo.image(
+                      width: 150,
+                      height: 150,
+                    ),
+                  ),
+                  if (viewModel.isLoading) CircularProgressIndicator(),
+                  if (viewModel.settingsRepository.isBiometricAuthEnabled &&
+                      viewModel.settingsRepository.isBiometricAvailable) ...[
+                    const SizedBox(height: 24),
+                    OutlinedButton.icon(
+                      onPressed: viewModel.isLoading
+                          ? null
+                          : () {
+                              viewModel.authenticateWithBiometrics();
+                            },
+                      icon: const Icon(Icons.fingerprint),
+                      label: const Text('Usar biometria'),
+                      style: OutlinedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 12, horizontal: 24),
+                        side: BorderSide(
+                            color: Theme.of(context).colorScheme.primary),
+                      ),
+                    ),
+                  ]
+                ],
               ),
-              child: Assets.images.myUfapeLogo.image(
-                width: 150,
-                height: 150,
-              ),
-            ),
-            const CircularProgressIndicator(),
-          ],
-        ),
-      ),
+            );
+          }),
     );
   }
 }
