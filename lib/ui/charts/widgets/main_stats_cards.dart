@@ -16,7 +16,7 @@ class MainStatsCards extends StatelessWidget {
             Expanded(
               child: StatCard(
                 title: 'Média Geral',
-                value: analytics['overallAverage'].toStringAsFixed(2),
+                value: analytics['overallAverage']?.toStringAsFixed(2) ?? '-',
                 icon: Icons.analytics_outlined,
                 color: Theme.of(context).primaryColor,
                 subtitle: _getGradeLabel(analytics['overallAverage']),
@@ -30,7 +30,8 @@ class MainStatsCards extends StatelessWidget {
             Expanded(
               child: StatCard(
                 title: 'Taxa de Aprovação',
-                value: '${analytics['approvalRate'].toStringAsFixed(1)}%',
+                value:
+                    '${analytics['approvalRate']?.toStringAsFixed(1) ?? '-'}%',
                 icon: Icons.trending_up,
                 color: analytics['approvalRate'] >= 70
                     ? Colors.green.shade600

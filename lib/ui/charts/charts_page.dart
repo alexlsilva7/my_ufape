@@ -37,7 +37,12 @@ class _ChartsPageState extends State<ChartsPage> {
     _loadDataAndCompute();
   }
 
+  bool isLoading = true;
+
   Future<void> _loadDataAndCompute() async {
+    setState(() {
+      isLoading = true;
+    });
     // Copiar os dados recebidos
     final merged = _periodosData.map((e) {
       return {
@@ -88,7 +93,9 @@ class _ChartsPageState extends State<ChartsPage> {
 
     // Passar para o viewModel
     _viewModel.computeAll(merged);
-    if (mounted) setState(() {});
+    setState(() {
+      isLoading = false;
+    });
   }
 
   @override
@@ -96,55 +103,62 @@ class _ChartsPageState extends State<ChartsPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Análise de Desempenho'),
-        elevation: 0,
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Cards de Resumo Principal
-            MainStatsCards(analytics: _viewModel.analytics),
+      body: AnimatedCrossFade(
+        duration: const Duration(milliseconds: 400),
+        secondCurve: Curves.decelerate,
+        crossFadeState:
+            isLoading ? CrossFadeState.showFirst : CrossFadeState.showSecond,
+        firstChild: Container(),
+        secondChild: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Cards de Resumo Principal
+              MainStatsCards(analytics: _viewModel.analytics),
 
-            // Tendência de Performance
-            if (_viewModel.performanceTrend != null)
-              PerformanceTrendCard(trend: _viewModel.performanceTrend!),
+              // Tendência de Performance
+              if (_viewModel.performanceTrend != null)
+                PerformanceTrendCard(trend: _viewModel.performanceTrend!),
 
-            // Gráfico de Pizza - Distribuição de Situações
-            PieChartCard(analytics: _viewModel.analytics),
+              // Gráfico de Pizza - Distribuição de Situações
+              PieChartCard(analytics: _viewModel.analytics),
 
-            // Gráfico de Linha - Evolução das Médias
-            if (_viewModel.periodMedias.length > 1)
-              LineChartCard(periodMedias: _viewModel.periodMedias),
+              // Gráfico de Linha - Evolução das Médias
+              if (_viewModel.periodMedias.length > 1)
+                LineChartCard(periodMedias: _viewModel.periodMedias),
 
-            // Distribuição de Notas
-            if (_viewModel.gradeDistribution.isNotEmpty)
-              GradeDistributionCard(distribution: _viewModel.gradeDistribution),
+              // Distribuição de Notas
+              if (_viewModel.gradeDistribution.isNotEmpty)
+                GradeDistributionCard(
+                    distribution: _viewModel.gradeDistribution),
 
-            // Top 10 Melhores Disciplinas
-            if (_viewModel.subjectPerformance.isNotEmpty)
-              SubjectPerformanceCard(
-                  performance: _viewModel.subjectPerformance),
+              // Top 10 Melhores Disciplinas
+              if (_viewModel.subjectPerformance.isNotEmpty)
+                SubjectPerformanceCard(
+                    performance: _viewModel.subjectPerformance),
 
-            // Melhor Período
-            if (_viewModel.periodMedias.isNotEmpty)
-              BestPeriodCard(
-                  periodMedias: _viewModel.periodMedias,
-                  periodosData: _periodosData),
+              // Melhor Período
+              if (_viewModel.periodMedias.isNotEmpty)
+                BestPeriodCard(
+                    periodMedias: _viewModel.periodMedias,
+                    periodosData: _periodosData),
 
-            // Comparativo: Correlação entre carga (nº disciplinas) e média por período
-            if (_viewModel.periodMedias.isNotEmpty)
-              CorrelationCard(
-                  periodMedias: _viewModel.periodMedias,
-                  periodosData: _periodosData),
+              // Comparativo: Correlação entre carga (nº disciplinas) e média por período
+              if (_viewModel.periodMedias.isNotEmpty)
+                CorrelationCard(
+                    periodMedias: _viewModel.periodMedias,
+                    periodosData: _periodosData),
 
-            // Insights e Recomendações
-            InsightsCard(
-              analytics: _viewModel.analytics,
-              trend: _viewModel.performanceTrend,
-              consistency: _viewModel.consistency,
-            ),
-          ],
+              // Insights e Recomendações
+              InsightsCard(
+                analytics: _viewModel.analytics,
+                trend: _viewModel.performanceTrend,
+                consistency: _viewModel.consistency,
+              ),
+            ],
+          ),
         ),
       ),
     );
