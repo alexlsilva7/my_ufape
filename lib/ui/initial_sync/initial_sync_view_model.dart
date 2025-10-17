@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
 
-enum SyncStep { user, grades, profile, timetable }
+enum SyncStep { user, grades, profile, timetable, academicHistory }
 
 enum StepStatus { idle, running, success, failure }
 
@@ -104,6 +104,13 @@ class InitialSyncViewModel extends ChangeNotifier {
     // 4. Sincronizar Dados do Usuário
     if (!await _runSyncStep(SyncStep.user, _sigaService.navigateAndExtractUser,
         'dados do usuário')) {
+      _isSyncing = false;
+      return;
+    }
+
+    // 5. Sincronizar Histórico Escolar
+    if (!await _runSyncStep(SyncStep.academicHistory,
+        _sigaService.navigateAndExtractSchoolHistory, 'histórico escolar')) {
       _isSyncing = false;
       return;
     }

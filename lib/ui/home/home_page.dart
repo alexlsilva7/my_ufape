@@ -510,6 +510,91 @@ class _HomePageState extends State<HomePage> {
                     child: _buildQuickAccessGrid(context, isDark),
                   ),
                   const SizedBox(height: 12),
+                  //adicionar mais 2 opções Perfil curricular e Hístórico acadêmico parecido ao menu rápido
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Row(
+                      spacing: 12,
+                      children: [
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              Routefly.push(routePaths.curricularProfile);
+                            },
+                            borderRadius: BorderRadius.circular(16),
+                            child: Container(
+                              height: 56,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: isDark ? Colors.black : Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black
+                                        .withValues(alpha: isDark ? 0.3 : 0.1),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    'Perfil Curricular',
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: InkWell(
+                            onTap: () {
+                              Routefly.push(routePaths.schoolHistory);
+                            },
+                            borderRadius: BorderRadius.circular(16),
+                            child: Container(
+                              height: 56,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: isDark ? Colors.black : Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black
+                                        .withValues(alpha: isDark ? 0.3 : 0.1),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    'Histórico',
+                                    style: const TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -856,14 +941,14 @@ class _HomePageState extends State<HomePage> {
           Routefly.push(routePaths.timetable);
         },
       },
-      {
-        'title': 'Perfil Curricular',
-        'icon': Icons.person_outline,
-        'color': Colors.purple.shade600,
-        'onTap': () async {
-          Routefly.push(routePaths.curricularProfile);
-        },
-      },
+      // {
+      //   'title': 'Perfil Curricular',
+      //   'icon': Icons.person_outline,
+      //   'color': Colors.purple.shade600,
+      //   'onTap': () async {
+      //     Routefly.push(routePaths.curricularProfile);
+      //   },
+      // },
       {
         'title': 'Disciplinas',
         'icon': Icons.view_list_outlined,
@@ -913,13 +998,24 @@ class _HomePageState extends State<HomePage> {
         },
       },
       {
-        'title': 'Histórico',
-        'icon': Icons.history_edu_outlined,
+        'title': 'Rendimento',
+        'icon': Icons.school_rounded,
         'color': Colors.indigo.shade600,
-        'onTap': () {
-          Routefly.push(routePaths.schoolHistory);
+        'onTap': () async {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Em desenvolvimento')),
+          );
+          //Routefly.push(routePaths.academicExploitation);
         },
       },
+      // {
+      //   'title': 'Histórico',
+      //   'icon': Icons.history_edu_outlined,
+      //   'color': Colors.indigo.shade600,
+      //   'onTap': () {
+      //     Routefly.push(routePaths.schoolHistory);
+      //   },
+      // },
     ];
 
     return GridView.builder(
@@ -929,7 +1025,7 @@ class _HomePageState extends State<HomePage> {
         crossAxisCount: 3,
         crossAxisSpacing: 10,
         mainAxisSpacing: 10,
-        childAspectRatio: 1.0,
+        childAspectRatio: 1.15,
       ),
       itemCount: items.length,
       itemBuilder: (context, index) {

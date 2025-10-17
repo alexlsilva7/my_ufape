@@ -79,19 +79,24 @@ class _InitialSyncPageState extends State<InitialSyncPage> {
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyMedium,
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 24),
                   _buildStepTile('Grade de Horário', SyncStep.timetable,
                       _viewModel.status[SyncStep.timetable]!),
-                  const SizedBox(height: 12),
+
                   _buildStepTile('Notas e Histórico', SyncStep.grades,
                       _viewModel.status[SyncStep.grades]!),
-                  const SizedBox(height: 12),
+
                   _buildStepTile('Disciplinas', SyncStep.profile,
                       _viewModel.status[SyncStep.profile]!),
-                  const SizedBox(height: 12),
+
                   _buildStepTile('Usuário', SyncStep.user,
                       _viewModel.status[SyncStep.user]!),
-                  const SizedBox(height: 32),
+
+                  _buildStepTile(
+                      'Histórico Acadêmico',
+                      SyncStep.academicHistory,
+                      _viewModel.status[SyncStep.academicHistory]!),
+                  const SizedBox(height: 24),
                   if (_viewModel.errorMessage != null && !_viewModel.isSyncing)
                     Text(
                       _viewModel.errorMessage!,
@@ -136,6 +141,7 @@ class _InitialSyncPageState extends State<InitialSyncPage> {
     }
 
     return Card(
+      margin: const EdgeInsets.symmetric(vertical: 6),
       elevation: 1,
       child: ListTile(
         leading: Icon(
@@ -158,6 +164,8 @@ class _InitialSyncPageState extends State<InitialSyncPage> {
         return Icons.schedule_outlined;
       case SyncStep.user:
         return Icons.person_outline;
+      case SyncStep.academicHistory:
+        return Icons.history_edu_outlined;
     }
   }
 }

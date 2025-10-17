@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:my_ufape/app_widget.dart';
 import 'package:my_ufape/config/dependencies.dart';
 import 'package:my_ufape/core/debug/logarte.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
+import 'package:routefly/routefly.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
 class DebugSigaPage extends StatefulWidget {
@@ -36,6 +38,12 @@ class _DebugSigaPageState extends State<DebugSigaPage> {
         title: const Text('Debug'),
         centerTitle: false,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.cloud_sync_rounded),
+            onPressed: () {
+              Routefly.navigate(routePaths.initialSync);
+            },
+          ),
           IconButton(
             icon: const Icon(Icons.bug_report),
             onPressed: () async {
