@@ -1,14 +1,11 @@
 import 'package:flutter/foundation.dart';
-import 'package:my_ufape/core/debug/logarte.dart';
 import 'package:my_ufape/data/repositories/school_history/school_history_repository.dart';
-import 'package:my_ufape/data/repositories/user/user_repository.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
 import 'package:my_ufape/domain/entities/school_history.dart';
 import 'package:my_ufape/domain/entities/user.dart';
 
 class SchoolHistoryViewModel extends ChangeNotifier {
   final SchoolHistoryRepository _repository;
-  final UserRepository _userRepository;
 
   final SigaBackgroundService _sigaService;
 
@@ -24,27 +21,9 @@ class SchoolHistoryViewModel extends ChangeNotifier {
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
 
-  SchoolHistoryViewModel(
-      this._repository, this._userRepository, this._sigaService);
+  SchoolHistoryViewModel(this._repository, this._sigaService);
 
   User? currentUser;
-
-  Future<void> loadCurrentUser() async {
-    final result = await _userRepository.getUser();
-    result.fold(
-      (user) {
-        currentUser = user;
-        notifyListeners();
-      },
-      (error) {
-        logarte.log(
-          'Failed to load current user: ${error.toString()}',
-          source: 'SchoolHistoryViewModel',
-        );
-        _errorMessage = "Error loading user: ${error.toString()}";
-      },
-    );
-  }
 
   Future<void> loadHistory() async {
     _isLoading = true;

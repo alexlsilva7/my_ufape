@@ -140,9 +140,11 @@ class SigaBackgroundService extends ChangeNotifier {
       if (!isSyncing) return;
       await goToHome();
       if (!isSyncing) return;
+      await navigateAndExtractSchoolHistory();
+      if (!isSyncing) return;
       await _settings.updateLastSyncTimestamp();
     } finally {
-      // Estado final garantido
+      goToHome();
       isSyncing = false;
     }
   }

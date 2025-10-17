@@ -16,7 +16,6 @@ class _SchoolHistoryPageState extends State<SchoolHistoryPage> {
   @override
   void initState() {
     super.initState();
-    _viewModel.loadCurrentUser();
     _viewModel.loadHistory();
   }
 
@@ -64,20 +63,6 @@ class _SchoolHistoryPageState extends State<SchoolHistoryPage> {
 
           return CustomScrollView(
             slivers: [
-              ListenableBuilder(
-                  listenable: _viewModel,
-                  builder: (context, _) {
-                    if (_viewModel.currentUser != null &&
-                        (_viewModel.currentUser!.overallAverage != null ||
-                            _viewModel.currentUser!.overallCoefficient !=
-                                null)) {
-                      return SliverToBoxAdapter(
-                        child: _buildOverallStatsCard(context),
-                      );
-                    } else {
-                      return const SliverToBoxAdapter(child: SizedBox.shrink());
-                    }
-                  }),
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
                 sliver: SliverList(
@@ -154,7 +139,6 @@ class _SchoolHistoryPageState extends State<SchoolHistoryPage> {
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: () {
-                _viewModel.loadCurrentUser();
                 _viewModel.loadHistory();
               },
               icon: const Icon(Icons.refresh),
@@ -215,137 +199,6 @@ class _SchoolHistoryPageState extends State<SchoolHistoryPage> {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildOverallStatsCard(BuildContext context) {
-    final user = _viewModel.currentUser;
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      decoration: BoxDecoration(
-        color: theme.cardTheme.color,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: theme.colorScheme.primary.withValues(alpha: 0.2),
-          width: 1.5,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: theme.colorScheme.primary
-                .withValues(alpha: isDark ? 0.15 : 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    Icons.analytics_outlined,
-                    color: theme.colorScheme.primary,
-                    size: 24,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  'Desempenho Geral',
-                  style: theme.textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: theme.colorScheme.onSurface,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Row(
-              children: [
-                if (user?.overallAverage != null)
-                  Expanded(
-                    child: _buildStatItem(
-                      context,
-                      icon: Icons.grade,
-                      label: 'Média Geral',
-                      value: user?.overallAverage!.toStringAsFixed(2) ?? 'N/A',
-                      color: _getGradeColor(user?.overallAverage ?? 0),
-                    ),
-                  ),
-                if (user?.overallAverage != null &&
-                    user?.overallCoefficient != null)
-                  const SizedBox(width: 12),
-                if (user?.overallCoefficient != null)
-                  Expanded(
-                    child: _buildStatItem(
-                      context,
-                      icon: Icons.trending_up,
-                      label: 'Coeficiente Geral',
-                      value:
-                          user?.overallCoefficient!.toStringAsFixed(2) ?? 'N/A',
-                      color: _getGradeColor(user?.overallCoefficient ?? 0),
-                    ),
-                  ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildStatItem(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required String value,
-    required Color color,
-  }) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: color.withValues(alpha: 0.2),
-          width: 1,
-        ),
-      ),
-      child: Column(
-        children: [
-          Icon(icon, color: color, size: 28),
-          const SizedBox(height: 12),
-          Text(
-            value,
-            style: theme.textTheme.headlineMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            label,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-              fontWeight: FontWeight.w500,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
       ),
     );
   }
