@@ -256,20 +256,22 @@ class TimetableBody extends StatelessWidget {
     final today = DateTime.now();
     final currentDay = DayOfWeek.fromDateTimeWeekday(today.weekday);
 
-    return ListView.separated(
+    return SingleChildScrollView(
       controller: scrollController,
-      itemCount: visibleDays.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemBuilder: (context, index) {
-        final day = visibleDays[index];
-        final isToday = day == currentDay;
-        return DayColumn(
-          key: dayKeys[day],
-          day: day,
-          subjects: grouped[day] ?? [],
-          isToday: isToday,
-        );
-      },
+      child: Column(
+        children: visibleDays.map((day) {
+          final isToday = day == currentDay;
+          return Padding(
+            padding: const EdgeInsets.only(bottom: 12.0),
+            child: DayColumn(
+              key: dayKeys[day],
+              day: day,
+              subjects: grouped[day] ?? [],
+              isToday: isToday,
+            ),
+          );
+        }).toList(),
+      ),
     );
   }
 }
