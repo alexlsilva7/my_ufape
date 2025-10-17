@@ -32,15 +32,21 @@ class ChartsViewModel {
     final totalReprovadas = allDisciplinas
         .where((d) => d.situacao.toUpperCase().contains('REPROVADO'))
         .length;
-    final totalCursando = totalDisciplinas - totalAprovadas - totalReprovadas;
-    final totalConcluidas = totalAprovadas + totalReprovadas;
-    final approvalRate =
-        totalConcluidas > 0 ? (totalAprovadas / totalConcluidas) * 100 : 0.0;
+    final totalDispensadas = allDisciplinas
+        .where((d) => d.situacao.toUpperCase().contains('DISPENSADO'))
+        .length;
+    final totalCursando =
+        totalDisciplinas - totalAprovadas - totalReprovadas - totalDispensadas;
+    final totalConcluidas = totalAprovadas + totalReprovadas + totalDispensadas;
+    final approvalRate = totalConcluidas > 0
+        ? ((totalAprovadas + totalDispensadas) / totalConcluidas) * 100
+        : 0.0;
 
     return {
       'totalDisciplinas': totalDisciplinas,
       'totalAprovadas': totalAprovadas,
       'totalReprovadas': totalReprovadas,
+      'totalDispensadas': totalDispensadas,
       'totalCursando': totalCursando,
       'totalPeriodos': periodosData.length,
       'approvalRate': approvalRate,
@@ -231,7 +237,8 @@ class ChartsViewModel {
           (periodoData['disciplinas'] as List<dynamic>).cast<SubjectNote>();
       for (final disciplina in disciplinas) {
         final situacao = (disciplina.situacao).toUpperCase();
-        if (!situacao.contains('APROVADO') && !situacao.contains('REPROVADO')) {
+        if (!situacao.contains('APROVADO') && !situacao.contains('REPROVADO') ||
+            situacao.contains('EM ANDAMENTO')) {
           continue;
         }
         for (final entry in disciplina.notas.entries) {

@@ -18,6 +18,7 @@ class CorrelationCard extends StatelessWidget {
     final xs = <double>[];
     final ys = <double>[];
     final spots = <ScatterSpot>[];
+    final periodoNames = <String>[];
 
     for (final pm in periodMedias) {
       final periodoName = pm['periodo'] as String;
@@ -33,7 +34,7 @@ class CorrelationCard extends StatelessWidget {
       final count = disciplinas.length;
       xs.add(count.toDouble());
       ys.add(media);
-      // Usar construtor mínimo para compatibilidade da versão do fl_chart
+      periodoNames.add(periodoName);
       spots.add(ScatterSpot(count.toDouble(), media));
     }
 
@@ -61,17 +62,22 @@ class CorrelationCard extends StatelessWidget {
     final stdY = math.sqrt(varY);
     final corr = (stdX == 0 || stdY == 0) ? 0.0 : cov / (stdX * stdY);
 
-    // Interpretação simples
+    // Interpretação e cor baseada na correlação
     String interpretation;
+    Color interpretationColor;
     final absCorr = corr.abs();
     if (absCorr >= 0.8) {
       interpretation = 'Correlação forte';
+      interpretationColor = Theme.of(context).colorScheme.primary;
     } else if (absCorr >= 0.5) {
       interpretation = 'Correlação moderada';
+      interpretationColor = Theme.of(context).colorScheme.secondary;
     } else if (absCorr >= 0.3) {
       interpretation = 'Correlação fraca';
+      interpretationColor = Theme.of(context).colorScheme.tertiary;
     } else {
       interpretation = 'Sem correlação aparente';
+      interpretationColor = Theme.of(context).colorScheme.outline;
     }
 
     final minX = (xs.reduce((a, b) => a < b ? a : b) - 1)
@@ -97,28 +103,45 @@ class CorrelationCard extends StatelessWidget {
                 children: [
                   Icon(
                     Icons.scatter_plot,
+                    color: Theme.of(context).colorScheme.primary,
+                    size: 20,
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    'Correlação: carga vs média',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                  Expanded(
+                    child: Text(
+                      'Correlação: carga vs média',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
-                  const Spacer(),
-                  Text(
-                    'r = ${corr.toStringAsFixed(2)}',
-                    style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade700,
-                        fontWeight: FontWeight.w600),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 4,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context)
+                          .colorScheme
+                          .primaryContainer
+                          .withValues(alpha: 0.5),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      'r = ${corr.toStringAsFixed(2)}',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Theme.of(context).colorScheme.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
                 ],
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
               SizedBox(
-                height: 220,
+                height: 240,
                 child: ScatterChart(
                   ScatterChartData(
                     scatterSpots: spots,
@@ -126,12 +149,102 @@ class CorrelationCard extends StatelessWidget {
                     maxX: maxX,
                     minY: minY,
                     maxY: maxY,
+                    scatterTouchData: ScatterTouchData(
+                      enabled: true,
+                      touchTooltipData: ScatterTouchTooltipData(
+                        getTooltipColor: (touchedSpot) =>
+                            Theme.of(context).colorScheme.primary,
+                        tooltipPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        getTooltipItems: (touchedSpot) {
+                          final index = spots.indexOf(touchedSpot);
+                          if (index < 0 || index >= periodoNames.length) {
+                            return null;
+                          }
+
+                          final periodo = periodoNames[index];
+                          final disciplinas = touchedSpot.x.toInt();
+                          final media = touchedSpot.y.toStringAsFixed(2);
+
+                          return ScatterTooltipItem(
+                            '$periodo\n',
+                            textStyle: TextStyle(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onPrimaryContainer,
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                            children: [
+                              TextSpan(
+                                text: 'Disciplinas: $disciplinas\n',
+                                style: TextStyle(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onPrimaryContainer,
+                                  fontWeight: FontWeight.normal,
+                                  fontSize: 11,
+                                ),
+                              ),
+                              TextSpan(
+                                text: 'Média: $media',
+                                style: TextStyle(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onPrimaryContainer,
+                                  fontWeight: FontWeight.normal,
+                                  fontSize: 11,
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                      touchCallback: (FlTouchEvent event,
+                          ScatterTouchResponse? touchResponse) {},
+                    ),
                     gridData: FlGridData(
-                        show: true,
-                        drawVerticalLine: true,
-                        drawHorizontalLine: true),
+                      show: true,
+                      drawVerticalLine: true,
+                      drawHorizontalLine: true,
+                      horizontalInterval: 2,
+                      getDrawingHorizontalLine: (value) {
+                        return FlLine(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.grey.shade700
+                              : Colors.grey.shade300,
+                          strokeWidth: 1,
+                        );
+                      },
+                      getDrawingVerticalLine: (value) {
+                        return FlLine(
+                          color: Theme.of(context).brightness == Brightness.dark
+                              ? Colors.grey.shade700
+                              : Colors.grey.shade300,
+                          strokeWidth: 1,
+                        );
+                      },
+                    ),
                     titlesData: FlTitlesData(
                       bottomTitles: AxisTitles(
+                        axisNameWidget: Padding(
+                          padding: const EdgeInsets.only(top: 4),
+                          child: Text(
+                            'Quantidade de disciplinas',
+                            style: TextStyle(
+                              color: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.color
+                                  ?.withValues(alpha: 0.7),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        axisNameSize: 20,
                         sideTitles: SideTitles(
                           showTitles: true,
                           reservedSize: 28,
@@ -141,12 +254,13 @@ class CorrelationCard extends StatelessWidget {
                               child: Text(
                                 value.toInt().toString(),
                                 style: TextStyle(
-                                    color: Theme.of(context)
-                                        .textTheme
-                                        .bodySmall
-                                        ?.color,
-                                    fontSize: 11,
-                                    fontWeight: FontWeight.w600),
+                                  color: Theme.of(context)
+                                      .textTheme
+                                      .bodySmall
+                                      ?.color,
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             );
                           },
@@ -154,6 +268,22 @@ class CorrelationCard extends StatelessWidget {
                         ),
                       ),
                       leftTitles: AxisTitles(
+                        axisNameWidget: Padding(
+                          padding: const EdgeInsets.only(right: 4),
+                          child: Text(
+                            'Média',
+                            style: TextStyle(
+                              color: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.color
+                                  ?.withValues(alpha: 0.7),
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                        axisNameSize: 16,
                         sideTitles: SideTitles(
                           showTitles: true,
                           reservedSize: 40,
@@ -161,44 +291,68 @@ class CorrelationCard extends StatelessWidget {
                             return Text(
                               value.toStringAsFixed(1),
                               style: TextStyle(
-                                  color: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall
-                                      ?.color,
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w600),
+                                color: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.color,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
                             );
                           },
                           interval: 2,
                         ),
                       ),
                       rightTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false)),
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
                       topTitles: const AxisTitles(
-                          sideTitles: SideTitles(showTitles: false)),
+                        sideTitles: SideTitles(showTitles: false),
+                      ),
                     ),
                     borderData: FlBorderData(
-                        show: true,
-                        border: Border.all(
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.grey.shade600
-                              : Colors.grey.shade300,
-                        )),
+                      show: true,
+                      border: Border.all(
+                        color: Theme.of(context).brightness == Brightness.dark
+                            ? Colors.grey.shade600
+                            : Colors.grey.shade400,
+                      ),
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                interpretation,
-                style: TextStyle(
-                    fontSize: 12,
-                    color: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.color
-                        ?.withValues(alpha: 0.8),
-                    fontStyle: FontStyle.italic),
-                textAlign: TextAlign.center,
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: interpretationColor.withValues(alpha: 0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      absCorr >= 0.5 ? Icons.trending_up : Icons.trending_flat,
+                      size: 16,
+                      color: interpretationColor,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      interpretation,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: interpretationColor,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),

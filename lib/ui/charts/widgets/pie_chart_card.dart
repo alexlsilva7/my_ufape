@@ -13,6 +13,9 @@ class PieChartCard extends StatelessWidget {
     final totalAprovadas = analytics['totalAprovadas'] as int;
     final totalCursando = analytics['totalCursando'] as int;
     final totalReprovadas = analytics['totalReprovadas'] as int;
+    final totalDispensadas = analytics['totalDispensadas'] as int? ?? 0;
+    final total =
+        totalAprovadas + totalCursando + totalReprovadas + totalDispensadas;
 
     return GestureDetector(
       onTap: () => showInfoDialog(
@@ -43,12 +46,12 @@ class PieChartCard extends StatelessWidget {
                 child: PieChart(
                   PieChartData(
                     sections: [
-                      if (totalAprovadas > 0)
+                      if (totalAprovadas > 0 && total > 0)
                         PieChartSectionData(
                           color: Colors.green.shade600,
                           value: totalAprovadas.toDouble(),
                           title:
-                              '${((totalAprovadas / (totalAprovadas + totalCursando + totalReprovadas)) * 100).toStringAsFixed(0)}%',
+                              '${((totalAprovadas / total) * 100).toStringAsFixed(0)}%',
                           titleStyle: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
@@ -56,12 +59,12 @@ class PieChartCard extends StatelessWidget {
                           ),
                           radius: 85,
                         ),
-                      if (totalCursando > 0)
+                      if (totalCursando > 0 && total > 0)
                         PieChartSectionData(
                           color: Colors.orange.shade600,
                           value: totalCursando.toDouble(),
                           title:
-                              '${((totalCursando / (totalAprovadas + totalCursando + totalReprovadas)) * 100).toStringAsFixed(0)}%',
+                              '${((totalCursando / total) * 100).toStringAsFixed(0)}%',
                           titleStyle: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
@@ -69,12 +72,25 @@ class PieChartCard extends StatelessWidget {
                           ),
                           radius: 85,
                         ),
-                      if (totalReprovadas > 0)
+                      if (totalReprovadas > 0 && total > 0)
                         PieChartSectionData(
                           color: Colors.red.shade600,
                           value: totalReprovadas.toDouble(),
                           title:
-                              '${((totalReprovadas / (totalAprovadas + totalCursando + totalReprovadas)) * 100).toStringAsFixed(0)}%',
+                              '${((totalReprovadas / total) * 100).toStringAsFixed(0)}%',
+                          titleStyle: const TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                          radius: 85,
+                        ),
+                      if (totalDispensadas > 0 && total > 0)
+                        PieChartSectionData(
+                          color: Colors.blue.shade600,
+                          value: totalDispensadas.toDouble(),
+                          title:
+                              '${((totalDispensadas / total) * 100).toStringAsFixed(0)}%',
                           titleStyle: const TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.bold,
@@ -112,6 +128,13 @@ class PieChartCard extends StatelessWidget {
                     'Reprovadas',
                     totalReprovadas,
                   ),
+                  if (totalDispensadas > 0)
+                    _buildLegendItem(
+                      context,
+                      Colors.blue.shade600,
+                      'Dispensadas',
+                      totalDispensadas,
+                    ),
                 ],
               ),
             ],

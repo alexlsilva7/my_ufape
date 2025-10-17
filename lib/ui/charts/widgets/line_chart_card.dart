@@ -38,6 +38,70 @@ class LineChartCard extends StatelessWidget {
                 height: 280,
                 child: LineChart(
                   LineChartData(
+                    lineTouchData: LineTouchData(
+                      enabled: true,
+                      touchTooltipData: LineTouchTooltipData(
+                        getTooltipColor: (touchedSpot) =>
+                            Theme.of(context).colorScheme.primary,
+                        tooltipPadding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        tooltipMargin: 8,
+                        getTooltipItems: (touchedSpots) {
+                          return touchedSpots.map((LineBarSpot touchedSpot) {
+                            final periodo = periodMedias[touchedSpot.spotIndex]
+                                ['periodo'] as String;
+                            final media = touchedSpot.y.toStringAsFixed(2);
+
+                            return LineTooltipItem(
+                              '$periodo\n',
+                              TextStyle(
+                                color: Theme.of(context)
+                                    .colorScheme
+                                    .onPrimaryContainer,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                              ),
+                              children: [
+                                TextSpan(
+                                  text: 'Média: $media',
+                                  style: TextStyle(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onPrimaryContainer,
+                                    fontWeight: FontWeight.normal,
+                                    fontSize: 11,
+                                  ),
+                                ),
+                              ],
+                            );
+                          }).toList();
+                        },
+                      ),
+                      getTouchedSpotIndicator:
+                          (LineChartBarData barData, List<int> indicators) {
+                        return indicators.map((int index) {
+                          return TouchedSpotIndicatorData(
+                            FlLine(
+                              color: Theme.of(context).primaryColor,
+                              strokeWidth: 2,
+                            ),
+                            FlDotData(
+                              show: true,
+                              getDotPainter: (spot, percent, barData, index) =>
+                                  FlDotCirclePainter(
+                                radius: 6,
+                                color: Theme.of(context).primaryColor,
+                                strokeWidth: 2,
+                                strokeColor:
+                                    Theme.of(context).colorScheme.surface,
+                              ),
+                            ),
+                          );
+                        }).toList();
+                      },
+                    ),
                     gridData: FlGridData(
                       show: true,
                       drawVerticalLine: true,
@@ -141,7 +205,7 @@ class LineChartCard extends StatelessWidget {
                         curveSmoothness: 0.3,
                         gradient: LinearGradient(
                           colors: [
-                            Theme.of(context).primaryColor,
+                            Theme.of(context).colorScheme.primary,
                             Theme.of(context).colorScheme.secondary,
                           ],
                         ),

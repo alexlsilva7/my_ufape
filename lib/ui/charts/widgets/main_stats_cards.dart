@@ -118,56 +118,59 @@ class StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.all(8),
-      elevation: 2,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(icon, size: 28, color: color),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                color: color,
+    return GestureDetector(
+      onTap: onInfoTap,
+      child: Card(
+        margin: const EdgeInsets.all(8),
+        elevation: 2,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(icon, size: 28, color: color),
+                ],
               ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).textTheme.bodyMedium?.color,
-              ),
-            ),
-            if (subtitle != null) ...[
-              const SizedBox(height: 4),
+              const SizedBox(height: 8),
               Text(
-                subtitle!,
-                textAlign: TextAlign.center,
+                value,
                 style: TextStyle(
-                  fontSize: 10,
-                  color: Theme.of(context)
-                      .textTheme
-                      .bodySmall
-                      ?.color
-                      ?.withValues(alpha: 0.7),
-                  fontStyle: FontStyle.italic,
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: color,
                 ),
               ),
+              const SizedBox(height: 4),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: Theme.of(context).textTheme.bodyMedium?.color,
+                ),
+              ),
+              if (subtitle != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  subtitle!,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Theme.of(context)
+                        .textTheme
+                        .bodySmall
+                        ?.color
+                        ?.withValues(alpha: 0.7),
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );

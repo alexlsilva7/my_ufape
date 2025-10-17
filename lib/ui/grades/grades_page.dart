@@ -4,6 +4,7 @@ import 'package:my_ufape/config/dependencies.dart';
 import 'package:my_ufape/data/repositories/subject_note/subject_note_repository.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
 import 'package:my_ufape/domain/entities/subject_note.dart';
+import 'package:my_ufape/data/repositories/school_history/school_history_repository.dart';
 import 'package:routefly/routefly.dart';
 
 class GradesPage extends StatefulWidget {
@@ -16,6 +17,7 @@ class GradesPage extends StatefulWidget {
 class _GradesPageState extends State<GradesPage> {
   final SubjectNoteRepository subjectNoteRepository = injector.get();
   final SigaBackgroundService _sigaService = injector.get();
+  final SchoolHistoryRepository _schoolHistoryRepository = injector.get();
   List<SubjectNote> allDisciplinas = [];
   bool _isLoading = true;
   bool _isSyncing = false;
