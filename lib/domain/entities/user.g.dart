@@ -47,23 +47,33 @@ const UserSchema = CollectionSchema(
       name: r'name',
       type: IsarType.string,
     ),
-    r'profile': PropertySchema(
+    r'overallAverage': PropertySchema(
       id: 6,
+      name: r'overallAverage',
+      type: IsarType.double,
+    ),
+    r'overallCoefficient': PropertySchema(
+      id: 7,
+      name: r'overallCoefficient',
+      type: IsarType.double,
+    ),
+    r'profile': PropertySchema(
+      id: 8,
       name: r'profile',
       type: IsarType.string,
     ),
     r'registration': PropertySchema(
-      id: 7,
+      id: 9,
       name: r'registration',
       type: IsarType.string,
     ),
     r'shift': PropertySchema(
-      id: 8,
+      id: 10,
       name: r'shift',
       type: IsarType.string,
     ),
     r'situation': PropertySchema(
-      id: 9,
+      id: 11,
       name: r'situation',
       type: IsarType.string,
     )
@@ -140,10 +150,12 @@ void _userSerialize(
   writer.writeString(offsets[3], object.entryPeriod);
   writer.writeString(offsets[4], object.entryType);
   writer.writeString(offsets[5], object.name);
-  writer.writeString(offsets[6], object.profile);
-  writer.writeString(offsets[7], object.registration);
-  writer.writeString(offsets[8], object.shift);
-  writer.writeString(offsets[9], object.situation);
+  writer.writeDouble(offsets[6], object.overallAverage);
+  writer.writeDouble(offsets[7], object.overallCoefficient);
+  writer.writeString(offsets[8], object.profile);
+  writer.writeString(offsets[9], object.registration);
+  writer.writeString(offsets[10], object.shift);
+  writer.writeString(offsets[11], object.situation);
 }
 
 User _userDeserialize(
@@ -159,10 +171,12 @@ User _userDeserialize(
     entryPeriod: reader.readString(offsets[3]),
     entryType: reader.readString(offsets[4]),
     name: reader.readString(offsets[5]),
-    profile: reader.readString(offsets[6]),
-    registration: reader.readString(offsets[7]),
-    shift: reader.readString(offsets[8]),
-    situation: reader.readString(offsets[9]),
+    overallAverage: reader.readDoubleOrNull(offsets[6]),
+    overallCoefficient: reader.readDoubleOrNull(offsets[7]),
+    profile: reader.readString(offsets[8]),
+    registration: reader.readString(offsets[9]),
+    shift: reader.readString(offsets[10]),
+    situation: reader.readString(offsets[11]),
   );
   object.id = id;
   return object;
@@ -188,12 +202,16 @@ P _userDeserializeProp<P>(
     case 5:
       return (reader.readString(offset)) as P;
     case 6:
-      return (reader.readString(offset)) as P;
+      return (reader.readDoubleOrNull(offset)) as P;
     case 7:
-      return (reader.readString(offset)) as P;
+      return (reader.readDoubleOrNull(offset)) as P;
     case 8:
       return (reader.readString(offset)) as P;
     case 9:
+      return (reader.readString(offset)) as P;
+    case 10:
+      return (reader.readString(offset)) as P;
+    case 11:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -1309,6 +1327,163 @@ extension UserQueryFilter on QueryBuilder<User, User, QFilterCondition> {
     });
   }
 
+  QueryBuilder<User, User, QAfterFilterCondition> overallAverageIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'overallAverage',
+      ));
+    });
+  }
+
+  QueryBuilder<User, User, QAfterFilterCondition> overallAverageIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'overallAverage',
+      ));
+    });
+  }
+
+  QueryBuilder<User, User, QAfterFilterCondition> overallAverageEqualTo(
+    double? value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'overallAverage',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<User, User, QAfterFilterCondition> overallAverageGreaterThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'overallAverage',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<User, User, QAfterFilterCondition> overallAverageLessThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'overallAverage',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<User, User, QAfterFilterCondition> overallAverageBetween(
+    double? lower,
+    double? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'overallAverage',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<User, User, QAfterFilterCondition> overallCoefficientIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'overallCoefficient',
+      ));
+    });
+  }
+
+  QueryBuilder<User, User, QAfterFilterCondition>
+      overallCoefficientIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'overallCoefficient',
+      ));
+    });
+  }
+
+  QueryBuilder<User, User, QAfterFilterCondition> overallCoefficientEqualTo(
+    double? value, {
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'overallCoefficient',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<User, User, QAfterFilterCondition> overallCoefficientGreaterThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'overallCoefficient',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<User, User, QAfterFilterCondition> overallCoefficientLessThan(
+    double? value, {
+    bool include = false,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'overallCoefficient',
+        value: value,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
+  QueryBuilder<User, User, QAfterFilterCondition> overallCoefficientBetween(
+    double? lower,
+    double? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    double epsilon = Query.epsilon,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'overallCoefficient',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        epsilon: epsilon,
+      ));
+    });
+  }
+
   QueryBuilder<User, User, QAfterFilterCondition> profileEqualTo(
     String value, {
     bool caseSensitive = true,
@@ -1903,6 +2078,30 @@ extension UserQuerySortBy on QueryBuilder<User, User, QSortBy> {
     });
   }
 
+  QueryBuilder<User, User, QAfterSortBy> sortByOverallAverage() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'overallAverage', Sort.asc);
+    });
+  }
+
+  QueryBuilder<User, User, QAfterSortBy> sortByOverallAverageDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'overallAverage', Sort.desc);
+    });
+  }
+
+  QueryBuilder<User, User, QAfterSortBy> sortByOverallCoefficient() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'overallCoefficient', Sort.asc);
+    });
+  }
+
+  QueryBuilder<User, User, QAfterSortBy> sortByOverallCoefficientDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'overallCoefficient', Sort.desc);
+    });
+  }
+
   QueryBuilder<User, User, QAfterSortBy> sortByProfile() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'profile', Sort.asc);
@@ -2037,6 +2236,30 @@ extension UserQuerySortThenBy on QueryBuilder<User, User, QSortThenBy> {
     });
   }
 
+  QueryBuilder<User, User, QAfterSortBy> thenByOverallAverage() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'overallAverage', Sort.asc);
+    });
+  }
+
+  QueryBuilder<User, User, QAfterSortBy> thenByOverallAverageDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'overallAverage', Sort.desc);
+    });
+  }
+
+  QueryBuilder<User, User, QAfterSortBy> thenByOverallCoefficient() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'overallCoefficient', Sort.asc);
+    });
+  }
+
+  QueryBuilder<User, User, QAfterSortBy> thenByOverallCoefficientDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'overallCoefficient', Sort.desc);
+    });
+  }
+
   QueryBuilder<User, User, QAfterSortBy> thenByProfile() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'profile', Sort.asc);
@@ -2130,6 +2353,18 @@ extension UserQueryWhereDistinct on QueryBuilder<User, User, QDistinct> {
     });
   }
 
+  QueryBuilder<User, User, QDistinct> distinctByOverallAverage() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'overallAverage');
+    });
+  }
+
+  QueryBuilder<User, User, QDistinct> distinctByOverallCoefficient() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'overallCoefficient');
+    });
+  }
+
   QueryBuilder<User, User, QDistinct> distinctByProfile(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -2199,6 +2434,18 @@ extension UserQueryProperty on QueryBuilder<User, User, QQueryProperty> {
   QueryBuilder<User, String, QQueryOperations> nameProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'name');
+    });
+  }
+
+  QueryBuilder<User, double?, QQueryOperations> overallAverageProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'overallAverage');
+    });
+  }
+
+  QueryBuilder<User, double?, QQueryOperations> overallCoefficientProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'overallCoefficient');
     });
   }
 

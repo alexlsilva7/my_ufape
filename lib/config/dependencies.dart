@@ -1,12 +1,15 @@
 import 'package:auto_injector/auto_injector.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:my_ufape/core/database/database.dart';
+import 'package:my_ufape/data/repositories/school_history/school_history_repository.dart';
+import 'package:my_ufape/data/repositories/school_history/school_history_repository_impl.dart';
 import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
 import 'package:my_ufape/data/repositories/settings/settings_repository_impl.dart';
 import 'package:my_ufape/data/repositories/subject/subject_repository.dart';
 import 'package:my_ufape/data/repositories/subject/subject_repository_impl.dart';
 import 'package:my_ufape/data/repositories/subject_note/subject_note_repository.dart';
 import 'package:my_ufape/data/repositories/subject_note/subject_note_repository_impl.dart';
+import 'package:my_ufape/data/services/school_history/school_history_service.dart';
 import 'package:my_ufape/data/services/settings/local_storage_preferences_service.dart';
 import 'package:my_ufape/data/services/subject/subject_service.dart';
 import 'package:my_ufape/data/services/block_of_profile/block_of_profile_service.dart';
@@ -21,6 +24,7 @@ import 'package:my_ufape/data/repositories/user/user_repository_impl.dart';
 import 'package:my_ufape/data/services/user/user_service.dart';
 import 'package:my_ufape/ui/charts/charts_view_model.dart';
 import 'package:my_ufape/ui/home/home_view_model.dart';
+import 'package:my_ufape/ui/school_history/school_history_view_model.dart';
 import 'package:my_ufape/ui/splash/splash_view_model.dart';
 import 'package:my_ufape/ui/subjects/subjects_view_model.dart';
 import 'package:my_ufape/ui/timetable/timetable_view_model.dart';
@@ -105,12 +109,25 @@ Future<void> setupDependencies() async {
     ),
   );
 
+  injector.addLazySingleton<SchoolHistoryService>(
+    () => SchoolHistoryService(
+      injector.get<Database>(),
+    ),
+  );
+
+  injector.addLazySingleton<SchoolHistoryRepository>(
+    () => SchoolHistoryRepositoryImpl(
+      injector.get<SchoolHistoryService>(),
+    ),
+  );
+
   injector.addLazySingleton(SplashViewModel.new);
   injector.addLazySingleton(
     () => HomeViewModel(
       injector.get<UserRepository>(),
     ),
   );
+
   injector.addLazySingleton(
     () => SubjectsViewModel(
       injector.get<SubjectRepository>(),
@@ -128,6 +145,7 @@ Future<void> setupDependencies() async {
   );
 
   injector.addLazySingleton(ChartsViewModel.new);
+  injector.addLazySingleton(SchoolHistoryViewModel.new);
 
   // Registrar serviço SIGA em background
   injector.addSingleton<SigaBackgroundService>(() => SigaBackgroundService());

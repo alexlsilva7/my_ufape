@@ -39,34 +39,39 @@ List<RouteEntity> get routes => [
         routeBuilder: b6Builder,
       ),
       RouteEntity(
+        key: '/school_history',
+        uri: Uri.parse('/school_history'),
+        routeBuilder: b7Builder,
+      ),
+      RouteEntity(
         key: '/settings',
         uri: Uri.parse('/settings'),
-        routeBuilder: b7Builder,
+        routeBuilder: b8Builder,
       ),
       RouteEntity(
         key: '/siga',
         uri: Uri.parse('/siga'),
-        routeBuilder: b8Builder,
+        routeBuilder: b9Builder,
       ),
       RouteEntity(
         key: '/splash',
         uri: Uri.parse('/splash'),
-        routeBuilder: b9Builder,
+        routeBuilder: b10Builder,
       ),
       RouteEntity(
         key: '/subjects',
         uri: Uri.parse('/subjects'),
-        routeBuilder: b10Builder,
+        routeBuilder: b11Builder,
       ),
       RouteEntity(
         key: '/subjects/subject_details',
         uri: Uri.parse('/subjects/subject_details'),
-        routeBuilder: b11Builder,
+        routeBuilder: b12Builder,
       ),
       RouteEntity(
         key: '/timetable',
         uri: Uri.parse('/timetable'),
-        routeBuilder: b12Builder,
+        routeBuilder: b13Builder,
       ),
     ];
 
@@ -79,6 +84,7 @@ const routePaths = (
   home: '/home',
   initialSync: '/initial_sync',
   login: '/login',
+  schoolHistory: '/school_history',
   settings: '/settings',
   siga: '/siga',
   splash: '/splash',

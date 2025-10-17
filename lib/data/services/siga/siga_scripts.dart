@@ -404,4 +404,127 @@ return JSON.stringify(disciplinas);
     }
 })();
 """;
+
+  static String scriptHistoricoEscolar() =>
+      r"""new Promise((resolve,reject)=>{const iframe=document.getElementById('Conteudo');if(iframe&&iframe.contentDocument){const links=iframe.contentDocument.querySelectorAll('a.default');for(const link of links){if(link.innerText.trim()==='Histórico Escolar'){link.click();resolve('SUCCESS');return;}}}reject('ERROR: Link "Histórico Escolar" not found');});""";
+
+  static String waitForSchoolHistoryPageReadyScript() =>
+      r"""(function(){const iframe=document.getElementById('Conteudo');if(!iframe||!iframe.contentDocument)return false; const tables = iframe.contentDocument.querySelectorAll('table'); for(const table of tables) { if(table.innerText.includes('Componente Curricular')) { return true; } } return false; })();""";
+
+  static String extractSchoolHistoryScript() => r'''
+function parseSchoolHistory() {
+  // Acessa o documento dentro do iframe 'Conteudo'
+  const iframe = document.getElementById('Conteudo');
+  if (!iframe || !iframe.contentDocument) {
+    // Se não encontrar o iframe, retorna um erro em formato JSON
+    return JSON.stringify({ error: "Iframe 'Conteudo' não encontrado." });
+  }
+  const iframeDoc = iframe.contentDocument;
+
+  // Funções auxiliares
+  const parseValue = (text) => {
+    if (!text) return null;
+    const cleanedText = text.trim();
+    if (cleanedText === '' || cleanedText === '-') return null;
+    const num = parseFloat(cleanedText.replace(',', '.'));
+    return isNaN(num) ? cleanedText : num;
+  };
+
+  const splitCodeAndName = (rawName) => {
+    const trimmedName = rawName.trim();
+    const match = trimmedName.match(/^([A-Z0-9]+)\s*-\s*(.*)$/);
+    if (match && match.length === 3) {
+      return { code: match[1].trim(), name: match[2].trim() };
+    }
+    return { code: 'N/A', name: trimmedName };
+  };
+
+  // Lógica principal
+  const allPeriods = [];
+  const mainContainer = iframeDoc.querySelector('div#content');
+  if (!mainContainer) {
+      return JSON.stringify({ error: "Container principal '#content' não foi encontrado dentro do iframe." });
+  }
+
+  const periodMarkers = Array.from(mainContainer.querySelectorAll('table')).filter(table =>
+    table.innerText.trim().startsWith('Período:')
+  );
+
+  for (const marker of periodMarkers) {
+    const periodName = marker.querySelector('.editPesquisa.fonte8pt')?.innerText.trim();
+    if (!periodName) continue;
+
+    const periodObject = {
+      period: periodName,
+      subjects: [],
+      periodAverage: null,
+      periodCoefficient: null,
+    };
+
+    let contentTable = marker.nextElementSibling;
+    while (contentTable && contentTable.tagName !== 'TABLE') {
+      contentTable = contentTable.nextElementSibling;
+    }
+
+    if (!contentTable) continue;
+
+    const rows = Array.from(contentTable.querySelectorAll('tr'));
+    
+    if (rows.length === 1 && rows[0].cells.length === 1) {
+        const specialStatusText = rows[0].innerText.trim();
+        periodObject.subjects.push({
+            code: 'N/A', name: specialStatusText, absences: 0,
+            workload: 0, credits: 0, finalGrade: null, status: specialStatusText,
+        });
+    } else {
+        for (const row of rows) {
+          const cells = row.cells;
+          if (cells.length === 6 && cells[0].querySelector('.editPesquisa.fonte8pt')) {
+            const { code, name } = splitCodeAndName(cells[0].innerText);
+            periodObject.subjects.push({
+              code: code, name: name,
+              absences: parseValue(cells[1].innerText),
+              workload: parseValue(cells[2].innerText),
+              credits: parseValue(cells[3].innerText),
+              finalGrade: parseValue(cells[4].innerText),
+              status: parseValue(cells[5].innerText),
+            });
+          } else if (row.innerText.includes('Média do Período:')) {
+            periodObject.periodAverage = parseValue(cells[cells.length - 1].innerText);
+          } else if (row.innerText.includes('Coeficiente de Rendimento Escolar no Período:')) {
+            periodObject.periodCoefficient = parseValue(cells[cells.length - 1].innerText);
+          }
+        }
+    }
+    allPeriods.push(periodObject);
+  }
+
+  let overallAverage = null;
+  let overallCoefficient = null;
+  const summaryTable = Array.from(mainContainer.querySelectorAll('table')).find(
+    table => table.innerText.includes('Média Geral:')
+  );
+
+  if (summaryTable) {
+      const rows = summaryTable.querySelectorAll('tr');
+      rows.forEach(row => {
+          if (row.innerText.includes('Média Geral:')) {
+              overallAverage = parseValue(row.cells[row.cells.length - 1].innerText);
+          } else if (row.innerText.includes('Coeficiente de Rendimento Escolar Geral:')) {
+              overallCoefficient = parseValue(row.cells[row.cells.length - 1].innerText);
+          }
+      });
+  }
+
+  // A mudança mais importante: retornar o JSON como string
+  return JSON.stringify({
+    periods: allPeriods,
+    overallAverage: overallAverage,
+    overallCoefficient: overallCoefficient,
+  });
+}
+
+// Executa a função
+parseSchoolHistory();
+''';
 }

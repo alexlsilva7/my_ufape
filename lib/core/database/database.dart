@@ -1,7 +1,7 @@
-import 'dart:developer';
-
 import 'package:isar_community/isar.dart';
 import 'package:my_ufape/core/debug/logarte.dart';
+import 'package:my_ufape/domain/entities/school_history.dart';
+import 'package:my_ufape/domain/entities/school_history_subject.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
@@ -38,6 +38,8 @@ class Database {
           SubjectNoteSchema,
           BlockOfProfileSchema,
           ScheduledSubjectSchema,
+          SchoolHistorySchema,
+          SchoolHistorySubjectSchema,
         ],
         directory: dir.path,
         inspector: kDebugMode,

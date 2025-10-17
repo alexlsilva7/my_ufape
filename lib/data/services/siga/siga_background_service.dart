@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:my_ufape/core/debug/logarte.dart';
+import 'package:my_ufape/data/repositories/school_history/school_history_repository.dart';
 import 'package:my_ufape/domain/entities/time_table.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:my_ufape/config/dependencies.dart';
@@ -37,6 +38,7 @@ class SigaBackgroundService extends ChangeNotifier {
   final BlockOfProfileRepository _blockRepository = injector.get();
   final ScheduledSubjectRepository _scheduledSubjectRepository = injector.get();
   final UserRepository _userRepository = injector.get();
+  final SchoolHistoryRepository _schoolHistoryRepository = injector.get();
 
   WebViewController? _controller;
   WebViewController? get controller => _controller;
@@ -904,5 +906,89 @@ class SigaBackgroundService extends ChangeNotifier {
       );
       throw Exception('Erro ao navegar e extrair dados do usuário: $e');
     }
+  }
+
+  Future<void> navigateAndExtractSchoolHistory() async {
+    if (_controller == null) throw Exception('Controller not initialized');
+    logarte.log('Starting school history extraction from SIGA...');
+
+    try {
+      await _controller!.runJavaScript(SigaScripts.scriptNav());
+      await _controller!.runJavaScriptReturningResult(SigaScripts.scriptInfo());
+      await _waitForStudentInfoPageReady();
+      await _controller!
+          .runJavaScriptReturningResult(SigaScripts.scriptHistoricoEscolar());
+      await _waitForSchoolHistoryPageReady();
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      final jsonResult = await _controller!.runJavaScriptReturningResult(
+          SigaScripts.extractSchoolHistoryScript());
+
+      dynamic decodedData = jsonDecode(jsonResult.toString());
+      if (decodedData is String) {
+        decodedData = jsonDecode(decodedData);
+      }
+
+      if (decodedData is Map && decodedData.containsKey('error')) {
+        logarte.log('Script error: ${decodedData['error']}',
+            source: 'SIGA BG - School History');
+        throw Exception('Script error: ${decodedData['error']}');
+      }
+
+      if (decodedData['periods'] is String) {
+        decodedData['periods'] = jsonDecode(decodedData['periods']);
+      }
+      await _schoolHistoryRepository.upsertFromSiga(decodedData);
+
+      final userResult = await _userRepository.getUser();
+      userResult.fold((user) async {
+        user.overallAverage =
+            (decodedData['overallAverage'] as num?)?.toDouble();
+        user.overallCoefficient =
+            (decodedData['overallCoefficient'] as num?)?.toDouble();
+        await _userRepository.upsertUser(user);
+      }, (error) => null);
+
+      logarte.log('School history extraction successful.');
+      goToHome();
+    } catch (e) {
+      logarte.log(
+        'Failed to navigate and extract school history: $e',
+      );
+      goToHome();
+      throw Exception('Error navigating and extracting history: $e');
+    }
+  }
+
+  Future<void> _waitForSchoolHistoryPageReady(
+      {Duration timeout = const Duration(seconds: 30)}) async {
+    final completer = Completer<void>();
+    Timer? timer;
+    final stopwatch = Stopwatch()..start();
+
+    final script = SigaScripts.waitForSchoolHistoryPageReadyScript();
+
+    timer = Timer.periodic(const Duration(milliseconds: 250), (t) async {
+      if (stopwatch.elapsed > timeout) {
+        timer?.cancel();
+        if (!completer.isCompleted) {
+          completer.completeError(
+              Exception('Timeout waiting for school history page.'));
+        }
+        return;
+      }
+
+      try {
+        final result = await _controller!.runJavaScriptReturningResult(script);
+        if (result == true || result.toString() == 'true') {
+          timer?.cancel();
+          if (!completer.isCompleted) completer.complete();
+        }
+      } catch (e) {
+        // Ignore temporary errors
+      }
+    });
+
+    return completer.future;
   }
 }

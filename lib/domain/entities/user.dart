@@ -22,6 +22,9 @@ class User {
   String situation;
   String currentPeriod;
 
+  double? overallAverage;
+  double? overallCoefficient;
+
   User({
     required this.name,
     required this.cpf,
@@ -33,5 +36,7 @@ class User {
     required this.shift,
     required this.situation,
     required this.currentPeriod,
+    this.overallAverage,
+    this.overallCoefficient,
   });
 }

@@ -912,6 +912,14 @@ class _HomePageState extends State<HomePage> {
           }
         },
       },
+      {
+        'title': 'Histórico',
+        'icon': Icons.history_edu_outlined,
+        'color': Colors.indigo.shade600,
+        'onTap': () {
+          Routefly.push(routePaths.schoolHistory);
+        },
+      },
     ];
 
     return GridView.builder(
