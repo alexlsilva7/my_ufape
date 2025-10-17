@@ -411,41 +411,45 @@ class _SchoolHistoryPageState extends State<SchoolHistoryPage> {
               fontSize: 16,
             ),
           ),
-          subtitle: Padding(
-            padding: const EdgeInsets.only(top: 6),
-            child: Row(
-              children: [
-                if (history.periodAverage != null) ...[
-                  Icon(Icons.grade,
-                      size: 14, color: _getGradeColor(history.periodAverage!)),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Média ${history.periodAverage!.toStringAsFixed(2)}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
-                      color: _getGradeColor(history.periodAverage!),
-                    ),
+          subtitle: history.periodAverage != null ||
+                  history.periodCoefficient != null
+              ? Padding(
+                  padding: const EdgeInsets.only(top: 6),
+                  child: Row(
+                    children: [
+                      if (history.periodAverage != null) ...[
+                        Icon(Icons.grade,
+                            size: 14,
+                            color: _getGradeColor(history.periodAverage!)),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Média ${history.periodAverage!.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                            color: _getGradeColor(history.periodAverage!),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                      ],
+                      if (history.periodCoefficient != null) ...[
+                        Icon(Icons.trending_up,
+                            size: 14,
+                            color: _getGradeColor(history.periodCoefficient!)),
+                        const SizedBox(width: 4),
+                        Text(
+                          'CR ${history.periodCoefficient!.toStringAsFixed(2)}',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                            color: _getGradeColor(history.periodCoefficient!),
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                ],
-                if (history.periodCoefficient != null) ...[
-                  Icon(Icons.trending_up,
-                      size: 14,
-                      color: _getGradeColor(history.periodCoefficient!)),
-                  const SizedBox(width: 4),
-                  Text(
-                    'CR ${history.periodCoefficient!.toStringAsFixed(2)}',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
-                      color: _getGradeColor(history.periodCoefficient!),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
+                )
+              : null,
           trailing: Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
             decoration: BoxDecoration(
@@ -591,22 +595,16 @@ class _SchoolHistoryPageState extends State<SchoolHistoryPage> {
 
   Color _getStatusColor(String? status) {
     final statusUpper = status?.toUpperCase() ?? '';
-    if (statusUpper.contains('APROVADO'))
-      return const Color(0xFF4CAF50); // Verde sucesso
-    if (statusUpper.contains('REPROVADO'))
-      return const Color(0xFFEF5350); // Vermelho erro
+    if (statusUpper.contains('APROVADO')) {
+      return const Color(0xFF4CAF50);
+    }
+    if (statusUpper.contains('REPROVADO')) {
+      return const Color(0xFFEF5350);
+    }
     if (statusUpper.contains('CURSANDO')) return Colors.orange.shade600;
-    if (statusUpper.contains('DISPENSADO'))
-      return const Color(0xFF2196F3); // Azul primário
+    if (statusUpper.contains('DISPENSADO')) {
+      return const Color(0xFF2196F3);
+    }
     return Colors.grey.shade500;
-  }
-
-  IconData _getStatusIcon(String? status) {
-    final statusUpper = status?.toUpperCase() ?? '';
-    if (statusUpper.contains('APROVADO')) return Icons.check_circle;
-    if (statusUpper.contains('REPROVADO')) return Icons.cancel;
-    if (statusUpper.contains('CURSANDO')) return Icons.hourglass_bottom;
-    if (statusUpper.contains('DISPENSADO')) return Icons.verified;
-    return Icons.help_outline;
   }
 }

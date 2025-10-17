@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
+import 'package:my_ufape/data/repositories/school_history/school_history_repository.dart';
 import 'package:my_ufape/data/repositories/subject/subject_repository.dart';
 import 'package:my_ufape/data/repositories/subject_note/subject_note_repository.dart';
+import 'package:my_ufape/domain/entities/school_history_subject.dart';
 import 'package:my_ufape/domain/entities/subject.dart';
 import 'package:my_ufape/domain/entities/subject_note.dart';
 
@@ -18,8 +20,12 @@ class EnrichedSubject {
     this.isFulfilledByEquivalence = false,
   });
 
+  bool get isWaived =>
+      completionNote?.situacao.toUpperCase().contains('DISPENSADO') ?? false;
+
   bool get isApproved =>
-      completionNote?.situacao.toUpperCase().contains('APROVADO') ?? false;
+      (completionNote?.situacao.toUpperCase().contains('APROVADO') ?? false) ||
+      isWaived;
   bool get isFailed =>
       completionNote?.situacao.toUpperCase().contains('REPROVADO') ?? false;
   // O status 'cursando' só se aplica à própria disciplina, não a uma equivalência
@@ -33,8 +39,10 @@ class EnrichedSubject {
 class SubjectsViewModel extends ChangeNotifier {
   final SubjectRepository _subjectRepository;
   final SubjectNoteRepository _subjectNoteRepository;
+  final SchoolHistoryRepository _schoolHistoryRepository;
 
-  SubjectsViewModel(this._subjectRepository, this._subjectNoteRepository);
+  SubjectsViewModel(this._subjectRepository, this._subjectNoteRepository,
+      this._schoolHistoryRepository);
 
   Map<String, List<EnrichedSubject>> _groupedSubjects = {};
   Map<String, List<EnrichedSubject>> get groupedSubjects => _groupedSubjects;
@@ -45,6 +53,15 @@ class SubjectsViewModel extends ChangeNotifier {
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
 
+  bool get hasWaivedSubjects {
+    for (final subjects in _groupedSubjects.values) {
+      if (subjects.any((subject) => subject.isWaived)) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   Future<void> loadData() async {
     _isLoading = true;
     _errorMessage = null;
@@ -52,16 +69,23 @@ class SubjectsViewModel extends ChangeNotifier {
 
     final subjectsResult = await _subjectRepository.getAllSubjects();
     final notesResult = await _subjectNoteRepository.getAllSubjectNotes();
+    final waivedSubjectsResult = await _schoolHistoryRepository
+        .getSchoolHistoriesSubjectByStatus('DISPENSADO');
 
     subjectsResult.fold(
       (subjects) {
         notesResult.fold(
           (notes) {
-            _processAndGroupData(subjects, notes);
+            waivedSubjectsResult.fold((waivedSubjects) {
+              _processAndGroupData(subjects, notes, waivedSubjects);
+            }, (error) {
+              // Se dispensadas falharem, continua sem elas
+              _processAndGroupData(subjects, notes, []);
+            });
           },
           (error) {
             // Se notas falharem, ainda mostramos as disciplinas
-            _processAndGroupData(subjects, []);
+            _processAndGroupData(subjects, [], []);
           },
         );
       },
@@ -74,10 +98,24 @@ class SubjectsViewModel extends ChangeNotifier {
     notifyListeners();
   }
 
-  void _processAndGroupData(List<Subject> subjects, List<SubjectNote> notes) {
+  void _processAndGroupData(List<Subject> subjects, List<SubjectNote> notes,
+      List<SchoolHistorySubject> waivedSubjects) {
+    // Converte disciplinas dispensadas para SubjectNote e as adiciona na lista principal
+    final List<SubjectNote> allNotes = [...notes];
+    for (final waived in waivedSubjects) {
+      if (waived.code != null && waived.name != null) {
+        allNotes.add(SubjectNote(
+          nome: '${waived.code} - ${waived.name}',
+          semestre: '', // Não disponível no histórico
+          situacao: waived.status ?? 'DISPENSADO',
+          teacher: '', // Não disponível no histórico
+        ));
+      }
+    }
+
     // Mapa para busca rápida de notas pelo código da disciplina.
     final Map<String, SubjectNote> notesMapByCode = {};
-    for (final note in notes) {
+    for (final note in allNotes) {
       final parts = note.nome.split(' - ');
       if (parts.isNotEmpty) {
         final code = parts[0].trim();

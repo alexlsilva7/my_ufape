@@ -202,6 +202,12 @@ class _SubjectsPageState extends State<SubjectsPage> {
                 _buildFilterChip('Aprovadas', Icons.check_circle),
                 const SizedBox(width: 8),
                 _buildFilterChip('Cursando', Icons.hourglass_bottom),
+                if (_viewModel.hasWaivedSubjects)
+                  if (_viewModel.hasWaivedSubjects) ...[
+                    const SizedBox(width: 8),
+                    _buildFilterChip(
+                        'Dispensadas', Icons.verified_user_outlined),
+                  ],
                 const SizedBox(width: 8),
                 _buildFilterChip('Pendentes', Icons.radio_button_unchecked),
               ],
@@ -249,6 +255,8 @@ class _SubjectsPageState extends State<SubjectsPage> {
     switch (status) {
       case 'Aprovadas':
         return Colors.green;
+      case 'Dispensadas':
+        return Colors.blue;
       case 'Cursando':
         return Colors.orange;
       case 'Pendentes':
@@ -303,7 +311,10 @@ class _SubjectsPageState extends State<SubjectsPage> {
             subject.subject.code.toLowerCase().contains(_searchQuery);
 
         final matchesFilter = _filterStatus == 'Todas' ||
-            (_filterStatus == 'Aprovadas' && subject.isApproved) ||
+            (_filterStatus == 'Aprovadas' &&
+                subject.isApproved &&
+                !subject.isWaived) ||
+            (_filterStatus == 'Dispensadas' && subject.isWaived) ||
             (_filterStatus == 'Cursando' && subject.isTaking) ||
             (_filterStatus == 'Pendentes' &&
                 !subject.isApproved &&
@@ -457,7 +468,10 @@ class _SubjectsPageState extends State<SubjectsPage> {
     IconData statusIcon;
     Color statusColor;
 
-    if (enrichedSubject.isApproved) {
+    if (enrichedSubject.isWaived) {
+      statusIcon = Icons.verified_user_outlined;
+      statusColor = Colors.blue.shade600;
+    } else if (enrichedSubject.isApproved) {
       statusIcon = Icons.check_circle;
       statusColor = Colors.green.shade600;
     } else if (enrichedSubject.isFailed) {

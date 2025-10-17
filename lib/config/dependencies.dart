@@ -132,8 +132,10 @@ Future<void> setupDependencies() async {
     () => SubjectsViewModel(
       injector.get<SubjectRepository>(),
       injector.get<SubjectNoteRepository>(),
+      injector.get<SchoolHistoryRepository>(),
     ),
   );
+
   injector.addLazySingleton(
       () => InitialSyncViewModel(injector.get(), injector.get()));
   // Registrar TimetableViewModel para injeção de dependência
