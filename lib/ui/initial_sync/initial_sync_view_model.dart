@@ -17,6 +17,7 @@ class InitialSyncViewModel extends ChangeNotifier {
     SyncStep.grades: StepStatus.idle,
     SyncStep.profile: StepStatus.idle,
     SyncStep.timetable: StepStatus.idle,
+    SyncStep.academicHistory: StepStatus.idle,
   };
   Map<SyncStep, StepStatus> get status => _status;
 
