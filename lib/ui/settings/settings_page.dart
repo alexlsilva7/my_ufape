@@ -62,7 +62,8 @@ class _SettingsPageState extends State<SettingsPage> {
               Listenable.merge([_settingsRepository, _shorebirdService]),
           builder: (context, child) {
             return Padding(
-              padding: const EdgeInsets.all(16.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -75,21 +76,63 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                   const SizedBox(height: 16),
                   Card(
+                    margin: EdgeInsets.zero,
                     child: Column(
                       children: [
-                        SwitchListTile(
-                          title: const Text('Modo Escuro'),
-                          subtitle:
-                              const Text('Alterne entre tema claro e escuro'),
-                          secondary: Icon(
-                            _settingsRepository.isDarkMode
-                                ? Icons.dark_mode
-                                : Icons.light_mode,
+                        Padding(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 16.0, vertical: 12.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Icon(
+                                    _getThemeIcon(
+                                        _settingsRepository.themeMode),
+                                    size: 24,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  const Text(
+                                    'Tema',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                              Center(
+                                child: SegmentedButton<ThemeMode>(
+                                  segments: const [
+                                    ButtonSegment<ThemeMode>(
+                                      value: ThemeMode.light,
+                                      icon: Icon(Icons.light_mode),
+                                      label: Text('Claro'),
+                                    ),
+                                    ButtonSegment<ThemeMode>(
+                                      value: ThemeMode.system,
+                                      icon: Icon(Icons.settings_brightness),
+                                      label: Text('Sistema'),
+                                    ),
+                                    ButtonSegment<ThemeMode>(
+                                      value: ThemeMode.dark,
+                                      icon: Icon(Icons.dark_mode),
+                                      label: Text('Escuro'),
+                                    ),
+                                  ],
+                                  selected: {_settingsRepository.themeMode},
+                                  onSelectionChanged:
+                                      (Set<ThemeMode> newSelection) {
+                                    _settingsRepository
+                                        .changeThemeMode(newSelection.first);
+                                  },
+                                  showSelectedIcon: false,
+                                ),
+                              ),
+                            ],
                           ),
-                          value: _settingsRepository.isDarkMode,
-                          onChanged: (value) async {
-                            await _settingsRepository.toggleDarkMode();
-                          },
                         ),
                         const Divider(height: 1),
                         SwitchListTile(
@@ -129,6 +172,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                       .toggleBiometricAuth();
                                 } else {
                                   if (mounted) {
+                                    // ignore: use_build_context_synchronously
                                     ScaffoldMessenger.of(context).showSnackBar(
                                       const SnackBar(
                                           content: Text(
@@ -179,6 +223,7 @@ class _SettingsPageState extends State<SettingsPage> {
                   ),
                   const SizedBox(height: 16),
                   Card(
+                    margin: EdgeInsets.zero,
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
@@ -232,6 +277,17 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
       ),
     );
+  }
+
+  IconData _getThemeIcon(ThemeMode themeMode) {
+    switch (themeMode) {
+      case ThemeMode.dark:
+        return Icons.dark_mode;
+      case ThemeMode.light:
+        return Icons.light_mode;
+      case ThemeMode.system:
+        return Icons.settings_brightness;
+    }
   }
 
   void _showResetDialog() {

@@ -17,6 +17,7 @@ import 'package:my_ufape/data/parsers/profile_parser.dart';
 import 'package:my_ufape/data/services/siga/siga_scripts.dart';
 import 'package:my_ufape/domain/entities/user.dart';
 import 'package:my_ufape/data/repositories/user/user_repository.dart';
+// ignore: depend_on_referenced_packages
 import 'package:async/async.dart';
 
 /// Serviço singleton que mantém um WebViewController em memória

@@ -5,7 +5,6 @@ import 'package:my_ufape/data/repositories/subject/subject_repository.dart';
 import 'package:my_ufape/data/repositories/subject_note/subject_note_repository.dart';
 import 'package:my_ufape/domain/entities/prerequisite.dart';
 import 'package:my_ufape/domain/entities/subject.dart';
-import 'package:my_ufape/domain/entities/subject_note.dart';
 import 'package:my_ufape/ui/subjects/subjects_view_model.dart';
 import 'package:result_dart/result_dart.dart';
 import 'package:routefly/routefly.dart';

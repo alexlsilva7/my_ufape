@@ -1,6 +1,5 @@
 import 'package:html/parser.dart' show parse;
 import 'package:html/dom.dart';
-import 'package:logarte/logarte.dart';
 import 'package:my_ufape/core/debug/logarte.dart';
 import 'package:my_ufape/domain/entities/block_of_profile.dart';
 import 'package:my_ufape/domain/entities/subject.dart';

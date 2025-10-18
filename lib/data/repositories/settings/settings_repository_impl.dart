@@ -20,13 +20,15 @@ class SettingsRepositoryImpl extends ChangeNotifier
   final Database _database;
   final LocalAuthentication _localAuth = LocalAuthentication();
 
+  late ThemeMode _themeMode;
+
   SettingsRepositoryImpl(
     this._localStoragePreferencesService,
     this._prefs,
     this._secureStorage,
     this._database,
   ) {
-    isDarkMode = _localStoragePreferencesService.isDarkMode;
+    _themeMode = _localStoragePreferencesService.themeMode;
     isDebugOverlayEnabled =
         _localStoragePreferencesService.isDebugOverlayEnabled;
     isAutoSyncEnabled = _localStoragePreferencesService.isAutoSyncEnabled;
@@ -36,7 +38,7 @@ class SettingsRepositoryImpl extends ChangeNotifier
   }
 
   @override
-  bool isDarkMode = false;
+  ThemeMode get themeMode => _themeMode;
 
   @override
   bool isDebugOverlayEnabled = false;
@@ -83,9 +85,9 @@ class SettingsRepositoryImpl extends ChangeNotifier
   }
 
   @override
-  AsyncResult<Unit> toggleDarkMode() async {
-    await _localStoragePreferencesService.toggleDarkMode();
-    isDarkMode = !isDarkMode;
+  AsyncResult<Unit> changeThemeMode(ThemeMode mode) async {
+    await _localStoragePreferencesService.setThemeMode(mode);
+    _themeMode = mode;
     notifyListeners();
     return Success(unit);
   }
@@ -114,7 +116,7 @@ class SettingsRepositoryImpl extends ChangeNotifier
       await sigaBackgroundService.resetService();
 
       // Notifica listeners para atualizar a UI se necessário (ex: modo escuro voltando ao padrão)
-      isDarkMode = false;
+      _themeMode = ThemeMode.system;
       isDebugOverlayEnabled = false;
       notifyListeners();
 

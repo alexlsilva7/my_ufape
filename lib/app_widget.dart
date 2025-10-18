@@ -38,9 +38,9 @@ class _MyUfapeAppState extends State<MyUfapeApp> {
           ),
           builder: (context, child) => DebugOverlayWidget(child: child!),
           title: 'My UFAPE',
-          theme: settingsRepository.isDarkMode
-              ? AppConfigUI.darkTheme
-              : AppConfigUI.lightTheme,
+          theme: AppConfigUI.lightTheme,
+          darkTheme: AppConfigUI.darkTheme,
+          themeMode: settingsRepository.themeMode,
           debugShowCheckedModeBanner: false,
         );
       },

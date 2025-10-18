@@ -166,6 +166,26 @@ class AppConfigUI {
       color: const Color(0xFF42A5F5).withAlpha(100),
       thickness: 1,
     ),
+    segmentedButtonTheme: SegmentedButtonThemeData(
+      style: ButtonStyle(
+        backgroundColor: WidgetStateProperty.resolveWith<Color?>(
+          (Set<WidgetState> states) {
+            if (states.contains(WidgetState.selected)) {
+              return const Color(0xFF2196F3);
+            }
+            return const Color(0xFF1E1E1E);
+          },
+        ),
+        foregroundColor: WidgetStateProperty.resolveWith<Color?>(
+          (Set<WidgetState> states) {
+            if (states.contains(WidgetState.selected)) {
+              return Colors.white;
+            }
+            return Colors.white70;
+          },
+        ),
+      ),
+    ),
   );
 
   static final ThemeData lightTheme = ThemeData(
@@ -329,6 +349,26 @@ class AppConfigUI {
     dividerTheme: DividerThemeData(
       color: Color(0xFFBDBDBD),
       thickness: 1,
+    ),
+    segmentedButtonTheme: SegmentedButtonThemeData(
+      style: ButtonStyle(
+        backgroundColor: WidgetStateProperty.resolveWith<Color?>(
+          (Set<WidgetState> states) {
+            if (states.contains(WidgetState.selected)) {
+              return const Color(0xFF1976D2);
+            }
+            return Colors.white;
+          },
+        ),
+        foregroundColor: WidgetStateProperty.resolveWith<Color?>(
+          (Set<WidgetState> states) {
+            if (states.contains(WidgetState.selected)) {
+              return Colors.white;
+            }
+            return const Color(0xFF424242);
+          },
+        ),
+      ),
     ),
   );
 }
