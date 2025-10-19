@@ -1,5 +1,4 @@
-import 'dart:convert';
-import 'package:my_ufape/core/debug/logarte.dart';
+
 import 'package:my_ufape/data/services/academic_achievement/academic_achievement_service.dart';
 import 'package:my_ufape/domain/entities/academic_achievement.dart';
 import 'package:result_dart/result_dart.dart';

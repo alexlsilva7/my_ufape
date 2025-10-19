@@ -1059,6 +1059,19 @@ class SigaBackgroundService extends ChangeNotifier {
               'Formato inválido para workload_summary (string não decodificável).');
         }
       }
+
+      if (workloadSummaryData is String) {
+        // Se for string, tenta decodificar
+        try {
+          workloadSummaryData = jsonDecode(workloadSummaryData);
+        } catch (e) {
+          logarte.log("Erro ao decodificar workload_summary string: $e",
+              source: "SIGA Service");
+          throw Exception(
+              'Formato inválido para workload_summary (string não decodificável).');
+        }
+      }
+
       if (workloadSummaryData is! List) {
         // Verifica se agora é lista
         logarte.log(
@@ -1083,12 +1096,17 @@ class SigaBackgroundService extends ChangeNotifier {
         }
       }
       if (componentSummaryData is! List) {
-        logarte.log(
-            "Tipo inesperado para component_summary: ${componentSummaryData.runtimeType}");
-        logarte.log("Conteúdo: $componentSummaryData");
-        throw Exception(
-            'Formato inesperado para component_summary: esperado List, recebido ${componentSummaryData.runtimeType}');
+        try {
+          componentSummaryData = jsonDecode(componentSummaryData.toString());
+        } catch (e) {
+          logarte.log(
+              "Tipo inesperado para component_summary: ${componentSummaryData.runtimeType}");
+          logarte.log("Conteúdo: $componentSummaryData");
+          throw Exception(
+              'Formato inesperado para component_summary: esperado List, recebido ${componentSummaryData.runtimeType}');
+        }
       }
+
       final componentSummaryList =
           (componentSummaryData).cast<Map<String, dynamic>>();
       // Atualiza decodedData para garantir que o tipo está correto para o repositório
@@ -1127,11 +1145,15 @@ class SigaBackgroundService extends ChangeNotifier {
         }
       }
       if (subjectsData is! List) {
-        logarte.log(
-            "Tipo inesperado para pending_components['subjects']: ${subjectsData.runtimeType}");
-        logarte.log("Conteúdo: $subjectsData");
-        throw Exception(
-            'Formato inesperado para pending_components["subjects"]: esperado List, recebido ${subjectsData.runtimeType}');
+        try {
+          subjectsData = jsonDecode(subjectsData.toString());
+        } catch (e) {
+          logarte.log(
+              "Tipo inesperado para pending_components['subjects']: ${subjectsData.runtimeType}");
+          logarte.log("Conteúdo: $subjectsData");
+          throw Exception(
+              'Formato inesperado para pending_components["subjects"]: esperado List, recebido ${subjectsData.runtimeType}');
+        }
       }
       pendingComponentsData['subjects'] = (subjectsData)
           .cast<Map<String, dynamic>>(); // Garante a tipagem correta
