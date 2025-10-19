@@ -1002,10 +1002,7 @@ class _HomePageState extends State<HomePage> {
         'icon': Icons.school_rounded,
         'color': Colors.indigo.shade600,
         'onTap': () async {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Em desenvolvimento')),
-          );
-          //Routefly.push(routePaths.academicExploitation);
+          Routefly.push(routePaths.academicAchievement);
         },
       },
       // {

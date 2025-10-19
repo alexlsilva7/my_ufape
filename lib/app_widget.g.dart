@@ -4,79 +4,85 @@ part of 'app_widget.dart';
 
 List<RouteEntity> get routes => [
       RouteEntity(
+        key: '/academic_achievement',
+        uri: Uri.parse('/academic_achievement'),
+        routeBuilder: b0Builder,
+      ),
+      RouteEntity(
         key: '/charts',
         uri: Uri.parse('/charts'),
-        routeBuilder: b0Builder,
+        routeBuilder: b1Builder,
       ),
       RouteEntity(
         key: '/curricular_profile',
         uri: Uri.parse('/curricular_profile'),
-        routeBuilder: b1Builder,
+        routeBuilder: b2Builder,
       ),
       RouteEntity(
         key: '/debug_siga',
         uri: Uri.parse('/debug_siga'),
-        routeBuilder: b2Builder,
+        routeBuilder: b3Builder,
       ),
       RouteEntity(
         key: '/grades',
         uri: Uri.parse('/grades'),
-        routeBuilder: b3Builder,
+        routeBuilder: b4Builder,
       ),
       RouteEntity(
         key: '/home',
         uri: Uri.parse('/home'),
-        routeBuilder: b4Builder,
+        routeBuilder: b5Builder,
       ),
       RouteEntity(
         key: '/initial_sync',
         uri: Uri.parse('/initial_sync'),
-        routeBuilder: b5Builder,
+        routeBuilder: b6Builder,
       ),
       RouteEntity(
         key: '/login',
         uri: Uri.parse('/login'),
-        routeBuilder: b6Builder,
+        routeBuilder: b7Builder,
       ),
       RouteEntity(
         key: '/school_history',
         uri: Uri.parse('/school_history'),
-        routeBuilder: b7Builder,
+        routeBuilder: b8Builder,
       ),
       RouteEntity(
         key: '/settings',
         uri: Uri.parse('/settings'),
-        routeBuilder: b8Builder,
+        routeBuilder: b9Builder,
       ),
       RouteEntity(
         key: '/siga',
         uri: Uri.parse('/siga'),
-        routeBuilder: b9Builder,
+        routeBuilder: b10Builder,
       ),
       RouteEntity(
         key: '/splash',
         uri: Uri.parse('/splash'),
-        routeBuilder: b10Builder,
+        routeBuilder: b11Builder,
       ),
       RouteEntity(
         key: '/subjects',
         uri: Uri.parse('/subjects'),
-        routeBuilder: b11Builder,
+        routeBuilder: b12Builder,
       ),
       RouteEntity(
         key: '/subjects/subject_details',
         uri: Uri.parse('/subjects/subject_details'),
-        routeBuilder: b12Builder,
+        routeBuilder: b13Builder,
       ),
       RouteEntity(
         key: '/timetable',
         uri: Uri.parse('/timetable'),
-        routeBuilder: b13Builder,
+        routeBuilder: b14Builder,
       ),
     ];
 
 const routePaths = (
   path: '/',
+  academicAchievement: '/academic_achievement',
   charts: '/charts',
   curricularProfile: '/curricular_profile',
   debugSiga: '/debug_siga',

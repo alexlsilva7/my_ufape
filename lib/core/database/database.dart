@@ -1,5 +1,6 @@
 import 'package:isar_community/isar.dart';
 import 'package:my_ufape/core/debug/logarte.dart';
+import 'package:my_ufape/domain/entities/academic_achievement.dart';
 import 'package:my_ufape/domain/entities/school_history.dart';
 import 'package:my_ufape/domain/entities/school_history_subject.dart';
 import 'package:path_provider/path_provider.dart';
@@ -40,6 +41,7 @@ class Database {
           ScheduledSubjectSchema,
           SchoolHistorySchema,
           SchoolHistorySubjectSchema,
+          AcademicAchievementSchema,
         ],
         directory: dir.path,
         inspector: kDebugMode,

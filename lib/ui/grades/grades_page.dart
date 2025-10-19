@@ -382,7 +382,7 @@ class _GradesPageState extends State<GradesPage> {
           preferredSize: const Size.fromHeight(148),
           child: Container(
             width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
             color: Theme.of(context).appBarTheme.backgroundColor,
             child: Column(
               children: [
@@ -564,111 +564,116 @@ class _GradesPageState extends State<GradesPage> {
           ),
         ),
       ),
-      body: Column(
-        children: [
-          // Indicador de filtro ativo
-          if (_filterBySituacao != 'todos')
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              color: _getFilterColor(_filterBySituacao).withValues(alpha: 0.1),
-              child: Row(
-                children: [
-                  Icon(
-                    _getFilterIcon(_filterBySituacao),
-                    size: 16,
-                    color: _getFilterColor(_filterBySituacao),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Filtro ativo: ${_getFilterLabel(_filterBySituacao)}',
-                    style: TextStyle(
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+        child: Column(
+          children: [
+            // Indicador de filtro ativo
+            if (_filterBySituacao != 'todos')
+              Container(
+                width: double.infinity,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                color:
+                    _getFilterColor(_filterBySituacao).withValues(alpha: 0.1),
+                child: Row(
+                  children: [
+                    Icon(
+                      _getFilterIcon(_filterBySituacao),
+                      size: 16,
                       color: _getFilterColor(_filterBySituacao),
-                      fontWeight: FontWeight.w600,
-                      fontSize: 12,
                     ),
-                  ),
-                  const Spacer(),
-                  GestureDetector(
-                    onTap: () => setState(() => _filterBySituacao = 'todos'),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: _getFilterColor(_filterBySituacao)
-                            .withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(12),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Filtro ativo: ${_getFilterLabel(_filterBySituacao)}',
+                      style: TextStyle(
+                        color: _getFilterColor(_filterBySituacao),
+                        fontWeight: FontWeight.w600,
+                        fontSize: 12,
                       ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Limpar',
-                            style: TextStyle(
-                              color: _getFilterColor(_filterBySituacao),
-                              fontSize: 11,
-                              fontWeight: FontWeight.w600,
+                    ),
+                    const Spacer(),
+                    GestureDetector(
+                      onTap: () => setState(() => _filterBySituacao = 'todos'),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: _getFilterColor(_filterBySituacao)
+                              .withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Limpar',
+                              style: TextStyle(
+                                color: _getFilterColor(_filterBySituacao),
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                              ),
                             ),
-                          ),
-                          const SizedBox(width: 4),
-                          Icon(
-                            Icons.clear,
-                            size: 14,
-                            color: _getFilterColor(_filterBySituacao),
-                          ),
-                        ],
+                            const SizedBox(width: 4),
+                            Icon(
+                              Icons.clear,
+                              size: 14,
+                              color: _getFilterColor(_filterBySituacao),
+                            ),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+            // Lista de períodos ou disciplinas individuais
+            Expanded(
+              child: isSearching
+                  ? (allMatchingDisciplines.isEmpty
+                      ? _buildEmptyState()
+                      : AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 200),
+                          child: ListView.separated(
+                            key: ValueKey('search_$_searchQuery'),
+                            padding: const EdgeInsets.all(16),
+                            itemCount: allMatchingDisciplines.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 12),
+                            itemBuilder: (context, index) {
+                              final item = allMatchingDisciplines[index];
+                              final disciplina =
+                                  item['disciplina'] as SubjectNote;
+                              final periodoNome = item['periodo'] as String;
+                              return _buildIndividualDisciplineCard(
+                                  disciplina, periodoNome);
+                            },
+                          ),
+                        ))
+                  : (sortedSemesters.isEmpty
+                      ? _buildEmptyState()
+                      : AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 200),
+                          child: ListView.separated(
+                            key: ValueKey(
+                                '${_searchQuery}_${_sortBy}_${_groupByStatus}_$_filterBySituacao'),
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            itemCount: sortedSemesters.length,
+                            separatorBuilder: (_, __) =>
+                                const SizedBox(height: 12),
+                            itemBuilder: (context, index) {
+                              final semestre = sortedSemesters[index];
+                              final disciplinas = periodos[semestre]!;
+                              final expanded =
+                                  _expandedPeriods.contains(semestre);
+                              return _buildPeriodoCard(
+                                  semestre, disciplinas, expanded);
+                            },
+                          ),
+                        )),
             ),
-          // Lista de períodos ou disciplinas individuais
-          Expanded(
-            child: isSearching
-                ? (allMatchingDisciplines.isEmpty
-                    ? _buildEmptyState()
-                    : AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 200),
-                        child: ListView.separated(
-                          key: ValueKey('search_$_searchQuery'),
-                          padding: const EdgeInsets.all(16),
-                          itemCount: allMatchingDisciplines.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: 12),
-                          itemBuilder: (context, index) {
-                            final item = allMatchingDisciplines[index];
-                            final disciplina =
-                                item['disciplina'] as SubjectNote;
-                            final periodoNome = item['periodo'] as String;
-                            return _buildIndividualDisciplineCard(
-                                disciplina, periodoNome);
-                          },
-                        ),
-                      ))
-                : (sortedSemesters.isEmpty
-                    ? _buildEmptyState()
-                    : AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 200),
-                        child: ListView.separated(
-                          key: ValueKey(
-                              '${_searchQuery}_${_sortBy}_${_groupByStatus}_$_filterBySituacao'),
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          itemCount: sortedSemesters.length,
-                          separatorBuilder: (_, __) =>
-                              const SizedBox(height: 12),
-                          itemBuilder: (context, index) {
-                            final semestre = sortedSemesters[index];
-                            final disciplinas = periodos[semestre]!;
-                            final expanded =
-                                _expandedPeriods.contains(semestre);
-                            return _buildPeriodoCard(
-                                semestre, disciplinas, expanded);
-                          },
-                        ),
-                      )),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -840,6 +845,7 @@ class _GradesPageState extends State<GradesPage> {
     final periodMedia = _computeSemesterAverage(disciplinas);
     final aprovacaoPercent = total > 0 ? (aprovadas / total) * 100.0 : 0.0;
     final isCurrentPeriod = _isCurrentPeriod(semestre, disciplinas);
+    bool isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Card(
       elevation: 1,
@@ -864,7 +870,11 @@ class _GradesPageState extends State<GradesPage> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
                 decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor,
+                  color: isDark
+                      ? Theme.of(context).colorScheme.primary.withValues(
+                            alpha: 0,
+                          )
+                      : Theme.of(context).primaryColor,
                   borderRadius: BorderRadius.circular(6),
                 ),
                 child: Column(
@@ -881,9 +891,7 @@ class _GradesPageState extends State<GradesPage> {
                     const SizedBox(height: 2),
                     Text(
                       'Média ${periodMedia.toStringAsFixed(2)}',
-                      style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.9),
-                          fontSize: 10),
+                      style: TextStyle(fontSize: 10, color: Colors.white),
                     ),
                   ],
                 ),
@@ -895,7 +903,9 @@ class _GradesPageState extends State<GradesPage> {
                   padding:
                       const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Colors.orange.shade600,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? Colors.orange.shade800
+                        : Colors.orange.shade600,
                     borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(

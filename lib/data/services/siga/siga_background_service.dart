@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:my_ufape/core/debug/logarte.dart';
+import 'package:my_ufape/data/repositories/academic_achievement/academic_achievement_repository.dart';
 import 'package:my_ufape/data/repositories/school_history/school_history_repository.dart';
 import 'package:my_ufape/domain/entities/time_table.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -40,6 +41,7 @@ class SigaBackgroundService extends ChangeNotifier {
   final ScheduledSubjectRepository _scheduledSubjectRepository = injector.get();
   final UserRepository _userRepository = injector.get();
   final SchoolHistoryRepository _schoolHistoryRepository = injector.get();
+  final AcademicAchievementRepository _achievementRepository = injector.get();
 
   WebViewController? _controller;
   WebViewController? get controller => _controller;
@@ -989,6 +991,212 @@ class SigaBackgroundService extends ChangeNotifier {
         }
       } catch (e) {
         // Ignore temporary errors
+      }
+    });
+
+    return completer.future;
+  }
+
+  Future<Map<String, dynamic>> navigateAndExtractAcademicAchievement() async {
+    if (_controller == null) throw Exception('Controller not initialized');
+    logarte.log('Starting academic achievement extraction from SIGA...');
+
+    try {
+      // 1. Navegação (sem alterações)
+      await _controller!.runJavaScript(SigaScripts.scriptNav());
+      await _controller!.runJavaScriptReturningResult(SigaScripts.scriptInfo());
+      await _waitForStudentInfoPageReady();
+      await _controller!.runJavaScriptReturningResult(
+          SigaScripts.scriptAproveitamentoAcademico());
+      await _waitForAcademicAchievementPageReady();
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      // 2. Extração e Decodificação Robusta
+      final dynamic jsResult = await _controller!.runJavaScriptReturningResult(
+          SigaScripts.extractAcademicAchievementScript());
+
+      if (jsResult == null || jsResult.toString().isEmpty) {
+        throw Exception('Script retornou resultado vazio ou nulo.');
+      }
+
+      String jsonString = jsResult.toString();
+      dynamic decodedData;
+
+      try {
+        decodedData = jsonDecode(jsonString);
+        // Trata possível dupla codificação
+        if (decodedData is String) {
+          decodedData = jsonDecode(decodedData);
+        }
+      } catch (e) {
+        throw Exception(
+            'Falha ao decodificar JSON do script: $e\nJSON recebido: $jsonString');
+      }
+
+      // Garante que decodedData seja um Map
+      if (decodedData is! Map<String, dynamic>) {
+        throw Exception(
+            'Resultado decodificado não é um mapa válido. Tipo: ${decodedData.runtimeType}');
+      }
+
+      // Verifica erro retornado pelo script
+      if (decodedData.containsKey('error')) {
+        throw Exception('Erro retornado pelo script: ${decodedData['error']}');
+      }
+
+      // --- VERIFICAÇÃO E CONVERSÃO SEGURA ---
+
+      // Workload Summary
+      dynamic workloadSummaryData = decodedData['workload_summary'];
+      if (workloadSummaryData is String) {
+        // Se for string, tenta decodificar
+        try {
+          workloadSummaryData = jsonDecode(workloadSummaryData);
+        } catch (e) {
+          logarte.log("Erro ao decodificar workload_summary string: $e",
+              source: "SIGA Service");
+          throw Exception(
+              'Formato inválido para workload_summary (string não decodificável).');
+        }
+      }
+      if (workloadSummaryData is! List) {
+        // Verifica se agora é lista
+        logarte.log(
+            "Tipo inesperado para workload_summary: ${workloadSummaryData.runtimeType}");
+        logarte.log("Conteúdo: $workloadSummaryData");
+        throw Exception(
+            'Formato inesperado para workload_summary: esperado List, recebido ${workloadSummaryData.runtimeType}');
+      }
+      final flatWorkloadList =
+          (workloadSummaryData).cast<Map<String, dynamic>>();
+
+      // Component Summary
+      dynamic componentSummaryData = decodedData['component_summary'];
+      if (componentSummaryData is String) {
+        try {
+          componentSummaryData = jsonDecode(componentSummaryData);
+        } catch (e) {
+          logarte.log("Erro ao decodificar component_summary string: $e",
+              source: "SIGA Service");
+          throw Exception(
+              'Formato inválido para component_summary (string não decodificável).');
+        }
+      }
+      if (componentSummaryData is! List) {
+        logarte.log(
+            "Tipo inesperado para component_summary: ${componentSummaryData.runtimeType}");
+        logarte.log("Conteúdo: $componentSummaryData");
+        throw Exception(
+            'Formato inesperado para component_summary: esperado List, recebido ${componentSummaryData.runtimeType}');
+      }
+      final componentSummaryList =
+          (componentSummaryData).cast<Map<String, dynamic>>();
+      // Atualiza decodedData para garantir que o tipo está correto para o repositório
+      decodedData['component_summary'] = componentSummaryList;
+
+      // Pending Components
+      dynamic pendingComponentsData = decodedData['pending_components'];
+      if (pendingComponentsData is String) {
+        try {
+          pendingComponentsData = jsonDecode(pendingComponentsData);
+        } catch (e) {
+          logarte.log("Erro ao decodificar pending_components string: $e",
+              source: "SIGA Service");
+          throw Exception(
+              'Formato inválido para pending_components (string não decodificável).');
+        }
+      }
+      if (pendingComponentsData is! Map<String, dynamic>) {
+        logarte.log(
+            "Tipo inesperado para pending_components: ${pendingComponentsData.runtimeType}");
+        logarte.log("Conteúdo: $pendingComponentsData");
+        throw Exception(
+            'Formato inesperado para pending_components: esperado Map, recebido ${pendingComponentsData.runtimeType}');
+      }
+      // Trata 'subjects' dentro de pending_components
+      dynamic subjectsData = pendingComponentsData['subjects'];
+      if (subjectsData is String) {
+        try {
+          subjectsData = jsonDecode(subjectsData);
+        } catch (e) {
+          logarte.log(
+              "Erro ao decodificar pending_components['subjects'] string: $e",
+              source: "SIGA Service");
+          throw Exception(
+              'Formato inválido para pending_components["subjects"] (string não decodificável).');
+        }
+      }
+      if (subjectsData is! List) {
+        logarte.log(
+            "Tipo inesperado para pending_components['subjects']: ${subjectsData.runtimeType}");
+        logarte.log("Conteúdo: $subjectsData");
+        throw Exception(
+            'Formato inesperado para pending_components["subjects"]: esperado List, recebido ${subjectsData.runtimeType}');
+      }
+      pendingComponentsData['subjects'] = (subjectsData)
+          .cast<Map<String, dynamic>>(); // Garante a tipagem correta
+
+      // Atualiza decodedData
+      decodedData['pending_components'] = pendingComponentsData;
+
+      // --- Construção da Árvore (sem alterações, usa flatWorkloadList) ---
+      final Map<String, Map<String, dynamic>> itemsById = {
+        for (var item in flatWorkloadList)
+          (item['id'] as String): item..['children'] = []
+      };
+      final List<Map<String, dynamic>> tree = [];
+      for (var item in flatWorkloadList) {
+        final parentId = item['parentId'];
+        if (parentId != null && itemsById.containsKey(parentId as String)) {
+          (itemsById[parentId]!['children'] as List).add(item);
+        } else {
+          tree.add(item);
+        }
+      }
+      decodedData['workload_summary_tree'] = tree;
+      decodedData['workload_summary_flat'] =
+          flatWorkloadList; // Opcional, se precisar da lista plana
+
+      // 3. Salva no Repositório (Passa decodedData ajustado)
+      await _achievementRepository.upsertFromSiga(decodedData);
+
+      logarte.log('Academic achievement extraction successful.');
+      goToHome();
+      return decodedData; // Retorna os dados processados
+    } catch (e) {
+      logarte.log('Failed to navigate and extract academic achievement: $e');
+      goToHome(); // Tenta voltar para home mesmo em erro
+      throw Exception(
+          'Error navigating and extracting academic achievement: $e');
+    }
+  }
+
+  Future<void> _waitForAcademicAchievementPageReady(
+      {Duration timeout = const Duration(seconds: 30)}) async {
+    final completer = Completer<void>();
+    Timer? timer;
+    final stopwatch = Stopwatch()..start();
+
+    final script = SigaScripts.waitForAcademicAchievementPageReadyScript();
+
+    timer = Timer.periodic(const Duration(milliseconds: 50), (t) async {
+      if (stopwatch.elapsed > timeout) {
+        timer?.cancel();
+        if (!completer.isCompleted) {
+          completer.completeError(
+              Exception('Timeout waiting for academic achievement page.'));
+        }
+        return;
+      }
+
+      try {
+        final result = await _controller!.runJavaScriptReturningResult(script);
+        if (result == true || result.toString() == 'true') {
+          timer?.cancel();
+          if (!completer.isCompleted) completer.complete();
+        }
+      } catch (e) {
+        // Ignora erros temporários
       }
     });
 

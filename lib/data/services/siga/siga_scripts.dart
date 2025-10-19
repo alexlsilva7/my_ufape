@@ -527,4 +527,187 @@ function parseSchoolHistory() {
 // Executa a função
 parseSchoolHistory();
 ''';
+
+  static String scriptAproveitamentoAcademico() =>
+      r"""new Promise((resolve,reject)=>{const iframe=document.getElementById('Conteudo');if(iframe&&iframe.contentDocument){const links=iframe.contentDocument.querySelectorAll('a.default');for(const link of links){if(link.innerText.trim()==='Aproveitamento Acadêmico'){link.click();resolve('SUCCESS');return;}}}reject('ERROR: Link "Aproveitamento Acadêmico" not found');});""";
+
+  static String waitForAcademicAchievementPageReadyScript() =>
+      r"""(function(){const iframe=document.getElementById('Conteudo');if(!iframe||!iframe.contentDocument)return false; const button = iframe.contentDocument.getElementById('bt_a1'); return button != null; })();""";
+  static String extractAcademicAchievementScript() => r'''
+function extractAcademicAchievement() {
+  try {
+    const iframe = document.getElementById('Conteudo');
+    if (!iframe || !iframe.contentDocument) {
+      return JSON.stringify({ error: "Iframe 'Conteudo' não encontrado." });
+    }
+    const doc = iframe.contentDocument;
+
+    // --- Funções Auxiliares ---
+    const parseNumber = (text) => {
+      if (!text || text.trim() === '-') return null;
+      const cleaned = text.trim().replace(/\./g, '').replace(',', '.');
+      const num = parseFloat(cleaned);
+      return isNaN(num) ? null : num;
+    };
+
+    const parsePercentage = (text) => {
+        if (!text || text.trim() === '-') return null;
+        const cleaned = text.trim().replace('%', '').replace(',', '.');
+        const num = parseFloat(cleaned);
+        return isNaN(num) ? null : num;
+    };
+
+    // --- 1. Resumo Carga Horária ---
+    const workloadSummaryList = [];
+    const workloadButton = doc.querySelector('input#bt_a1');
+    if (workloadButton) {
+        const workloadTable = workloadButton.nextElementSibling.nextElementSibling;
+        if (workloadTable && workloadTable.tagName === 'TABLE') {
+            const rows = workloadTable.querySelectorAll('tr[id^="a1."]');
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                const rowId = row.getAttribute('id');
+
+                // Ignora linha de cabeçalho E A LINHA "ATENÇÃO:" (a1.13)
+                if(cells.length < 2 || cells[0].querySelector('.tituloColuna') || rowId === 'a1.13') return;
+
+                let nameElement = cells[0].querySelector('font.edit');
+                let name = nameElement ? nameElement.innerText.trim() : cells[0].innerText.trim();
+                name = name.replace(/[-]/g, '').replace(/\u00A0/g, ' ').trim();
+
+                const buttonElement = cells[0].querySelector('input.botao2, input.botao_desativado');
+                if (buttonElement) {
+                    name = name.replace(buttonElement.outerHTML, '').trim();
+                     // Tratamento especial para remover texto residual de botões em casos específicos
+                     if (buttonElement.nextSibling && buttonElement.nextSibling.nodeType === Node.TEXT_NODE) {
+                         name = buttonElement.nextSibling.textContent.trim();
+                     } else if (nameElement && nameElement.childNodes.length > 1) {
+                         // Tenta pegar o último nó de texto dentro do <font>
+                          const lastNode = nameElement.childNodes[nameElement.childNodes.length - 1];
+                          if (lastNode.nodeType === Node.TEXT_NODE) {
+                              name = lastNode.textContent.trim();
+                          }
+                     }
+                      name = name.replace(/[-]/g, '').replace(/\u00A0/g, ' ').trim(); // Limpa novamente
+                }
+
+
+                let parentId = null;
+                const idParts = rowId.split('.');
+                if (idParts.length > 2) {
+                    parentId = idParts.slice(0, -1).join('.');
+                }
+
+                 if (cells.length >= 8) {
+                    workloadSummaryList.push({
+                        id: rowId, parentId: parentId, name: name,
+                        integration: parseNumber(cells[1].innerText),
+                        completed_hours: parseNumber(cells[2].innerText),
+                        completed_percentage: parsePercentage(cells[3].innerText),
+                        waived_hours: parseNumber(cells[4].innerText),
+                        waived_percentage: parsePercentage(cells[5].innerText),
+                        to_complete_hours: parseNumber(cells[6].innerText),
+                        to_complete_percentage: parsePercentage(cells[7].innerText),
+                    });
+                 } else if (cells.length > 1) {
+                     workloadSummaryList.push({
+                        id: rowId, parentId: parentId, name: name,
+                        integration: parseNumber(cells[1].innerText),
+                        completed_hours: cells.length > 2 ? parseNumber(cells[2].innerText) : null,
+                        completed_percentage: cells.length > 3 ? parsePercentage(cells[3].innerText) : null,
+                        waived_hours: cells.length > 4 ? parseNumber(cells[4].innerText) : null,
+                        waived_percentage: cells.length > 5 ? parsePercentage(cells[5].innerText) : null,
+                        to_complete_hours: cells.length > 6 ? parseNumber(cells[6].innerText) : null,
+                        to_complete_percentage: cells.length > 7 ? parsePercentage(cells[7].innerText) : null,
+                     });
+                 }
+            });
+        }
+    }
+
+
+    // --- 2. Resumo de Realização ---
+    const componentSummary = [];
+    const componentTable = doc.querySelector('table[id="a2.2.1"]');
+    if (componentTable) {
+      const rows = componentTable.querySelectorAll('tr');
+      rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length < 2 || cells[0].querySelector('.tituloColuna')) return;
+
+        const description = cells[0].innerText.trim();
+        const hours = parseNumber(cells[1].innerText);
+        const quantity = cells.length > 2 ? parseNumber(cells[2].innerText) : null;
+
+        if (description === 'Total de componentes aproveitados') {
+             componentSummary.push({ description: description, hours: null, quantity: parseNumber(cells[1].innerText) });
+        } else if (description === 'Utilizados como Equivalência**') {
+             componentSummary.push({ description: description, hours: null, quantity: parseNumber(cells[2].innerText) });
+        } else if (description) {
+             componentSummary.push({ description: description, hours: hours, quantity: quantity });
+        }
+      });
+    }
+
+    // --- 3. Componentes Pendentes ---
+    const pendingComponents = { subjects: [], total_pending_hours: null }; // Inicializa como null
+    const pendingTable = doc.querySelector('table[id="a3.1"]');
+    if (pendingTable) {
+      const rows = pendingTable.querySelectorAll('tr');
+      rows.forEach(row => {
+        const cells = row.querySelectorAll('td');
+        if (cells.length === 4 && cells[0].querySelector('font.editPesquisa')) {
+             const nameWithCodeRaw = cells[0].querySelector('font.editPesquisa').innerText.trim();
+             const nameWithCode = nameWithCodeRaw.substring(nameWithCodeRaw.indexOf('.') + 1).trim();
+             const codeMatch = nameWithCode.match(/^([A-Z0-9]+)\s*-\s*(.*)$/);
+             pendingComponents.subjects.push({
+                 code: codeMatch ? codeMatch[1] : null,
+                 name: codeMatch ? codeMatch[2] : nameWithCode,
+                 workload: parseNumber(cells[1].innerText),
+                 period: parseNumber(cells[2].innerText),
+                 credits: parseNumber(cells[3].innerText),
+             });
+         // --- CORREÇÃO para Total Horas Pendentes ---
+        } else if (row.innerText.includes('TOTAL PENDENTE')) {
+            const cells = row.querySelectorAll('td');
+            if (cells.length > 0) {
+                const lastCell = cells[cells.length - 1];
+                // Tenta buscar dentro de <font><b>...</b></font> ou só <b>...</b>
+                const boldTextElement = lastCell.querySelector('font.editPesquisa > b') ?? lastCell.querySelector('b');
+                const text = boldTextElement?.innerText || ''; // Ex: "TOTAL PENDENTE = 1050 horas"
+                const match = text.match(/=\s*(\d+)/); // Procura por "= numero"
+                if (match && match[1]) {
+                    pendingComponents.total_pending_hours = parseInt(match[1], 10);
+                } else {
+                     console.error("Could not parse total pending hours from:", text);
+                     pendingComponents.total_pending_hours = 0; // Define 0 se não encontrar
+                }
+            }
+        }
+        // --- FIM CORREÇÃO ---
+      });
+       // Se após percorrer a tabela, o total ainda for null (não encontrou a linha), define como 0
+      if(pendingComponents.total_pending_hours === null) {
+          pendingComponents.total_pending_hours = 0;
+      }
+    } else {
+        // Se a tabela não for encontrada, define como 0
+        pendingComponents.total_pending_hours = 0;
+    }
+
+    return JSON.stringify({
+      workload_summary: JSON.stringify(workloadSummaryList), // Stringify a lista aqui
+      component_summary: JSON.stringify(componentSummary), // Stringify a lista aqui
+      pending_components: { // Mantém o objeto, mas stringify 'subjects'
+          subjects: JSON.stringify(pendingComponents.subjects),
+          total_pending_hours: pendingComponents.total_pending_hours
+      },
+    });
+  } catch (e) {
+    return JSON.stringify({ error: `An exception occurred: ${e.toString()}` });
+  }
+}
+
+extractAcademicAchievement();
+''';
 }

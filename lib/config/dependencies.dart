@@ -1,6 +1,8 @@
 import 'package:auto_injector/auto_injector.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:my_ufape/core/database/database.dart';
+import 'package:my_ufape/data/repositories/academic_achievement/academic_achievement_repository.dart';
+import 'package:my_ufape/data/repositories/academic_achievement/academic_achievement_repository_impl.dart';
 import 'package:my_ufape/data/repositories/school_history/school_history_repository.dart';
 import 'package:my_ufape/data/repositories/school_history/school_history_repository_impl.dart';
 import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
@@ -9,6 +11,7 @@ import 'package:my_ufape/data/repositories/subject/subject_repository.dart';
 import 'package:my_ufape/data/repositories/subject/subject_repository_impl.dart';
 import 'package:my_ufape/data/repositories/subject_note/subject_note_repository.dart';
 import 'package:my_ufape/data/repositories/subject_note/subject_note_repository_impl.dart';
+import 'package:my_ufape/data/services/academic_achievement/academic_achievement_service.dart';
 import 'package:my_ufape/data/services/school_history/school_history_service.dart';
 import 'package:my_ufape/data/services/settings/local_storage_preferences_service.dart';
 import 'package:my_ufape/data/services/subject/subject_service.dart';
@@ -22,6 +25,7 @@ import 'package:my_ufape/data/repositories/scheduled_subject/scheduled_subject_r
 import 'package:my_ufape/data/repositories/user/user_repository.dart';
 import 'package:my_ufape/data/repositories/user/user_repository_impl.dart';
 import 'package:my_ufape/data/services/user/user_service.dart';
+import 'package:my_ufape/ui/academic_achievement/academic_achievement_view_model.dart';
 import 'package:my_ufape/ui/charts/charts_view_model.dart';
 import 'package:my_ufape/ui/home/home_view_model.dart';
 import 'package:my_ufape/ui/school_history/school_history_view_model.dart';
@@ -138,10 +142,26 @@ Future<void> setupDependencies() async {
 
   injector.addLazySingleton(
       () => InitialSyncViewModel(injector.get(), injector.get()));
-  // Registrar TimetableViewModel para injeção de dependência
+
   injector.addLazySingleton(
     () => TimetableViewModel(
       injector.get<ScheduledSubjectRepository>(),
+      injector.get<SigaBackgroundService>(),
+    ),
+  );
+
+  injector.addLazySingleton<AcademicAchievementService>(
+    () => AcademicAchievementService(injector.get<Database>()),
+  );
+
+  injector.addLazySingleton<AcademicAchievementRepository>(
+    () => AcademicAchievementRepositoryImpl(
+        injector.get<AcademicAchievementService>()),
+  );
+
+  injector.addLazySingleton(
+    () => AcademicAchievementViewModel(
+      injector.get<AcademicAchievementRepository>(),
       injector.get<SigaBackgroundService>(),
     ),
   );
