@@ -21,7 +21,10 @@ class AcademicAchievementViewModel extends ChangeNotifier {
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
 
-  Future<void> loadData() async {
+  /// Indica se já tentamos sincronizar automaticamente nesta sessão de página.
+  bool _hasAutoSynced = false;
+
+  Future<void> _loadData() async {
     _isLoading = true;
     _errorMessage = null;
     notifyListeners();
@@ -51,13 +54,24 @@ class AcademicAchievementViewModel extends ChangeNotifier {
     try {
       await _sigaService.navigateAndExtractAcademicAchievement();
       // Após sincronizar, recarrega os dados do banco local
-      await loadData();
+      await _loadData();
     } catch (e) {
       _errorMessage = "Erro ao sincronizar: ${e.toString()}";
     } finally {
       _isSyncing = false;
       _isLoading = false;
       notifyListeners();
+    }
+  }
+
+  Future<void> loadDataAndSyncIfEmpty() async {
+    await _loadData();
+
+    // Se não houver dados e não houve erro ao carregar, tenta sincronizar.
+    if (_achievement == null && _errorMessage == null && !_hasAutoSynced) {
+      _hasAutoSynced = true;
+
+      await syncFromSiga();
     }
   }
 }

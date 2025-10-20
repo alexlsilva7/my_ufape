@@ -23,7 +23,7 @@ class _AcademicAchievementPageState extends State<AcademicAchievementPage> {
   @override
   void initState() {
     super.initState();
-    _viewModel.loadData();
+    _viewModel.loadDataAndSyncIfEmpty();
   }
 
   @override
@@ -62,7 +62,8 @@ class _AcademicAchievementPageState extends State<AcademicAchievementPage> {
                     _viewModel.isSyncing ? null : _viewModel.syncFromSiga,
                 tooltip: 'Sincronizar com o SIGA',
                 style: IconButton.styleFrom(
-                  backgroundColor: theme.colorScheme.primary.withAlpha((255 * 0.1).round()),
+                  backgroundColor:
+                      theme.colorScheme.primary.withAlpha((255 * 0.1).round()),
                 ),
               ),
             ),
@@ -78,7 +79,7 @@ class _AcademicAchievementPageState extends State<AcademicAchievementPage> {
           if (_viewModel.errorMessage != null) {
             return ErrorState(
               errorMessage: _viewModel.errorMessage,
-              onRetry: _viewModel.loadData,
+              onRetry: _viewModel.loadDataAndSyncIfEmpty,
             );
           }
           if (_viewModel.achievement == null) {
