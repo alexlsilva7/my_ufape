@@ -2,7 +2,14 @@ import 'package:flutter/foundation.dart';
 import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
 
-enum SyncStep { user, grades, profile, timetable, academicHistory }
+enum SyncStep {
+  user,
+  grades,
+  profile,
+  timetable,
+  academicHistory,
+  academicAchievement
+}
 
 enum StepStatus { idle, running, success, failure }
 
@@ -18,6 +25,7 @@ class InitialSyncViewModel extends ChangeNotifier {
     SyncStep.profile: StepStatus.idle,
     SyncStep.timetable: StepStatus.idle,
     SyncStep.academicHistory: StepStatus.idle,
+    SyncStep.academicAchievement: StepStatus.idle,
   };
   Map<SyncStep, StepStatus> get status => _status;
 
@@ -112,6 +120,15 @@ class InitialSyncViewModel extends ChangeNotifier {
     // 5. Sincronizar Histórico Escolar
     if (!await _runSyncStep(SyncStep.academicHistory,
         _sigaService.navigateAndExtractSchoolHistory, 'histórico escolar')) {
+      _isSyncing = false;
+      return;
+    }
+
+    // 6. Sincronizar Aproveitamento Acadêmico
+    if (!await _runSyncStep(
+        SyncStep.academicAchievement,
+        _sigaService.navigateAndExtractAcademicAchievement,
+        'aproveitamento acadêmico')) {
       _isSyncing = false;
       return;
     }

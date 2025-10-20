@@ -96,6 +96,12 @@ class _InitialSyncPageState extends State<InitialSyncPage> {
                       'Histórico Acadêmico',
                       SyncStep.academicHistory,
                       _viewModel.status[SyncStep.academicHistory]!),
+
+                  _buildStepTile(
+                      'Aproveitamento Acadêmico',
+                      SyncStep.academicAchievement,
+                      _viewModel.status[SyncStep.academicAchievement]!),
+
                   const SizedBox(height: 24),
                   if (_viewModel.errorMessage != null && !_viewModel.isSyncing)
                     Text(
@@ -166,6 +172,8 @@ class _InitialSyncPageState extends State<InitialSyncPage> {
         return Icons.person_outline;
       case SyncStep.academicHistory:
         return Icons.history_edu_outlined;
+      case SyncStep.academicAchievement:
+        return Icons.school_outlined;
     }
   }
 }

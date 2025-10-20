@@ -147,7 +147,7 @@ Future<void> setupDependencies() async {
   injector.addLazySingleton(
     () => TimetableViewModel(
       injector.get<ScheduledSubjectRepository>(),
-      injector.get<SigaBackgroundService>(key: 'siga_background'),
+      injector.get<SigaBackgroundService>(key: 'siga_ui'),
     ),
   );
 
@@ -163,7 +163,7 @@ Future<void> setupDependencies() async {
   injector.addLazySingleton(
     () => AcademicAchievementViewModel(
       injector.get<AcademicAchievementRepository>(),
-      injector.get<SigaBackgroundService>(key: 'siga_background'),
+      injector.get<SigaBackgroundService>(key: 'siga_ui'),
     ),
   );
 

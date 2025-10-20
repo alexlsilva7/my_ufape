@@ -9,6 +9,8 @@ import 'package:result_dart/result_dart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
 import 'package:local_auth/local_auth.dart';
+import 'package:local_auth_android/local_auth_android.dart';
+import 'package:local_auth_darwin/local_auth_darwin.dart';
 
 import './settings_repository.dart';
 
@@ -73,6 +75,27 @@ class SettingsRepositoryImpl extends ChangeNotifier
       }
 
       return await _localAuth.authenticate(
+        authMessages: const <AuthMessages>[
+          AndroidAuthMessages(
+            signInTitle: 'Autenticação biométrica necessária',
+            cancelButton: 'Cancelar',
+            goToSettingsButton: 'Ir para configurações',
+            goToSettingsDescription:
+                'Por favor, configure sua biometria para usar esta funcionalidade.',
+            biometricNotRecognized:
+                'Biometria não reconhecida. Tente novamente.',
+            biometricSuccess: 'Biometria reconhecida com sucesso.',
+            deviceCredentialsRequiredTitle: 'Autenticação necessária',
+            deviceCredentialsSetupDescription:
+                'Por favor, configure suas credenciais do dispositivo para usar esta funcionalidade.',
+          ),
+          IOSAuthMessages(
+            cancelButton: 'Cancelar',
+            goToSettingsButton: 'Ir para configurações',
+            goToSettingsDescription:
+                'Por favor, configure sua biometria para usar esta funcionalidade.',
+          ),
+        ],
         localizedReason: 'Por favor, autentique-se para acessar o aplicativo',
         options: const AuthenticationOptions(
           biometricOnly: false, // Permite outros métodos de autenticação
