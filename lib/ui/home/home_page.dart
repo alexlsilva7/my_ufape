@@ -14,6 +14,7 @@ import 'package:my_ufape/domain/entities/time_table.dart';
 import 'package:terminate_restart/terminate_restart.dart';
 import 'package:my_ufape/ui/home/home_view_model.dart';
 import 'package:my_ufape/ui/home/widgets/user_info_dialog.dart';
+import 'package:url_launcher/url_launcher_string.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -34,6 +35,8 @@ class _HomePageState extends State<HomePage> {
 
   List<Map<String, dynamic>> _nextClasses = [];
   bool _isLoadingNext = true;
+
+  String? version;
 
   @override
   void initState() {
@@ -69,7 +72,15 @@ class _HomePageState extends State<HomePage> {
     _shorebirdService.isUpdateReadyToInstall.addListener(_showUpdateBanner);
     // Check on init
     WidgetsBinding.instance.addPostFrameCallback((_) => _showUpdateBanner());
+    Future.delayed(const Duration(seconds: 3), () {
+      _showUpdateBanner();
+    });
+
+    version = _shorebirdService.appVersion;
   }
+
+  bool isNewApkAvailable = false;
+  String newVersionApkUrl = '';
 
   @override
   void dispose() {
@@ -82,14 +93,24 @@ class _HomePageState extends State<HomePage> {
     super.dispose();
   }
 
+  bool get _isUpdateAvailable => _shorebirdService.isUpdateReadyToInstall.value;
+  bool updateAfter = false;
+
   void _showUpdateBanner() {
-    if (!_shorebirdService.isUpdateReadyToInstall.value || !mounted) return;
+    if (!_isUpdateAvailable || !mounted || updateAfter) return;
 
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     ScaffoldMessenger.of(context).showMaterialBanner(
       MaterialBanner(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        animation: CurvedAnimation(
+          parent: AnimationController(
+            duration: const Duration(milliseconds: 300),
+            vsync: ScaffoldMessenger.of(context),
+          )..forward(),
+          curve: Curves.easeInOut,
+        ),
         content: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisSize: MainAxisSize.min,
@@ -139,7 +160,7 @@ class _HomePageState extends State<HomePage> {
           ],
         ),
         backgroundColor: isDark
-            ? Colors.grey.shade900
+            ? Colors.black
             : Theme.of(context)
                 .colorScheme
                 .primaryContainer
@@ -149,9 +170,10 @@ class _HomePageState extends State<HomePage> {
           TextButton(
             onPressed: () {
               ScaffoldMessenger.of(context).hideCurrentMaterialBanner();
+              updateAfter = true;
             },
             style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).primaryColor,
+              foregroundColor: Theme.of(context).colorScheme.primary,
             ),
             child: const Text('Depois'),
           ),
@@ -165,7 +187,7 @@ class _HomePageState extends State<HomePage> {
             icon: const Icon(Icons.refresh, size: 18),
             label: const Text('Reiniciar'),
             style: FilledButton.styleFrom(
-              backgroundColor: Theme.of(context).primaryColor,
+              backgroundColor: Theme.of(context).colorScheme.primary,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
             ),
@@ -505,6 +527,44 @@ class _HomePageState extends State<HomePage> {
                       ],
                     ),
                   ),
+                  if (isNewApkAvailable && newVersionApkUrl.isNotEmpty)
+                    GestureDetector(
+                      onTap: () async {
+                        if (await canLaunchUrlString(newVersionApkUrl)) {
+                          await launchUrlString(newVersionApkUrl,
+                              mode: LaunchMode.externalApplication);
+                        }
+                      },
+                      child: Container(
+                        margin: EdgeInsets.symmetric(horizontal: 16),
+                        height: 60,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              Theme.of(context)
+                                  .primaryColor
+                                  .withValues(alpha: 0.6),
+                              Theme.of(context)
+                                  .primaryColor
+                                  .withValues(alpha: 0.2),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Nova Atualização, clique para baixar',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                            const SizedBox(width: 8),
+                            Icon(Icons.download),
+                          ],
+                        ),
+                      ),
+                    ),
                   const SizedBox(height: 16),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
