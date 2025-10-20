@@ -15,7 +15,8 @@ class CurricularProfilePage extends StatefulWidget {
 
 class _CurricularProfilePageState extends State<CurricularProfilePage> {
   final BlockOfProfileRepository _blockRepository = injector.get();
-  final SigaBackgroundService _sigaService = injector.get();
+  final SigaBackgroundService _sigaService =
+      injector.get<SigaBackgroundService>(key: 'siga_ui');
   final TextEditingController _searchController = TextEditingController();
 
   List<BlockOfProfile> _blocks = [];

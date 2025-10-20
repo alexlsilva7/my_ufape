@@ -28,7 +28,7 @@ class _SigaPageState extends State<SigaPage> {
             IconButton(
               icon: const Icon(Icons.refresh),
               onPressed: () {
-                injector.get<SigaBackgroundService>().reconnect();
+                injector.get<SigaBackgroundService>(key: 'siga_ui').reconnect();
               },
             ),
           ],

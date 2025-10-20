@@ -14,7 +14,8 @@ class DebugSigaPage extends StatefulWidget {
 }
 
 class _DebugSigaPageState extends State<DebugSigaPage> {
-  final _sigaService = injector.get<SigaBackgroundService>();
+  final _sigaService =
+      injector.get<SigaBackgroundService>(key: 'siga_background');
   bool isLogarteOpen = false;
 
   @override
@@ -39,31 +40,6 @@ class _DebugSigaPageState extends State<DebugSigaPage> {
         centerTitle: false,
         actions: [
           IconButton(
-            icon: const Icon(Icons.cloud_sync_rounded),
-            onPressed: () {
-              Routefly.navigate(routePaths.initialSync);
-            },
-          ),
-          IconButton(
-            icon: const Icon(Icons.bug_report),
-            onPressed: () async {
-              setState(() {
-                isLogarteOpen = true;
-              });
-              logarte.openConsole(context);
-            },
-          ),
-          if (isLogarteOpen)
-            IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: () {
-                setState(() {
-                  isLogarteOpen = false;
-                });
-                logarte.detachOverlay();
-              },
-            ),
-          IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
               _sigaService.controller?.reload();
@@ -71,7 +47,130 @@ class _DebugSigaPageState extends State<DebugSigaPage> {
           ),
         ],
       ),
-      body: WebViewWidget(controller: _sigaService.controller!),
+      body: Column(
+        children: [
+          ListenableBuilder(
+            listenable: _sigaService,
+            builder: (context, child) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 8.0),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      spacing: 8,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        ElevatedButton.icon(
+                            onPressed: () {
+                              Routefly.navigate(routePaths.initialSync);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              visualDensity: VisualDensity.compact,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              backgroundColor: Colors.indigo,
+                            ),
+                            icon: const Icon(Icons.sync_rounded),
+                            label: const Text('initialSync')),
+                        ElevatedButton.icon(
+                            onPressed: () {
+                              _sigaService.goToHome();
+                            },
+                            style: ElevatedButton.styleFrom(
+                              visualDensity: VisualDensity.compact,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              backgroundColor: Colors.indigo,
+                            ),
+                            icon: const Icon(Icons.home),
+                            label: const Text('Home')),
+                        ElevatedButton.icon(
+                            onPressed: () {
+                              _sigaService.performAutomaticSyncIfNeeded();
+                            },
+                            style: ElevatedButton.styleFrom(
+                              visualDensity: VisualDensity.compact,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 8,
+                              ),
+                              backgroundColor: Colors.indigo,
+                            ),
+                            icon: const Icon(Icons.sync),
+                            label: const Text('Sync')),
+                      ],
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        // LogsButton
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            if (!isLogarteOpen) {
+                              setState(() {
+                                isLogarteOpen = true;
+                              });
+                              logarte.openConsole(context);
+                            } else {
+                              setState(() {
+                                isLogarteOpen = false;
+                              });
+                              logarte.detachOverlay();
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            backgroundColor: Colors.deepOrange[700],
+                          ),
+                          icon: Icon(isLogarteOpen
+                              ? Icons.close
+                              : Icons.article_outlined),
+                          label: Text(isLogarteOpen
+                              ? 'Fechar Logs Overlay'
+                              : 'Abrir Logs Overlay'),
+                        ),
+                      ],
+                    ),
+                    if (_sigaService.isSyncing)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 6.0),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            SizedBox(
+                              width: 16,
+                              height: 16,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white70,
+                              ),
+                            ),
+                            SizedBox(width: 8),
+                            Text(
+                              'Sincronizando...',
+                              style: TextStyle(
+                                  fontSize: 12, color: Colors.white70),
+                            ),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
+              );
+            },
+          ),
+          Expanded(child: WebViewWidget(controller: _sigaService.controller!)),
+        ],
+      ),
     );
   }
 }

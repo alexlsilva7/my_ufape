@@ -140,13 +140,14 @@ Future<void> setupDependencies() async {
     ),
   );
 
-  injector.addLazySingleton(
-      () => InitialSyncViewModel(injector.get(), injector.get()));
+  injector.addLazySingleton(() => InitialSyncViewModel(
+      injector.get<SigaBackgroundService>(key: 'siga_background'),
+      injector.get()));
 
   injector.addLazySingleton(
     () => TimetableViewModel(
       injector.get<ScheduledSubjectRepository>(),
-      injector.get<SigaBackgroundService>(),
+      injector.get<SigaBackgroundService>(key: 'siga_background'),
     ),
   );
 
@@ -162,15 +163,27 @@ Future<void> setupDependencies() async {
   injector.addLazySingleton(
     () => AcademicAchievementViewModel(
       injector.get<AcademicAchievementRepository>(),
-      injector.get<SigaBackgroundService>(),
+      injector.get<SigaBackgroundService>(key: 'siga_background'),
     ),
   );
 
   injector.addLazySingleton(ChartsViewModel.new);
-  injector.addLazySingleton(SchoolHistoryViewModel.new);
+  injector.addLazySingleton(() => SchoolHistoryViewModel(
+        injector.get<SchoolHistoryRepository>(),
+        injector.get<SigaBackgroundService>(key: 'siga_ui'),
+      ));
 
-  // Registrar serviço SIGA em background
-  injector.addSingleton<SigaBackgroundService>(() => SigaBackgroundService());
+  // Registrar serviço SIGA: uma instância para background (sincronização)
+  // e outra para uso pela UI (WebView). Usamos keys para diferenciar.
+  injector.addInstance<SigaBackgroundService>(
+    SigaBackgroundService(),
+    key: 'siga_background',
+  );
+
+  injector.addInstance<SigaBackgroundService>(
+    SigaBackgroundService(),
+    key: 'siga_ui',
+  );
   injector.addSingleton(ShorebirdService.new);
 
   injector.commit();
@@ -181,7 +194,13 @@ Future<void> setupDependencies() async {
 
   // Inicializa o serviço SIGA em background (cria controller e começa verificação)
   try {
-    await injector.get<SigaBackgroundService>().initialize();
+    // Inicializa a instância de background para criar o controller e iniciar
+    // verificação periódica de sessão.
+    await injector
+        .get<SigaBackgroundService>(key: 'siga_background')
+        .initialize();
+
+    await injector.get<SigaBackgroundService>(key: 'siga_ui').initialize();
   } catch (_) {
     // não bloquear inicialização do app se falhar
   }

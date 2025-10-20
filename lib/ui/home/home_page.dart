@@ -26,7 +26,7 @@ class _HomePageState extends State<HomePage> {
   final HomeViewModel _viewModel = injector.get<HomeViewModel>();
 
   final SigaBackgroundService _sigaService =
-      injector.get<SigaBackgroundService>();
+      injector.get<SigaBackgroundService>(key: 'siga_background');
   final ShorebirdService _shorebirdService = injector.get<ShorebirdService>();
   final ScheduledSubjectRepository _scheduledRepo = injector.get();
   bool _isLoggedIn = false;
@@ -401,6 +401,7 @@ class _HomePageState extends State<HomePage> {
             child: SafeArea(
               bottom: false,
               child: Column(
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   // AppBar customizada
                   Padding(
@@ -509,7 +510,7 @@ class _HomePageState extends State<HomePage> {
                     padding: const EdgeInsets.symmetric(horizontal: 16),
                     child: _buildQuickAccessGrid(context, isDark),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
                   //adicionar mais 2 opções Perfil curricular e Hístórico acadêmico parecido ao menu rápido
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -702,6 +703,7 @@ class _HomePageState extends State<HomePage> {
     }
 
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: _nextClasses.map((item) {
         final subject = item['subject'] as ScheduledSubject;
         final slot = item['slot'] as TimeSlot;
@@ -892,17 +894,9 @@ class _HomePageState extends State<HomePage> {
 
             await credentials.fold(
               (login) async {
-                // 1) Cancela a sync atual de forma robusta
-                await _sigaService.cancelSync();
-                _sigaService.goToHome();
-                // 3) Libera navegações e vai para home do SIGA
-                _sigaService.isSyncing = false;
                 await _sigaService.goToHome();
                 // 4) Entra na página do SIGA
-                await Routefly.push(routePaths.siga).then((_) {
-                  // Quando voltar do SIGA, retomar sync automática se necessário
-                  _sigaService.performAutomaticSyncIfNeeded();
-                });
+                await Routefly.push(routePaths.siga);
               },
               (login) {
                 ScaffoldMessenger.of(context).showSnackBar(

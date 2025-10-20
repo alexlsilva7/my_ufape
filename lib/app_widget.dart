@@ -21,7 +21,9 @@ class MyUfapeApp extends StatefulWidget {
 
 class _MyUfapeAppState extends State<MyUfapeApp> {
   final settingsRepository = injector.get<SettingsRepository>();
-  final sigaService = injector.get<SigaBackgroundService>();
+  final sigaService = injector.get<SigaBackgroundService>(
+    key: 'siga_background',
+  );
 
   @override
   Widget build(BuildContext context) {

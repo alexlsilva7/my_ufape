@@ -112,7 +112,8 @@ class SettingsRepositoryImpl extends ChangeNotifier
 
       // 3. Limpa Secure Storage (credenciais)
       await _secureStorage.deleteAll();
-      var sigaBackgroundService = injector.get<SigaBackgroundService>();
+      var sigaBackgroundService =
+          injector.get<SigaBackgroundService>(key: 'siga_background');
       await sigaBackgroundService.resetService();
 
       // Notifica listeners para atualizar a UI se necessário (ex: modo escuro voltando ao padrão)

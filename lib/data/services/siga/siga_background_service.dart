@@ -18,21 +18,13 @@ import 'package:my_ufape/data/parsers/profile_parser.dart';
 import 'package:my_ufape/data/services/siga/siga_scripts.dart';
 import 'package:my_ufape/domain/entities/user.dart';
 import 'package:my_ufape/data/repositories/user/user_repository.dart';
-// ignore: depend_on_referenced_packages
-import 'package:async/async.dart';
 
-/// Serviço singleton que mantém um WebViewController em memória
+/// Serviço que mantém um WebViewController em memória
 /// para manter a sessão SIGA viva e expor métodos de extração.
-/// Use `injector.get<SigaBackgroundService>()` para obter a instância.
+/// A classe agora permite múltiplas instâncias (ex: uma para background sync
+/// e outra para uso pela UI/WebView). Use `injector.get<SigaBackgroundService>(key: '<key>')`.
 class SigaBackgroundService extends ChangeNotifier {
-  static SigaBackgroundService? _instance;
-
-  factory SigaBackgroundService() {
-    _instance ??= SigaBackgroundService._();
-    return _instance!;
-  }
-
-  SigaBackgroundService._();
+  SigaBackgroundService();
 
   final SettingsRepository _settings = injector.get();
   final SubjectRepository _subjectRepository = injector.get();
@@ -81,11 +73,9 @@ class SigaBackgroundService extends ChangeNotifier {
   final int _maxReconnectAttempts = 5;
   final Duration _reconnectBaseDelay = const Duration(seconds: 5);
 
-  CancelableOperation<void>? _syncOp;
-
   /// Realiza a sincronização automática se as condições forem atendidas.
   Future<void> performAutomaticSyncIfNeeded(
-      {Duration syncInterval = const Duration(hours: 1)}) async {
+      {Duration syncInterval = const Duration(hours: 0)}) async {
     // 1. Verifica se a funcionalidade está habilitada pelo usuário
     if (!_settings.isAutoSyncEnabled) {
       logarte.log('Auto-sync is disabled by the user.');
@@ -113,50 +103,25 @@ class SigaBackgroundService extends ChangeNotifier {
     logarte.log('Starting automatic background sync...');
     isSyncing = true;
 
-    _syncOp = CancelableOperation.fromFuture(_runSync(), onCancel: () async {
-      // Sinaliza fim e faz limpeza
-      isSyncing = false;
-      _reconnectTimer?.cancel();
-      _statusTimer?.cancel();
-    });
-
     try {
-      await _syncOp!.value;
+      await _runSync();
     } catch (e) {
       logarte.log('Automatic sync failed: $e');
-    } finally {
-      _syncOp = null;
-      // _cts = null;
     }
   }
 
   Future<void> _runSync() async {
     try {
-      if (!isSyncing) return;
       await navigateAndExtractGrades(); // cheque interno de isSyncing/tokens
-      if (!isSyncing) return;
       await goToHome();
-      if (!isSyncing) return;
-      await Future.delayed(const Duration(seconds: 2));
-      if (!isSyncing) return;
+      await Future.delayed(const Duration(seconds: 1));
       await navigateAndExtractTimetable();
-      if (!isSyncing) return;
       await goToHome();
-      if (!isSyncing) return;
       await navigateAndExtractSchoolHistory();
-      if (!isSyncing) return;
       await _settings.updateLastSyncTimestamp();
     } finally {
       goToHome();
       isSyncing = false;
-    }
-  }
-
-  Future<void> cancelSync() async {
-    isSyncing = false;
-    if (_syncOp != null) {
-      await _syncOp!.cancel();
-      _syncOp = null;
     }
   }
 
@@ -516,7 +481,7 @@ class SigaBackgroundService extends ChangeNotifier {
     // Script para clicar no link de notas dentro do iframe
     const script2 = """
       new Promise((resolve, reject) => {
-        const maxTries = 40;
+        const maxTries = 200;
         let tries = 0;
         const interval = setInterval(() => {
           const iframe = document.getElementsByTagName('iframe')[0];
@@ -538,7 +503,7 @@ class SigaBackgroundService extends ChangeNotifier {
             clearInterval(interval);
             reject('ERRO: Tempo esgotado. Botão de notas não encontrado.');
           }
-        }, 250);
+        }, 50);
       });
     """;
 

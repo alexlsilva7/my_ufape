@@ -51,7 +51,8 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
-      final sigaService = injector.get<SigaBackgroundService>();
+      final sigaService =
+          injector.get<SigaBackgroundService>(key: 'siga_background');
       final success = await sigaService.login(username, password);
 
       if (mounted) {
