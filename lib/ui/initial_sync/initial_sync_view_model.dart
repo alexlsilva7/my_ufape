@@ -3,10 +3,10 @@ import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
 
 enum SyncStep {
-  user,
+  timetable,
   grades,
   profile,
-  timetable,
+  user,
   academicHistory,
   academicAchievement
 }
@@ -20,12 +20,7 @@ class InitialSyncViewModel extends ChangeNotifier {
   InitialSyncViewModel(this._sigaService, this._settingsRepository);
 
   final Map<SyncStep, StepStatus> _status = {
-    SyncStep.user: StepStatus.idle,
-    SyncStep.grades: StepStatus.idle,
-    SyncStep.profile: StepStatus.idle,
-    SyncStep.timetable: StepStatus.idle,
-    SyncStep.academicHistory: StepStatus.idle,
-    SyncStep.academicAchievement: StepStatus.idle,
+    for (var step in SyncStep.values) step: StepStatus.idle
   };
   Map<SyncStep, StepStatus> get status => _status;
 
@@ -38,33 +33,60 @@ class InitialSyncViewModel extends ChangeNotifier {
   bool get isSyncComplete =>
       _status.values.every((s) => s == StepStatus.success);
 
-  /// Notificador para sinalizar à UI que a navegação para a home deve ocorrer.
   final ValueNotifier<bool> navigateToHome = ValueNotifier(false);
 
-  final int _maxAttempts = 3;
+  final int _maxAttempts = 1;
 
-  // Função helper para executar uma etapa com retentativas
-  Future<bool> _runSyncStep(
-    SyncStep step,
-    Future<void> Function() syncFunction,
-    String errorContext,
-  ) async {
+  Future<bool> _executeStep(SyncStep step) async {
     _status[step] = StepStatus.running;
     notifyListeners();
 
+    late Future<void> Function() syncFunction;
+    late String errorContext;
+
+    switch (step) {
+      case SyncStep.timetable:
+        syncFunction = _sigaService.navigateAndExtractTimetable;
+        errorContext = 'grade de horário';
+        break;
+      case SyncStep.grades:
+        syncFunction = _sigaService.navigateAndExtractGrades;
+        errorContext = 'notas';
+        break;
+      case SyncStep.profile:
+        syncFunction = _sigaService.navigateAndExtractProfile;
+        errorContext = 'perfil';
+        break;
+      case SyncStep.user:
+        syncFunction = _sigaService.navigateAndExtractUser;
+        errorContext = 'dados do usuário';
+        break;
+      case SyncStep.academicHistory:
+        syncFunction = _sigaService.navigateAndExtractSchoolHistory;
+        errorContext = 'histórico escolar';
+        break;
+      case SyncStep.academicAchievement:
+        syncFunction = _sigaService.navigateAndExtractAcademicAchievement;
+        errorContext = 'aproveitamento acadêmico';
+        break;
+    }
+
     for (int attempt = 1; attempt <= _maxAttempts; attempt++) {
       try {
+        await _sigaService.goToHome();
+        await Future.delayed(const Duration(milliseconds: 500));
         await syncFunction();
         _status[step] = StepStatus.success;
+        await _settingsRepository.saveSyncStatus(_status);
         notifyListeners();
-        return true; // Sucesso
+        return true;
       } catch (e) {
         if (attempt == _maxAttempts) {
           _status[step] = StepStatus.failure;
-          _errorMessage =
-              "Falha ao sincronizar $errorContext após $attempt tentativas. Verifique sua conexão e tente novamente.";
+          _errorMessage = "Falha ao sincronizar $errorContext.";
+          await _settingsRepository.saveSyncStatus(_status);
           notifyListeners();
-          return false; // Falha definitiva
+          return false;
         }
         await Future.delayed(Duration(seconds: attempt * 2));
       }
@@ -73,75 +95,46 @@ class InitialSyncViewModel extends ChangeNotifier {
   }
 
   Future<void> startSync() async {
-    if (_isSyncing) return;
+    if (isSyncing) return;
 
     _isSyncing = true;
     _errorMessage = null;
     navigateToHome.value = false;
 
-    // Reseta o status dos passos antes de iniciar
-    _status.updateAll((key, value) => StepStatus.idle);
+    // Carrega o estado salvo
+    _status.addAll(_settingsRepository.getSyncStatus());
     notifyListeners();
 
-    await _sigaService.goToHome();
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    if (!await _runSyncStep(SyncStep.timetable,
-        _sigaService.navigateAndExtractTimetable, 'grade de horário')) {
-      _isSyncing = false;
-      return;
-    }
-    await _sigaService.goToHome();
-    await Future.delayed(const Duration(milliseconds: 500));
-    // 2. Sincronizar Notas com retentativas
-    if (!await _runSyncStep(
-        SyncStep.grades, _sigaService.navigateAndExtractGrades, 'notas')) {
-      _isSyncing = false;
-      return; // Para a sincronização se uma etapa falhar
+    for (final step in SyncStep.values) {
+      if (_status[step] != StepStatus.success) {
+        await _executeStep(step);
+      }
     }
 
-    await _sigaService.goToHome();
-    await Future.delayed(const Duration(milliseconds: 500));
-
-    // 3. Sincronizar Perfil Curricular com retentativas
-    if (!await _runSyncStep(
-        SyncStep.profile, _sigaService.navigateAndExtractProfile, 'perfil')) {
-      _isSyncing = false;
-      return;
-    }
-
-    // 4. Sincronizar Dados do Usuário
-    if (!await _runSyncStep(SyncStep.user, _sigaService.navigateAndExtractUser,
-        'dados do usuário')) {
-      _isSyncing = false;
-      return;
-    }
-
-    // 5. Sincronizar Histórico Escolar
-    if (!await _runSyncStep(SyncStep.academicHistory,
-        _sigaService.navigateAndExtractSchoolHistory, 'histórico escolar')) {
-      _isSyncing = false;
-      return;
-    }
-
-    // 6. Sincronizar Aproveitamento Acadêmico
-    if (!await _runSyncStep(
-        SyncStep.academicAchievement,
-        _sigaService.navigateAndExtractAcademicAchievement,
-        'aproveitamento acadêmico')) {
-      _isSyncing = false;
-      return;
-    }
-
-    // Finalização
-    await _sigaService.goToHome();
-    await _settingsRepository.setInitialSyncCompleted(true);
-    await _settingsRepository.updateLastSyncTimestamp();
     _isSyncing = false;
     notifyListeners();
+    _checkCompletionAndNavigate();
+  }
 
-    await Future.delayed(const Duration(milliseconds: 500));
-    // Sinaliza que a navegação deve ocorrer.
-    navigateToHome.value = true;
+  Future<void> retryStep(SyncStep step) async {
+    if (isSyncing || _status[step] != StepStatus.failure) return;
+
+    _isSyncing = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    await _executeStep(step);
+
+    _isSyncing = false;
+    notifyListeners();
+    _checkCompletionAndNavigate();
+  }
+
+  void _checkCompletionAndNavigate() async {
+    if (isSyncComplete) {
+      await _settingsRepository.updateLastSyncTimestamp();
+      await Future.delayed(const Duration(milliseconds: 1500));
+      navigateToHome.value = true;
+    }
   }
 }

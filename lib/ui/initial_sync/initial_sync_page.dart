@@ -25,6 +25,12 @@ class _InitialSyncPageState extends State<InitialSyncPage> {
     });
   }
 
+  @override
+  void dispose() {
+    _viewModel.navigateToHome.removeListener(_handleNavigation);
+    super.dispose();
+  }
+
   void _handleNavigation() {
     // Se o valor for true e a tela ainda estiver "montada", navega.
     if (_viewModel.navigateToHome.value && mounted) {
@@ -43,8 +49,7 @@ class _InitialSyncPageState extends State<InitialSyncPage> {
           child: ListenableBuilder(
             listenable: _viewModel,
             builder: (context, child) {
-              // Remove o botão de "Concluir" que será substituído pelo redirecionamento automático
-              final showFinishButton = _viewModel.isSyncComplete &&
+              final isFinished = _viewModel.isSyncComplete &&
                   !_viewModel.isSyncing &&
                   _viewModel.errorMessage == null;
 
@@ -59,7 +64,7 @@ class _InitialSyncPageState extends State<InitialSyncPage> {
                   const SizedBox(height: 24),
                   GestureDetector(
                     child: Text(
-                      showFinishButton
+                      isFinished
                           ? 'Sincronização Concluída!'
                           : 'Sincronização Inicial',
                       style: theme.textTheme.headlineSmall
@@ -73,7 +78,7 @@ class _InitialSyncPageState extends State<InitialSyncPage> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    showFinishButton
+                    isFinished
                         ? 'Redirecionando para a tela inicial...'
                         : 'Estamos preparando tudo para você. Isso pode levar alguns instantes.',
                     textAlign: TextAlign.center,
@@ -82,26 +87,20 @@ class _InitialSyncPageState extends State<InitialSyncPage> {
                   const SizedBox(height: 24),
                   _buildStepTile('Grade de Horário', SyncStep.timetable,
                       _viewModel.status[SyncStep.timetable]!),
-
-                  _buildStepTile('Notas e Histórico', SyncStep.grades,
+                  _buildStepTile('Notas', SyncStep.grades,
                       _viewModel.status[SyncStep.grades]!),
-
                   _buildStepTile('Disciplinas', SyncStep.profile,
                       _viewModel.status[SyncStep.profile]!),
-
                   _buildStepTile('Usuário', SyncStep.user,
                       _viewModel.status[SyncStep.user]!),
-
                   _buildStepTile(
                       'Histórico Acadêmico',
                       SyncStep.academicHistory,
                       _viewModel.status[SyncStep.academicHistory]!),
-
                   _buildStepTile(
                       'Aproveitamento Acadêmico',
                       SyncStep.academicAchievement,
                       _viewModel.status[SyncStep.academicAchievement]!),
-
                   const SizedBox(height: 24),
                   if (_viewModel.errorMessage != null && !_viewModel.isSyncing)
                     Text(
@@ -110,13 +109,6 @@ class _InitialSyncPageState extends State<InitialSyncPage> {
                       textAlign: TextAlign.center,
                     ),
                   const SizedBox(height: 16),
-                  // O botão de "Tentar Novamente" continua aparecendo apenas em caso de erro
-                  if (_viewModel.errorMessage != null && !_viewModel.isSyncing)
-                    ElevatedButton.icon(
-                      icon: const Icon(Icons.refresh),
-                      label: const Text('Tentar Novamente'),
-                      onPressed: _viewModel.startSync,
-                    ),
                 ],
               );
             },
@@ -128,21 +120,35 @@ class _InitialSyncPageState extends State<InitialSyncPage> {
 
   Widget _buildStepTile(String title, SyncStep step, StepStatus status) {
     Widget trailing;
+    bool canRetry = status == StepStatus.failure && !_viewModel.isSyncing;
+
     switch (status) {
       case StepStatus.idle:
         trailing = const Icon(Icons.more_horiz, color: Colors.grey);
         break;
       case StepStatus.running:
-        trailing = const SizedBox(
-            width: 20,
-            height: 20,
-            child: CircularProgressIndicator(strokeWidth: 2));
+        trailing = Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: const SizedBox(
+              width: 20,
+              height: 20,
+              child: CircularProgressIndicator(strokeWidth: 2)),
+        );
         break;
       case StepStatus.success:
-        trailing = const Icon(Icons.check_circle, color: Colors.green);
+        trailing = Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: const Icon(Icons.check_circle, color: Colors.green),
+        );
         break;
       case StepStatus.failure:
-        trailing = const Icon(Icons.error, color: Colors.red);
+        trailing = IconButton(
+          padding: EdgeInsets.zero,
+          splashRadius: 20,
+          icon: Icon(Icons.refresh, color: Theme.of(context).colorScheme.error),
+          onPressed: () => _viewModel.retryStep(step),
+          tooltip: 'Tentar novamente',
+        );
         break;
     }
 
@@ -156,6 +162,7 @@ class _InitialSyncPageState extends State<InitialSyncPage> {
         ),
         title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
         trailing: trailing,
+        onTap: canRetry ? () => _viewModel.retryStep(step) : null,
       ),
     );
   }

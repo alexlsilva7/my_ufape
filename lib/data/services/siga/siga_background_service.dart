@@ -75,7 +75,7 @@ class SigaBackgroundService extends ChangeNotifier {
 
   /// Realiza a sincronização automática se as condições forem atendidas.
   Future<void> performAutomaticSyncIfNeeded(
-      {Duration syncInterval = const Duration(hours: 0)}) async {
+      {Duration syncInterval = const Duration(hours: 1)}) async {
     // 1. Verifica se a funcionalidade está habilitada pelo usuário
     if (!_settings.isAutoSyncEnabled) {
       logarte.log('Auto-sync is disabled by the user.');
@@ -227,7 +227,7 @@ class SigaBackgroundService extends ChangeNotifier {
 
     try {
       final result =
-          await _loginCompleter!.future.timeout(const Duration(seconds: 30));
+          await _loginCompleter!.future.timeout(const Duration(seconds: 10));
       _loginCompleter = null; // Limpa o completer após o uso
       return result;
     } catch (e) {
@@ -383,7 +383,7 @@ class SigaBackgroundService extends ChangeNotifier {
 
   /// Aguarda a página de notas ser carregada (busca pelo botão Imprimir)
   Future<void> _waitForGradesPageReady(
-      {Duration timeout = const Duration(seconds: 30)}) async {
+      {Duration timeout = const Duration(seconds: 10)}) async {
     final completer = Completer<void>();
     Timer? timer;
     final stopwatch = Stopwatch()..start();
@@ -399,7 +399,7 @@ class SigaBackgroundService extends ChangeNotifier {
     })();
     """;
 
-    timer = Timer.periodic(const Duration(milliseconds: 250), (t) async {
+    timer = Timer.periodic(const Duration(milliseconds: 50), (t) async {
       if (stopwatch.elapsed > timeout) {
         timer?.cancel();
         if (!completer.isCompleted) {
@@ -427,7 +427,7 @@ class SigaBackgroundService extends ChangeNotifier {
 
   /// Aguarda a página de informações do discente carregar
   Future<void> _waitForStudentInfoPageReady(
-      {Duration timeout = const Duration(seconds: 30)}) async {
+      {Duration timeout = const Duration(seconds: 10)}) async {
     final completer = Completer<void>();
     Timer? timer;
     final stopwatch = Stopwatch()..start();
@@ -447,7 +447,7 @@ class SigaBackgroundService extends ChangeNotifier {
     })();
     """;
 
-    timer = Timer.periodic(const Duration(milliseconds: 250), (t) async {
+    timer = Timer.periodic(const Duration(milliseconds: 50), (t) async {
       if (stopwatch.elapsed > timeout) {
         timer?.cancel();
         if (!completer.isCompleted) {
@@ -630,7 +630,7 @@ class SigaBackgroundService extends ChangeNotifier {
       await _controller!.runJavaScriptReturningResult(SigaScripts.scriptInfo());
 
       // 3. Aguarda a página de informações carregar
-      await _waitForStudentInfoPageReady(timeout: const Duration(seconds: 30));
+      await _waitForStudentInfoPageReady(timeout: const Duration(seconds: 12));
 
       // 4. Clica em Perfil Curricular
       await _controller!
@@ -931,7 +931,7 @@ class SigaBackgroundService extends ChangeNotifier {
   }
 
   Future<void> _waitForSchoolHistoryPageReady(
-      {Duration timeout = const Duration(seconds: 30)}) async {
+      {Duration timeout = const Duration(seconds: 10)}) async {
     final completer = Completer<void>();
     Timer? timer;
     final stopwatch = Stopwatch()..start();
@@ -1159,7 +1159,7 @@ class SigaBackgroundService extends ChangeNotifier {
   }
 
   Future<void> _waitForAcademicAchievementPageReady(
-      {Duration timeout = const Duration(seconds: 30)}) async {
+      {Duration timeout = const Duration(seconds: 10)}) async {
     final completer = Completer<void>();
     Timer? timer;
     final stopwatch = Stopwatch()..start();

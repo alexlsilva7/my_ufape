@@ -1,6 +1,7 @@
 import 'package:auto_injector/auto_injector.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:my_ufape/core/database/database.dart';
+import 'package:my_ufape/core/debug/logarte.dart';
 import 'package:my_ufape/data/repositories/academic_achievement/academic_achievement_repository.dart';
 import 'package:my_ufape/data/repositories/academic_achievement/academic_achievement_repository_impl.dart';
 import 'package:my_ufape/data/repositories/school_history/school_history_repository.dart';
@@ -147,7 +148,7 @@ Future<void> setupDependencies() async {
   injector.addLazySingleton(
     () => TimetableViewModel(
       injector.get<ScheduledSubjectRepository>(),
-      injector.get<SigaBackgroundService>(key: 'siga_ui'),
+      injector.get<SigaBackgroundService>(key: 'siga_background'),
     ),
   );
 
@@ -163,14 +164,14 @@ Future<void> setupDependencies() async {
   injector.addLazySingleton(
     () => AcademicAchievementViewModel(
       injector.get<AcademicAchievementRepository>(),
-      injector.get<SigaBackgroundService>(key: 'siga_ui'),
+      injector.get<SigaBackgroundService>(key: 'siga_background'),
     ),
   );
 
   injector.addLazySingleton(ChartsViewModel.new);
   injector.addLazySingleton(() => SchoolHistoryViewModel(
         injector.get<SchoolHistoryRepository>(),
-        injector.get<SigaBackgroundService>(key: 'siga_ui'),
+        injector.get<SigaBackgroundService>(key: 'siga_background'),
       ));
 
   // Registrar serviço SIGA: uma instância para background (sincronização)
@@ -180,10 +181,10 @@ Future<void> setupDependencies() async {
     key: 'siga_background',
   );
 
-  injector.addInstance<SigaBackgroundService>(
-    SigaBackgroundService(),
-    key: 'siga_ui',
-  );
+  // injector.addInstance<SigaBackgroundService>(
+  //   SigaBackgroundService(),
+  //   key: 'siga_ui',
+  // );
   injector.addSingleton(ShorebirdService.new);
 
   injector.commit();
@@ -200,15 +201,17 @@ Future<void> setupDependencies() async {
         .get<SigaBackgroundService>(key: 'siga_background')
         .initialize();
 
-    await injector.get<SigaBackgroundService>(key: 'siga_ui').initialize();
+    //await injector.get<SigaBackgroundService>(key: 'siga_ui').initialize();
   } catch (_) {
-    // não bloquear inicialização do app se falhar
+    logarte.log('Falha ao inicializar SigaBackgroundService',
+        source: 'setupDependencies');
   }
 
   // Inicializa o serviço do Shorebird para verificações automáticas
   try {
     injector.get<ShorebirdService>().init();
   } catch (_) {
-    // não bloquear inicialização do app se falhar
+    logarte.log('Falha ao inicializar ShorebirdService',
+        source: 'setupDependencies');
   }
 }

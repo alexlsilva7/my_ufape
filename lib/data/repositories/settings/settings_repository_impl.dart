@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:my_ufape/config/dependencies.dart';
@@ -5,6 +6,7 @@ import 'package:my_ufape/core/database/database.dart';
 import 'package:my_ufape/core/exceptions/app_exception.dart';
 import 'package:my_ufape/data/services/settings/local_storage_preferences_service.dart';
 import 'package:my_ufape/domain/entities/login.dart';
+import 'package:my_ufape/ui/initial_sync/initial_sync_view_model.dart';
 import 'package:result_dart/result_dart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
@@ -50,6 +52,18 @@ class SettingsRepositoryImpl extends ChangeNotifier
 
   @override
   bool isBiometricAvailable = false;
+
+  @override
+  Future<void> saveSyncStatus(Map<SyncStep, StepStatus> status) =>
+      _localStoragePreferencesService.saveSyncStatus(status);
+
+  @override
+  Map<SyncStep, StepStatus> getSyncStatus() =>
+      _localStoragePreferencesService.getSyncStatus();
+
+  @override
+  Future<void> clearSyncStatus() =>
+      _localStoragePreferencesService.clearSyncStatus();
 
   Future<void> initBiometricAuth() async {
     bool canAuthenticateWithBiometrics = await _localAuth.canCheckBiometrics;
@@ -132,6 +146,9 @@ class SettingsRepositoryImpl extends ChangeNotifier
 
       // 2. Limpa SharedPreferences (incluindo a flag de sync)
       await _prefs.clear();
+
+      // Limpa o estado de sincronização salvo
+      await _localStoragePreferencesService.clearSyncStatus();
 
       // 3. Limpa Secure Storage (credenciais)
       await _secureStorage.deleteAll();
@@ -226,13 +243,16 @@ class SettingsRepositoryImpl extends ChangeNotifier
 
   @override
   Future<bool> isInitialSyncCompleted() async {
-    return _localStoragePreferencesService.isInitialSyncCompleted;
-  }
-
-  @override
-  AsyncResult<Unit> setInitialSyncCompleted(bool value) async {
-    final result =
-        await _localStoragePreferencesService.setInitialSyncCompleted(value);
-    return result;
+    var status = _localStoragePreferencesService.getSyncStatus();
+    if (status.isEmpty) {
+      return false;
+    }
+    bool allCompleted = true;
+    status.forEach((step, stepStatus) {
+      if (stepStatus != StepStatus.success) {
+        allCompleted = false;
+      }
+    });
+    return allCompleted;
   }
 }

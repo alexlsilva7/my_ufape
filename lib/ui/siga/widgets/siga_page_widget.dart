@@ -19,7 +19,7 @@ class SigaPageWidget extends StatefulWidget {
 class _SigaPageWidgetState extends State<SigaPageWidget> {
   WebViewController? get _controller => _sigaService.controller;
   final _sigaService = injector.get<SigaBackgroundService>(
-    key: 'siga_ui',
+    key: 'siga_background',
   );
   final _settings = injector.get<SettingsRepository>();
   bool _isLoggedIn = false;

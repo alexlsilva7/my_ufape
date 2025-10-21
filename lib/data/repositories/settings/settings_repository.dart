@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:my_ufape/domain/entities/login.dart';
+import 'package:my_ufape/ui/initial_sync/initial_sync_view_model.dart';
 import 'package:result_dart/result_dart.dart';
 
 abstract interface class SettingsRepository extends ChangeNotifier {
@@ -30,5 +31,7 @@ abstract interface class SettingsRepository extends ChangeNotifier {
 
   Future<bool> isInitialSyncCompleted();
 
-  AsyncResult<Unit> setInitialSyncCompleted(bool value);
+  Future<void> saveSyncStatus(Map<SyncStep, StepStatus> status);
+  Map<SyncStep, StepStatus> getSyncStatus();
+  Future<void> clearSyncStatus();
 }

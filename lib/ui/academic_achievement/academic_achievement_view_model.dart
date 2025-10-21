@@ -65,10 +65,14 @@ class AcademicAchievementViewModel extends ChangeNotifier {
   }
 
   Future<void> loadDataAndSyncIfEmpty() async {
-    await _loadData();
+    try {
+      await _loadData();
+    } catch (e) {
+      _errorMessage = "Erro ao carregar dados: ${e.toString()}";
+    }
 
     // Se não houver dados e não houve erro ao carregar, tenta sincronizar.
-    if (_achievement == null && _errorMessage == null && !_hasAutoSynced) {
+    if (_achievement == null && !_hasAutoSynced) {
       _hasAutoSynced = true;
 
       await syncFromSiga();
