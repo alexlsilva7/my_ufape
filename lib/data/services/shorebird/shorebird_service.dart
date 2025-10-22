@@ -39,7 +39,7 @@ class ShorebirdService extends ChangeNotifier {
 
     // Start periodic check
     _timer?.cancel();
-    _timer = Timer.periodic(const Duration(minutes: 60), (timer) async {
+    _timer = Timer.periodic(const Duration(minutes: 5), (timer) async {
       await _checkForUpdate(isAutomatic: true);
     });
   }

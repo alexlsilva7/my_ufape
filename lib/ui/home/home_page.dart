@@ -72,7 +72,7 @@ class _HomePageState extends State<HomePage> {
     _shorebirdService.isUpdateReadyToInstall.addListener(_showUpdateBanner);
     // Check on init
     WidgetsBinding.instance.addPostFrameCallback((_) => _showUpdateBanner());
-    Future.delayed(const Duration(seconds: 3), () {
+    Future.delayed(const Duration(seconds: 10), () {
       _showUpdateBanner();
     });
 
