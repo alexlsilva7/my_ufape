@@ -24,8 +24,12 @@ class WorkloadCard extends StatelessWidget {
         data: item,
       );
 
+      // Primeiro, processar e filtrar os filhos normalmente
+      List<IndexedTreeNode<WorkloadSummaryItem>> validChildren = [];
+
       for (var i = 0; i < item.children.length; i++) {
         var newNode = convertToTreeNode(item.children[i], i);
+        // Aplicar a filtragem original
         if (newNode.data != null &&
                 (newNode.data!.toCompleteHours != null &&
                     newNode.data!.toCompleteHours! == 0 &&
@@ -37,7 +41,23 @@ class WorkloadCard extends StatelessWidget {
                 newNode.data!.toCompleteHours == 0)) {
           continue;
         }
-        node.add(newNode);
+        validChildren.add(newNode);
+      }
+
+      // Depois da filtragem, verificar se deve pular nível intermediário
+      // Se após filtrar sobrou apenas 1 filho e esse filho tem outros filhos,
+      // pular o nível intermediário
+      if (validChildren.length == 1 &&
+          validChildren[0].childrenAsList.isNotEmpty) {
+        // Adicionar os netos diretamente
+        for (var grandchild in validChildren[0].childrenAsList) {
+          node.add(grandchild);
+        }
+      } else {
+        // Caso normal: adicionar os filhos válidos
+        for (var child in validChildren) {
+          node.add(child);
+        }
       }
 
       return node;
