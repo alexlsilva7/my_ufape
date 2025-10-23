@@ -25,7 +25,19 @@ class WorkloadCard extends StatelessWidget {
       );
 
       for (var i = 0; i < item.children.length; i++) {
-        node.add(convertToTreeNode(item.children[i], i));
+        var newNode = convertToTreeNode(item.children[i], i);
+        if (newNode.data != null &&
+                (newNode.data!.toCompleteHours != null &&
+                    newNode.data!.toCompleteHours! == 0 &&
+                    newNode.data!.completedHours != null &&
+                    newNode.data!.completedHours! == 0) ||
+            (newNode.data!.completedHours == 0 &&
+                newNode.data!.toCompleteHours == null) ||
+            (newNode.data!.completedHours == 0 &&
+                newNode.data!.toCompleteHours == 0)) {
+          continue;
+        }
+        node.add(newNode);
       }
 
       return node;

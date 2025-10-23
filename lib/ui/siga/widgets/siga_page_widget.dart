@@ -28,6 +28,7 @@ class _SigaPageWidgetState extends State<SigaPageWidget> {
   bool _isProcessingGrades = false;
   bool _isProcessingProfile = false;
   bool _isProcessingTimetable = false;
+  bool _isSyncInProgress = false;
 
   // Listener chamado quando o serviço notifica mudança de login
   void _onLoginChange() {
@@ -54,16 +55,26 @@ class _SigaPageWidgetState extends State<SigaPageWidget> {
       if (mounted) {
         setState(() {
           _isLoggedIn = _sigaService.isLoggedIn;
+          _isSyncInProgress = _sigaService.isSyncing;
         });
       }
     });
     _sigaService.loginNotifier.addListener(_onLoginChange);
+    _sigaService.addListener(_onSyncStatusChange);
+  }
+
+  void _onSyncStatusChange() {
+    if (!mounted) return;
+    setState(() {
+      _isSyncInProgress = _sigaService.isSyncing;
+    });
   }
 
   @override
   void dispose() {
     try {
       _sigaService.loginNotifier.removeListener(_onLoginChange);
+      _sigaService.removeListener(_onSyncStatusChange);
     } catch (_) {}
     super.dispose();
   }
@@ -217,96 +228,72 @@ class _SigaPageWidgetState extends State<SigaPageWidget> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      spacing: 8,
+    return Stack(
       children: [
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
-          child: _message.isNotEmpty
-              ? Text(_message, key: ValueKey(_message))
-              : const SizedBox.shrink(key: ValueKey('empty')),
-        ),
-        _controller != null
-            ? Expanded(
-                child: WebViewWidget(controller: _sigaService.controller!))
-            : const Spacer(),
-        if (_settings.isDebugOverlayEnabled || kDebugMode)
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              alignment: WrapAlignment.center,
-              children: [
-                ElevatedButton.icon(
-                  onPressed: _isProcessingGrades ||
-                          _isProcessingProfile ||
-                          _isProcessingTimetable ||
-                          !_isLoggedIn
-                      ? null
-                      : _navigateAndExtractGrades,
-                  icon: _isProcessingGrades
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Icon(Icons.school, color: Colors.white),
-                  label: const Text(
-                    'Extrair Notas',
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                ),
-                ElevatedButton.icon(
-                  onPressed: _isProcessingGrades ||
-                          _isProcessingProfile ||
-                          _isProcessingTimetable ||
-                          !_isLoggedIn
-                      ? null
-                      : _navigateAndExtractProfile,
-                  icon: _isProcessingProfile
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Icon(Icons.list_alt, color: Colors.white),
-                  label: const Text('Extrair Perfil Curricular',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                      )),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Theme.of(context).colorScheme.secondary,
-                  ),
-                ),
-                ElevatedButton.icon(
-                  onPressed: _isProcessingGrades ||
-                          _isProcessingProfile ||
-                          _isProcessingTimetable || // ADICIONAR CONDIÇÃO
-                          !_isLoggedIn
-                      ? null
-                      : _navigateAndExtractTimetable,
-                  icon: _isProcessingTimetable
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Icon(Icons.grid_on, color: Colors.white),
-                  label: const Text('Extrair Grade',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                      )),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.teal, // Cor diferente
-                  ),
-                ),
-              ],
+        Column(
+          spacing: 8,
+          children: [
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              child: _message.isNotEmpty
+                  ? Text(_message, key: ValueKey(_message))
+                  : const SizedBox.shrink(key: ValueKey('empty')),
             ),
-          )
+            _controller != null
+                ? Expanded(
+                    child: WebViewWidget(controller: _sigaService.controller!))
+                : const Spacer(),
+          ],
+        ),
+        if (_isSyncInProgress)
+          Container(
+            color: Colors.black54,
+            child: Center(
+              child: Card(
+                margin: const EdgeInsets.all(24),
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const CircularProgressIndicator(
+                        valueColor:
+                            AlwaysStoppedAnimation<Color>(Color(0xFF004D40)),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Aguarde a sincronização',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        _sigaService.syncStatusMessage.isNotEmpty
+                            ? _sigaService.syncStatusMessage
+                            : 'Sincronização em andamento...',
+                        style: const TextStyle(fontSize: 14),
+                        textAlign: TextAlign.center,
+                      ),
+                      if (_sigaService.currentSyncOperation != null) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          _sigaService.currentSyncOperation!,
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[600],
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
       ],
     );
   }

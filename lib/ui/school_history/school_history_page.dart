@@ -206,7 +206,7 @@ class _SchoolHistoryPageState extends State<SchoolHistoryPage> {
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: () {
-                _viewModel.loadHistory();
+                _viewModel.syncFromSiga();
               },
               icon: const Icon(Icons.refresh),
               label: const Text('Tentar novamente'),

@@ -91,7 +91,6 @@ class SettingsRepositoryImpl extends ChangeNotifier
       return await _localAuth.authenticate(
         authMessages: const <AuthMessages>[
           AndroidAuthMessages(
-            biometricHint: 'Toque o sensor para autenticar',
             cancelButton: 'Cancelar',
             goToSettingsButton: 'Ir para configurações',
             goToSettingsDescription:
