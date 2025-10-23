@@ -19,6 +19,15 @@ import 'package:my_ufape/data/services/siga/siga_scripts.dart';
 import 'package:my_ufape/domain/entities/user.dart';
 import 'package:my_ufape/data/repositories/user/user_repository.dart';
 
+/// Exceção lançada quando uma sincronização é tentada enquanto outra está em andamento
+class SyncInProgressException implements Exception {
+  final String message;
+  SyncInProgressException(this.message);
+
+  @override
+  String toString() => message;
+}
+
 /// Serviço que mantém um WebViewController em memória
 /// para manter a sessão SIGA viva e expor métodos de extração.
 /// A classe agora permite múltiplas instâncias (ex: uma para background sync
@@ -62,6 +71,45 @@ class SigaBackgroundService extends ChangeNotifier {
   }
 
   String statusMessage = '';
+
+  String _syncStatusMessage = '';
+  String get syncStatusMessage => _syncStatusMessage;
+
+  String? _currentSyncOperation;
+  String? get currentSyncOperation => _currentSyncOperation;
+
+  /// Tenta adquirir o lock de sincronização
+  /// Retorna true se conseguiu, false se já está sincronizando
+  bool _acquireSyncLock(String operationName) {
+    if (_isSyncing) {
+      logarte.log(
+          'Sync lock denied: $_currentSyncOperation already in progress',
+          source: 'SigaBackgroundService');
+      return false;
+    }
+
+    _isSyncing = true;
+    _currentSyncOperation = operationName;
+    _syncStatusMessage = 'Iniciando $operationName...';
+    notifyListeners();
+    logarte.log('Sync lock acquired for: $operationName');
+    return true;
+  }
+
+  /// Libera o lock de sincronização
+  void _releaseSyncLock() {
+    final operation = _currentSyncOperation;
+    _isSyncing = false;
+    _currentSyncOperation = null;
+    _syncStatusMessage = '';
+    notifyListeners();
+    logarte.log('Sync lock released for: $operation');
+  }
+
+  void _updateSyncStatus(String message) {
+    _syncStatusMessage = message;
+    notifyListeners();
+  }
 
   Timer? _statusTimer;
 
@@ -135,6 +183,9 @@ class SigaBackgroundService extends ChangeNotifier {
     // Cria o controller
     _controller = WebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
+      ..setUserAgent(
+        'Mozilla/5.0 (Linux; Android 10) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.120 Mobile Safari/537.36',
+      )
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (url) {
@@ -145,15 +196,28 @@ class SigaBackgroundService extends ChangeNotifier {
             statusMessage = '';
             notifyListeners();
 
+            // Injeta script global de supressão de erros em todas as páginas do SIGA
+            if (url.contains('siga.ufape.edu.br')) {
+              try {
+                await _controller
+                    ?.runJavaScript(SigaScripts.suppressSigaErrorsScript);
+              } catch (e) {
+                // Ignora falhas na injeção do script de supressão
+              }
+            }
+
             if (url.contains('siga.ufape.edu.br/ufape/index.jsp')) {
               try {
+                // Aplica estilos e supressão de erros do console
                 await _controller
                     ?.runJavaScript(SigaScripts.loginPageStylesScript);
               } catch (e) {
                 // Ignora erros de script de estilo para não quebrar a funcionalidade
-                if (kDebugMode) {
-                  print('Erro ao aplicar estilos na página de login: $e');
-                }
+                // Erros comuns do SIGA (jQuery Cycle, etc) são esperados e não afetam o login
+                logarte.log(
+                  'Aviso: Erro ao aplicar estilos na página de login (não crítico): $e',
+                  source: 'SigaBackgroundService',
+                );
               }
             }
 
@@ -427,7 +491,7 @@ class SigaBackgroundService extends ChangeNotifier {
 
   /// Aguarda a página de informações do discente carregar
   Future<void> _waitForStudentInfoPageReady(
-      {Duration timeout = const Duration(seconds: 10)}) async {
+      {Duration timeout = const Duration(seconds: 60)}) async {
     final completer = Completer<void>();
     Timer? timer;
     final stopwatch = Stopwatch()..start();
@@ -630,7 +694,7 @@ class SigaBackgroundService extends ChangeNotifier {
       await _controller!.runJavaScriptReturningResult(SigaScripts.scriptInfo());
 
       // 3. Aguarda a página de informações carregar
-      await _waitForStudentInfoPageReady(timeout: const Duration(seconds: 12));
+      await _waitForStudentInfoPageReady();
 
       // 4. Clica em Perfil Curricular
       await _controller!
@@ -879,18 +943,30 @@ class SigaBackgroundService extends ChangeNotifier {
   }
 
   Future<void> navigateAndExtractSchoolHistory() async {
-    if (_controller == null) throw Exception('Controller not initialized');
-    logarte.log('Starting school history extraction from SIGA...');
+    if (!_acquireSyncLock('Histórico Escolar')) {
+      throw SyncInProgressException(
+          'Sincronização de $_currentSyncOperation já em andamento. '
+          'Aguarde a conclusão ou tente novamente em alguns instantes.');
+    }
 
     try {
+      if (_controller == null) throw Exception('Controller not initialized');
+      logarte.log('Starting school history extraction from SIGA...');
+
+      _updateSyncStatus('Navegando para o menu...');
       await _controller!.runJavaScript(SigaScripts.scriptNav());
+
+      _updateSyncStatus('Acessando informações do discente...');
       await _controller!.runJavaScriptReturningResult(SigaScripts.scriptInfo());
       await _waitForStudentInfoPageReady();
+
+      _updateSyncStatus('Abrindo histórico escolar...');
       await _controller!
           .runJavaScriptReturningResult(SigaScripts.scriptHistoricoEscolar());
       await _waitForSchoolHistoryPageReady();
       await Future.delayed(const Duration(milliseconds: 500));
 
+      _updateSyncStatus('Extraindo dados do histórico...');
       final jsonResult = await _controller!.runJavaScriptReturningResult(
           SigaScripts.extractSchoolHistoryScript());
 
@@ -908,8 +984,11 @@ class SigaBackgroundService extends ChangeNotifier {
       if (decodedData['periods'] is String) {
         decodedData['periods'] = jsonDecode(decodedData['periods']);
       }
+
+      _updateSyncStatus('Salvando histórico no banco de dados...');
       await _schoolHistoryRepository.upsertFromSiga(decodedData);
 
+      _updateSyncStatus('Atualizando dados do usuário...');
       final userResult = await _userRepository.getUser();
       userResult.fold((user) async {
         user.overallAverage =
@@ -919,14 +998,17 @@ class SigaBackgroundService extends ChangeNotifier {
         await _userRepository.upsertUser(user);
       }, (error) => null);
 
+      _updateSyncStatus('Sincronização concluída!');
       logarte.log('School history extraction successful.');
-      goToHome();
+      await goToHome();
     } catch (e) {
       logarte.log(
         'Failed to navigate and extract school history: $e',
       );
-      goToHome();
+      await goToHome();
       throw Exception('Error navigating and extracting history: $e');
+    } finally {
+      _releaseSyncLock();
     }
   }
 

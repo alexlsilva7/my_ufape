@@ -91,7 +91,7 @@ class SettingsRepositoryImpl extends ChangeNotifier
       return await _localAuth.authenticate(
         authMessages: const <AuthMessages>[
           AndroidAuthMessages(
-            signInTitle: 'Autenticação biométrica necessária',
+            biometricHint: 'Toque o sensor para autenticar',
             cancelButton: 'Cancelar',
             goToSettingsButton: 'Ir para configurações',
             goToSettingsDescription:
@@ -99,7 +99,6 @@ class SettingsRepositoryImpl extends ChangeNotifier
             biometricNotRecognized:
                 'Biometria não reconhecida. Tente novamente.',
             biometricSuccess: 'Biometria reconhecida com sucesso.',
-            deviceCredentialsRequiredTitle: 'Autenticação necessária',
             deviceCredentialsSetupDescription:
                 'Por favor, configure suas credenciais do dispositivo para usar esta funcionalidade.',
           ),
