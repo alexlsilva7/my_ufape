@@ -1,15 +1,198 @@
 import 'dart:core';
 
 class SigaScripts {
+  /// Script global para suprimir erros do console do SIGA
+  static const String suppressSigaErrorsScript = """
+(function() {
+  try {
+    if (window._sigaErrorsSuppressed) return;
+    window._sigaErrorsSuppressed = true;
+    
+    window.console = window.console || {};
+    var originalError = console.error;
+    var originalWarn = console.warn;
+    var originalLog = console.log;
+    
+    // Lista de padrões de erro/warning do SIGA que devem ser ignorados
+    var ignoredPatterns = [
+      '[cycle]',
+      'terminating',
+      'zero elements',
+      'funcoesInicioTela',
+      'Mixed Content',
+      'insecure XMLHttpRequest',
+      'http://siga.ufape.edu.br',
+      'was loaded over HTTPS',
+      'This request has been blocked'
+    ];
+    
+    function shouldIgnore(msg) {
+      for (var i = 0; i < ignoredPatterns.length; i++) {
+        if (msg.includes(ignoredPatterns[i])) {
+          return true;
+        }
+      }
+      return false;
+    }
+    
+    console.error = function() {
+      var args = Array.prototype.slice.call(arguments);
+      var msg = args.join(' ');
+      if (!shouldIgnore(msg) && originalError) {
+        originalError.apply(console, arguments);
+      }
+    };
+    
+    console.warn = function() {
+      var args = Array.prototype.slice.call(arguments);
+      var msg = args.join(' ');
+      if (!shouldIgnore(msg) && originalWarn) {
+        originalWarn.apply(console, arguments);
+      }
+    };
+    
+    console.log = function() {
+      var args = Array.prototype.slice.call(arguments);
+      var msg = args.join(' ');
+      if (!shouldIgnore(msg) && originalLog) {
+        originalLog.apply(console, arguments);
+      }
+    };
+  } catch(e) {
+    // Silently fail if console override fails
+  }
+})();
+""";
+
   /// Retorna script para login. Passar valores já escapados.
   static String loginScript(String user, String pass) {
-    return "(function(){try{var u=document.getElementById('cpf')||document.getElementsByName('cpf')[0]||null;var p=document.getElementById('txtPassword')||document.getElementsByName('txtPassword')[0]||null;if(u)u.value='$user';if(p)p.value='$pass';var btn=document.getElementById('btnEntrar');if(btn){btn.click();return;}var form=document.getElementById('formulario')||document.forms[0];if(form)form.submit();}catch(e){} })();";
+    return """
+(function(){
+  try {
+    // Suprime erros do jQuery Cycle, Mixed Content e outros scripts do SIGA
+    window.console = window.console || {};
+    var originalError = console.error;
+    var originalWarn = console.warn;
+    
+    console.error = function() {
+      var args = Array.prototype.slice.call(arguments);
+      var msg = args.join(' ');
+      // Ignora erros conhecidos do SIGA que não afetam funcionalidade
+      if (msg.includes('[cycle]') ||
+          msg.includes('terminating') ||
+          msg.includes('zero elements') ||
+          msg.includes('Mixed Content') ||
+          msg.includes('insecure XMLHttpRequest') ||
+          msg.includes('http://siga.ufape.edu.br')) {
+        return;
+      }
+      if (originalError) {
+        originalError.apply(console, arguments);
+      }
+    };
+    
+    console.warn = function() {
+      var args = Array.prototype.slice.call(arguments);
+      var msg = args.join(' ');
+      // Ignora warnings de Mixed Content
+      if (msg.includes('Mixed Content') ||
+          msg.includes('insecure XMLHttpRequest')) {
+        return;
+      }
+      if (originalWarn) {
+        originalWarn.apply(console, arguments);
+      }
+    };
+    
+    // Aguarda um momento para garantir que a página está pronta
+    setTimeout(function() {
+      var u = document.getElementById('cpf') ||
+              document.getElementsByName('cpf')[0] ||
+              document.querySelector('input[name="cpf"]');
+      var p = document.getElementById('txtPassword') ||
+              document.getElementsByName('txtPassword')[0] ||
+              document.querySelector('input[type="password"]');
+      
+      if (u) u.value = '$user';
+      if (p) p.value = '$pass';
+      
+      // Tenta múltiplos métodos de submit
+      var btn = document.getElementById('btnEntrar');
+      if (btn) {
+        btn.click();
+        return;
+      }
+      
+      var form = document.getElementById('formulario') ||
+                 document.forms[0] ||
+                 document.querySelector('form');
+      if (form) {
+        form.submit();
+      }
+    }, 100);
+  } catch(e) {
+    console.log('Login script error:', e);
+  }
+})();
+""";
   }
 
   /// Script para aplicar estilos customizados na página de login do SIGA
   static const String loginPageStylesScript = """
   (function() {
       'use strict';
+
+      // 0. Suprime erros do console do SIGA que não afetam funcionalidade
+      try {
+        window.console = window.console || {};
+        var originalError = console.error;
+        var originalLog = console.log;
+        var originalWarn = console.warn;
+        
+        console.error = function() {
+          var args = Array.prototype.slice.call(arguments);
+          var msg = args.join(' ');
+          // Ignora erros conhecidos do SIGA
+          if (msg.includes('[cycle]') ||
+              msg.includes('terminating') ||
+              msg.includes('zero elements') ||
+              msg.includes('funcoesInicioTela') ||
+              msg.includes('Mixed Content') ||
+              msg.includes('insecure XMLHttpRequest') ||
+              msg.includes('http://siga.ufape.edu.br')) {
+            return;
+          }
+          if (originalError) {
+            originalError.apply(console, arguments);
+          }
+        };
+        
+        console.log = function() {
+          var args = Array.prototype.slice.call(arguments);
+          var msg = args.join(' ');
+          // Ignora logs do jQuery Cycle e Mixed Content
+          if (msg.includes('[cycle]') ||
+              msg.includes('Mixed Content')) {
+            return;
+          }
+          if (originalLog) {
+            originalLog.apply(console, arguments);
+          }
+        };
+        
+        console.warn = function() {
+          var args = Array.prototype.slice.call(arguments);
+          var msg = args.join(' ');
+          // Ignora warnings de Mixed Content
+          if (msg.includes('Mixed Content') ||
+              msg.includes('insecure XMLHttpRequest')) {
+            return;
+          }
+          if (originalWarn) {
+            originalWarn.apply(console, arguments);
+          }
+        };
+      } catch(e) {}
 
       // 1. Função para limpar a interface
       function limparInterface() {
@@ -405,27 +588,108 @@ return JSON.stringify(disciplinas);
 })();
 """;
 
-  static String scriptHistoricoEscolar() =>
-      r"""new Promise((resolve,reject)=>{const iframe=document.getElementById('Conteudo');if(iframe&&iframe.contentDocument){const links=iframe.contentDocument.querySelectorAll('a.default');for(const link of links){if(link.innerText.trim()==='Histórico Escolar'){link.click();resolve('SUCCESS');return;}}}reject('ERROR: Link "Histórico Escolar" not found');});""";
+  static String scriptHistoricoEscolar() => r"""
+new Promise((resolve, reject) => {
+  const maxTries = 150; // 3 segundos (150 * 20ms)
+  let tries = 0;
+  
+  const interval = setInterval(() => {
+    tries++;
+    
+    const iframe = document.getElementById('Conteudo');
+    if (!iframe || !iframe.contentDocument) {
+      if (tries >= maxTries) {
+        clearInterval(interval);
+        reject('ERROR: Iframe not ready after timeout');
+      }
+      return;
+    }
+    
+    const links = iframe.contentDocument.querySelectorAll('a.default');
+    for (const link of links) {
+      const linkText = link.innerText.trim();
+      // Busca mais flexível - aceita variações
+      if (linkText.includes('Histórico') && linkText.includes('Escolar')) {
+        clearInterval(interval);
+        try {
+          link.click();
+          resolve('SUCCESS: Histórico Escolar link clicked');
+        } catch (e) {
+          reject('ERROR: Failed to click link - ' + e.toString());
+        }
+        return;
+      }
+    }
+    
+    if (tries >= maxTries) {
+      clearInterval(interval);
+      reject('ERROR: "Histórico Escolar" link not found after ' + maxTries + ' attempts');
+    }
+  }, 20);
+});
+""";
 
-  static String waitForSchoolHistoryPageReadyScript() =>
-      r"""(function(){const iframe=document.getElementById('Conteudo');if(!iframe||!iframe.contentDocument)return false; const tables = iframe.contentDocument.querySelectorAll('table'); for(const table of tables) { if(table.innerText.includes('Componente Curricular')) { return true; } } return false; })();""";
+  static String waitForSchoolHistoryPageReadyScript() => r"""
+(function() {
+  try {
+    const iframe = document.getElementById('Conteudo');
+    if (!iframe || !iframe.contentDocument) {
+      return false;
+    }
+    
+    const doc = iframe.contentDocument;
+    
+    // Verifica se o container principal existe
+    const mainContainer = doc.querySelector('div#content');
+    if (!mainContainer) {
+      return false;
+    }
+    
+    // Verifica se há pelo menos uma tabela com marcador de período
+    const periodMarkers = Array.from(mainContainer.querySelectorAll('table')).filter(
+      table => table.innerText.trim().startsWith('Período:')
+    );
+    
+    if (periodMarkers.length === 0) {
+      return false;
+    }
+    
+    // Verifica se há pelo menos uma tabela de conteúdo após o marcador
+    const firstMarker = periodMarkers[0];
+    let contentTable = firstMarker.nextElementSibling;
+    while (contentTable && contentTable.tagName !== 'TABLE') {
+      contentTable = contentTable.nextElementSibling;
+    }
+    
+    // Verifica se a tabela de conteúdo tem dados
+    if (!contentTable || contentTable.querySelectorAll('tr').length === 0) {
+      return false;
+    }
+    
+    // Verifica se a tabela de resumo existe (Média Geral)
+    const hasSummary = Array.from(mainContainer.querySelectorAll('table')).some(
+      table => table.innerText.includes('Média Geral:')
+    );
+    
+    // Página está pronta se tem períodos E (tem dados OU tem resumo)
+    return contentTable.querySelectorAll('tr').length > 0 || hasSummary;
+    
+  } catch (e) {
+    console.error('Error checking page ready:', e);
+    return false;
+  }
+})();
+""";
 
   static String extractSchoolHistoryScript() => r'''
 function parseSchoolHistory() {
-  try {
-    let iframeDoc;
-    const iframe = document.getElementById('Conteudo');
-    
-    // Tenta obter o documento a partir do iframe.
-    if (iframe && iframe.contentDocument) {
-      iframeDoc = iframe.contentDocument;
-    } else {
-      // Se não encontrar, assume que já está no contexto do documento correto.
-      iframeDoc = document;
-    }
+  // Array para coletar logs durante a execução
+  const logs = [];
 
-    // O resto do script continua a partir daqui, usando 'iframeDoc'.
+  try {
+    logs.push('[SIGA] Iniciando extração do histórico escolar...');
+
+    // === FUNÇÕES AUXILIARES ===
     const parseValue = (text) => {
       if (!text) return null;
       const cleanedText = text.trim();
@@ -443,19 +707,46 @@ function parseSchoolHistory() {
       return { code: 'N/A', name: trimmedName };
     };
 
-    const allPeriods = [];
-    const mainContainer = iframeDoc.querySelector('div#content');
-    if (!mainContainer) {
-        return JSON.stringify({ error: "Container principal '#content' não foi encontrado." });
+    // === OBTER DOCUMENTO ===
+    let iframeDoc;
+    const iframe = document.getElementById('Conteudo');
+    
+    if (iframe && iframe.contentDocument) {
+      iframeDoc = iframe.contentDocument;
+    } else {
+      iframeDoc = document;
     }
 
-    const periodMarkers = Array.from(mainContainer.querySelectorAll('table')).filter(table =>
-      table.innerText.trim().startsWith('Período:')
+    // === VALIDAR CONTAINER PRINCIPAL ===
+    const mainContainer = iframeDoc.querySelector('div#content');
+    if (!mainContainer) {
+      logs.push('[SIGA ERROR] Container principal "#content" não foi encontrado.');
+      return JSON.stringify({
+        error: "Container principal '#content' não foi encontrado.",
+        logs: logs
+      });
+    }
+
+    logs.push('[SIGA] Container principal encontrado.');
+
+    // === EXTRAIR PERÍODOS ===
+    const allPeriods = [];
+    const periodMarkers = Array.from(mainContainer.querySelectorAll('table')).filter(
+      table => table.innerText.trim().startsWith('Período:')
     );
 
-    for (const marker of periodMarkers) {
+    logs.push('[SIGA] Encontrados ' + periodMarkers.length + ' marcadores de períodos.');
+
+    for (let i = 0; i < periodMarkers.length; i++) {
+      const marker = periodMarkers[i];
       const periodName = marker.querySelector('.editPesquisa.fonte8pt')?.innerText.trim();
-      if (!periodName) continue;
+      
+      if (!periodName) {
+        logs.push('[SIGA WARN] Período ' + (i + 1) + ': nome não encontrado, pulando...');
+        continue;
+      }
+
+      logs.push('[SIGA] Processando período: ' + periodName);
 
       const periodObject = {
         period: periodName,
@@ -464,68 +755,100 @@ function parseSchoolHistory() {
         periodCoefficient: null,
       };
 
+      // Buscar tabela de conteúdo
       let contentTable = marker.nextElementSibling;
       while (contentTable && contentTable.tagName !== 'TABLE') {
         contentTable = contentTable.nextElementSibling;
       }
 
-      if (!contentTable) continue;
+      if (!contentTable) {
+        logs.push('[SIGA WARN] Período ' + periodName + ': tabela de conteúdo não encontrada.');
+        continue;
+      }
 
       const rows = Array.from(contentTable.querySelectorAll('tr'));
+      logs.push('[SIGA] Período ' + periodName + ': ' + rows.length + ' linhas encontradas na tabela.');
       
+      // Caso especial: período com status especial (ex: "Trancamento")
       if (rows.length === 1 && rows[0].cells.length === 1) {
-          const specialStatusText = rows[0].innerText.trim();
-          periodObject.subjects.push({
-              code: 'N/A', name: specialStatusText, absences: 0,
-              workload: 0, credits: 0, finalGrade: null, status: specialStatusText,
-          });
+        const specialStatusText = rows[0].innerText.trim();
+        periodObject.subjects.push({
+          code: 'N/A', name: specialStatusText, absences: 0,
+          workload: 0, credits: 0, finalGrade: null, status: specialStatusText,
+        });
+        logs.push('[SIGA] Período ' + periodName + ': status especial detectado - ' + specialStatusText);
       } else {
-          for (const row of rows) {
-            const cells = row.cells;
-            if (cells.length === 6 && cells[0].querySelector('.editPesquisa.fonte8pt')) {
-              const { code, name } = splitCodeAndName(cells[0].innerText);
-              periodObject.subjects.push({
-                code: code, name: name,
-                absences: parseValue(cells[1].innerText),
-                workload: parseValue(cells[2].innerText),
-                credits: parseValue(cells[3].innerText),
-                finalGrade: parseValue(cells[4].innerText),
-                status: parseValue(cells[5].innerText),
-              });
-            } else if (row.innerText.includes('Média do Período:')) {
-              periodObject.periodAverage = parseValue(cells[cells.length - 1].innerText);
-            } else if (row.innerText.includes('Coeficiente de Rendimento Escolar no Período:')) {
-              periodObject.periodCoefficient = parseValue(cells[cells.length - 1].innerText);
-            }
+        // Processar disciplinas normais
+        let subjectCount = 0;
+        for (const row of rows) {
+          const cells = row.cells;
+          
+          if (cells.length === 6 && cells[0].querySelector('.editPesquisa.fonte8pt')) {
+            const { code, name } = splitCodeAndName(cells[0].innerText);
+            periodObject.subjects.push({
+              code: code, name: name,
+              absences: parseValue(cells[1].innerText),
+              workload: parseValue(cells[2].innerText),
+              credits: parseValue(cells[3].innerText),
+              finalGrade: parseValue(cells[4].innerText),
+              status: parseValue(cells[5].innerText),
+            });
+            subjectCount++;
           }
+          else if (row.innerText.includes('Média do Período:')) {
+            periodObject.periodAverage = parseValue(cells[cells.length - 1].innerText);
+            logs.push('[SIGA] Período ' + periodName + ': média = ' + periodObject.periodAverage);
+          }
+          else if (row.innerText.includes('Coeficiente de Rendimento Escolar no Período:')) {
+            periodObject.periodCoefficient = parseValue(cells[cells.length - 1].innerText);
+            logs.push('[SIGA] Período ' + periodName + ': CR = ' + periodObject.periodCoefficient);
+          }
+        }
+        logs.push('[SIGA] Período ' + periodName + ': ' + subjectCount + ' disciplinas extraídas.');
       }
+      
       allPeriods.push(periodObject);
     }
 
+    // === EXTRAIR RESUMO GERAL ===
+    logs.push('[SIGA] Extraindo resumo geral...');
     let overallAverage = null;
     let overallCoefficient = null;
+    
     const summaryTable = Array.from(mainContainer.querySelectorAll('table')).find(
       table => table.innerText.includes('Média Geral:')
     );
 
     if (summaryTable) {
-        const rows = summaryTable.querySelectorAll('tr');
-        rows.forEach(row => {
-            if (row.innerText.includes('Média Geral:')) {
-                overallAverage = parseValue(row.cells[row.cells.length - 1].innerText);
-            } else if (row.innerText.includes('Coeficiente de Rendimento Escolar Geral:')) {
-                overallCoefficient = parseValue(row.cells[row.cells.length - 1].innerText);
-            }
-        });
+      const rows = summaryTable.querySelectorAll('tr');
+      rows.forEach(row => {
+        if (row.innerText.includes('Média Geral:')) {
+          overallAverage = parseValue(row.cells[row.cells.length - 1].innerText);
+          logs.push('[SIGA] Média Geral: ' + overallAverage);
+        } else if (row.innerText.includes('Coeficiente de Rendimento Escolar Geral:')) {
+          overallCoefficient = parseValue(row.cells[row.cells.length - 1].innerText);
+          logs.push('[SIGA] CR Geral: ' + overallCoefficient);
+        }
+      });
+    } else {
+      logs.push('[SIGA WARN] Tabela de resumo geral não encontrada.');
     }
+
+    logs.push('[SIGA] Extração concluída: ' + allPeriods.length + ' períodos processados.');
 
     return JSON.stringify({
       periods: allPeriods,
       overallAverage: overallAverage,
       overallCoefficient: overallCoefficient,
+      logs: logs // Inclui os logs no sucesso também, para depuração
     });
+    
   } catch (e) {
-    return JSON.stringify({ error: "Erro ao executar script de extração: " + e.toString() });
+    logs.push('[SIGA FATAL] Erro na extração: ' + e.toString());
+    return JSON.stringify({
+      error: "Erro ao executar script de extração: " + e.toString(),
+      logs: logs
+    });
   }
 }
 

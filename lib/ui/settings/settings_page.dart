@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:logarte/logarte.dart';
 import 'package:my_ufape/config/dependencies.dart';
+import 'package:my_ufape/core/debug/logarte.dart';
 import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
 
 import 'package:my_ufape/data/services/shorebird/shorebird_service.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:terminate_restart/terminate_restart.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -32,6 +35,28 @@ class _SettingsPageState extends State<SettingsPage> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Não foi possível abrir o link: $url')),
+        );
+      }
+    }
+  }
+
+  // Função para compartilhar os logs
+  Future<void> _shareLogs() async {
+    try {
+      List<LogarteEntry> logs = logarte.logs.value;
+
+      String text = '';
+      for (var log in logs) {
+        var datetime = log.date;
+        text +=
+            '[${datetime.toIso8601String()}] [${log.type}] ${log.contents.join('\n')}\n';
+      }
+      await SharePlus.instance
+          .share(ShareParams(text: text, title: 'Logs de Diagnóstico'));
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Erro ao compartilhar logs: $e')),
         );
       }
     }
@@ -191,7 +216,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           const Divider(height: 1),
                           SwitchListTile(
                             title: const Text('Habilitar Debug'),
-                            secondary: Icon(Icons.bug_report),
+                            secondary: const Icon(Icons.bug_report),
                             value: _settingsRepository.isDebugOverlayEnabled,
                             onChanged: (value) async {
                               await _settingsRepository.toggleDebugOverlay();
@@ -240,7 +265,7 @@ class _SettingsPageState extends State<SettingsPage> {
                           title: const Text('Desenvolvido por'),
                           subtitle: const Text('Alex Silva'),
                           onTap: () =>
-                              _launchURL('https://github.com/alexlsilva7'),
+                              _launchURL('https://wa.me/5587981504902'),
                         ),
                         const Divider(height: 1),
                         ListTile(
@@ -266,6 +291,14 @@ class _SettingsPageState extends State<SettingsPage> {
                               ? null
                               : () => _shorebirdService
                                   .checkForUpdateFromSettings(context),
+                        ),
+                        const Divider(height: 1),
+                        ListTile(
+                          leading: const Icon(Icons.bug_report),
+                          title: const Text('Compartilhar Logs de Diagnóstico'),
+                          subtitle: const Text(
+                              'Ajude a resolver problemas enviando os logs'),
+                          onTap: _shareLogs,
                         ),
                       ],
                     ),

@@ -491,27 +491,37 @@ class SigaBackgroundService extends ChangeNotifier {
 
   /// Aguarda a página de informações do discente carregar
   Future<void> _waitForStudentInfoPageReady(
-      {Duration timeout = const Duration(seconds: 60)}) async {
+      {Duration timeout = const Duration(seconds: 90)}) async {
+    // Timeout aumentado
     final completer = Completer<void>();
     Timer? timer;
     final stopwatch = Stopwatch()..start();
 
+    // Script mais robusto para verificar se a página está pronta
     const script = """
     (function() {
       const iframe = document.getElementById('Conteudo');
-      if (iframe && iframe.contentDocument) {
-        const sanfonaLinks = iframe.contentDocument.querySelectorAll('ul.sanfona a');
-        for(let i = 0; i < sanfonaLinks.length; i++) {
-          if(sanfonaLinks[i].innerText.trim() === 'Perfil Curricular') {
-            return true;
-          }
-        }
-      }
-      return false;
+      if (!iframe || !iframe.contentDocument) return false;
+      const doc = iframe.contentDocument;
+      
+      // Checa se a tabela principal de informações do cabeçalho já carregou
+      const headerTable = doc.getElementById('tableCabecalho');
+      if (!headerTable) return false;
+
+      // Checa se as seções expansíveis (sanfona) estão presentes
+      const sanfonaLists = doc.querySelectorAll('ul.sanfona');
+      if (sanfonaLists.length === 0) return false;
+      
+      // Confirma a presença de um link específico para ter mais certeza
+      const specificLink = Array.from(doc.querySelectorAll('ul.sanfona a'))
+                                .some(a => a.innerText.trim().includes('Histórico do Vínculo'));
+      
+      return specificLink;
     })();
     """;
 
-    timer = Timer.periodic(const Duration(milliseconds: 50), (t) async {
+    timer = Timer.periodic(const Duration(milliseconds: 250), (t) async {
+      // Intervalo de verificação ligeiramente maior
       if (stopwatch.elapsed > timeout) {
         timer?.cancel();
         if (!completer.isCompleted) {
@@ -530,7 +540,7 @@ class SigaBackgroundService extends ChangeNotifier {
           }
         }
       } catch (e) {
-        // Ignora erros temporários
+        // Ignora erros temporários de polling que podem ocorrer durante o carregamento
       }
     });
 
@@ -957,8 +967,15 @@ class SigaBackgroundService extends ChangeNotifier {
       await _controller!.runJavaScript(SigaScripts.scriptNav());
 
       _updateSyncStatus('Acessando informações do discente...');
+      logarte.log('Clicando em "Informações do Discente"...',
+          source: 'SigaService');
       await _controller!.runJavaScriptReturningResult(SigaScripts.scriptInfo());
+
+      logarte.log('Aguardando a página "Informações do Discente" carregar...',
+          source: 'SigaService');
       await _waitForStudentInfoPageReady();
+      logarte.log('Página "Informações do Discente" carregada com sucesso.',
+          source: 'SigaService');
 
       _updateSyncStatus('Abrindo histórico escolar...');
       await _controller!
@@ -975,10 +992,25 @@ class SigaBackgroundService extends ChangeNotifier {
         decodedData = jsonDecode(decodedData);
       }
 
+      // Verificação aprimorada de erros e logs
       if (decodedData is Map && decodedData.containsKey('error')) {
-        logarte.log('Script error: ${decodedData['error']}',
+        final errorMessage = decodedData['error'];
+        final errorLogs = decodedData['logs'] as List<dynamic>? ?? [];
+
+        logarte.log('Erro no script de extração do Histórico: $errorMessage',
             source: 'SIGA BG - School History');
-        throw Exception('Script error: ${decodedData['error']}');
+
+        if (errorLogs.isNotEmpty) {
+          logarte.log('--- Logs de Execução do Script ---',
+              source: 'SIGA BG - School History');
+          for (var log in errorLogs) {
+            logarte.log(log.toString(), source: 'JS');
+          }
+          logarte.log('--- Fim dos Logs ---',
+              source: 'SIGA BG - School History');
+        }
+
+        throw Exception(errorMessage);
       }
 
       if (decodedData['periods'] is String) {
