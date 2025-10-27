@@ -3,6 +3,8 @@ import 'package:my_ufape/domain/entities/login.dart';
 import 'package:my_ufape/ui/initial_sync/initial_sync_view_model.dart';
 import 'package:result_dart/result_dart.dart';
 
+enum SyncMode { interval, fixedTime }
+
 abstract interface class SettingsRepository extends ChangeNotifier {
   AsyncResult<Unit> restoreApp();
   ThemeMode get themeMode;
@@ -34,6 +36,17 @@ abstract interface class SettingsRepository extends ChangeNotifier {
   Map<SyncStep, StepStatus> getSyncStatus();
   Future<void> clearSyncStatus();
 
-  Future<void> schedulePeriodicSync();
-  Future<void> cancelPeriodicSync();
+  Duration get syncInterval;
+  Future<void> setSyncInterval(Duration interval);
+
+  SyncMode get syncMode;
+  Future<void> setSyncMode(SyncMode mode);
+
+  TimeOfDay get syncFixedTime;
+  Future<void> setSyncFixedTime(TimeOfDay time);
+
+  int get nextSyncTimestamp;
+
+  Future<void> scheduleSyncTask();
+  Future<void> cancelSyncTask();
 }

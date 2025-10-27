@@ -23,6 +23,7 @@ class _SettingsPageState extends State<SettingsPage> {
   late ShorebirdService _shorebirdService;
 
   DateTime? _lastSyncTime;
+  double? _currentSliderValue;
 
   @override
   void initState() {
@@ -31,6 +32,7 @@ class _SettingsPageState extends State<SettingsPage> {
     _shorebirdService = injector.get<ShorebirdService>();
     _userRepository = injector.get<UserRepository>();
     _loadLastSyncTime();
+    _currentSliderValue = _settingsRepository.syncInterval.inMinutes.toDouble();
   }
 
   Future<void> _loadLastSyncTime() async {
@@ -85,6 +87,14 @@ class _SettingsPageState extends State<SettingsPage> {
     // Formata a data e hora conforme desejado dd/MM/yyyy HH:mm
     return '${dateTime.day.toString().padLeft(2, '0')}/${dateTime.month.toString().padLeft(2, '0')}/${dateTime.year} '
         '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
+  }
+
+  String _formatDuration(Duration duration) {
+    if (duration.inMinutes < 60) {
+      return '${duration.inMinutes} minutos';
+    } else {
+      return '${duration.inHours} horas';
+    }
   }
 
   @override
@@ -186,9 +196,9 @@ class _SettingsPageState extends State<SettingsPage> {
                         ),
                         const Divider(height: 1),
                         SwitchListTile(
-                          title: const Text('Sincronização Automática'),
-                          subtitle:
-                              const Text('Atualizar dados ao abrir o app'),
+                          title: const Text('Sincronização em segundo plano'),
+                          subtitle: const Text(
+                              'Manter dados atualizados periodicamente'),
                           secondary: Icon(
                             _settingsRepository.isAutoSyncEnabled
                                 ? Icons.sync
@@ -199,6 +209,81 @@ class _SettingsPageState extends State<SettingsPage> {
                             await _settingsRepository.toggleAutoSync();
                           },
                         ),
+                        if (_settingsRepository.isAutoSyncEnabled) ...[
+                          Padding(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 16.0, vertical: 12.0),
+                            child: SegmentedButton<SyncMode>(
+                              segments: const [
+                                ButtonSegment<SyncMode>(
+                                  value: SyncMode.interval,
+                                  label: Text('Intervalo'),
+                                  icon: Icon(Icons.timer),
+                                ),
+                                ButtonSegment<SyncMode>(
+                                  value: SyncMode.fixedTime,
+                                  label: Text('Horário Fixo'),
+                                  icon: Icon(Icons.schedule),
+                                ),
+                              ],
+                              selected: {_settingsRepository.syncMode},
+                              onSelectionChanged: (newSelection) {
+                                _settingsRepository
+                                    .setSyncMode(newSelection.first);
+                              },
+                            ),
+                          ),
+                          if (_settingsRepository.syncMode ==
+                              SyncMode.interval) ...[
+                            ListTile(
+                              title: Text(
+                                  'Sincronizar a cada: ${_formatDuration(Duration(minutes: _currentSliderValue!.round()))}'),
+                              subtitle: Slider(
+                                value: _currentSliderValue!,
+                                min: 15,
+                                max: 1440,
+                                divisions: (1440 - 15) ~/ 15,
+                                label: _formatDuration(Duration(
+                                    minutes: _currentSliderValue!.round())),
+                                onChanged: (double value) {
+                                  setState(() {
+                                    _currentSliderValue = value;
+                                  });
+                                },
+                                onChangeEnd: (double value) {
+                                  _settingsRepository.setSyncInterval(
+                                      Duration(minutes: value.round()));
+                                },
+                              ),
+                            ),
+                          ] else ...[
+                            ListTile(
+                              leading: const Icon(Icons.access_time_filled),
+                              title: const Text('Horário da sincronização'),
+                              subtitle: Text(
+                                  'Todos os dias às ${_settingsRepository.syncFixedTime.format(context)}'),
+                              onTap: () async {
+                                final newTime = await showTimePicker(
+                                  context: context,
+                                  initialTime:
+                                      _settingsRepository.syncFixedTime,
+                                );
+                                if (newTime != null) {
+                                  _settingsRepository.setSyncFixedTime(newTime);
+                                }
+                              },
+                            ),
+                          ],
+                          ListTile(
+                            leading: const Icon(Icons.update),
+                            title: const Text('Próxima Sincronização'),
+                            subtitle: Text(_settingsRepository
+                                        .nextSyncTimestamp >
+                                    0
+                                ? 'Agendada para: ${_formatTimestamp(_settingsRepository.nextSyncTimestamp)}'
+                                : 'Nenhuma sincronização agendada'),
+                          ),
+                        ],
                         ListTile(
                           leading: const Icon(Icons.access_time),
                           title: const Text('Última sincronização'),

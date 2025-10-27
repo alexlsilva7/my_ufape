@@ -23,7 +23,7 @@ Future<void> main() async {
 
   final settingsRepository = injector.get<SettingsRepository>();
   if (settingsRepository.isAutoSyncEnabled) {
-    await settingsRepository.schedulePeriodicSync();
+    await settingsRepository.scheduleSyncTask();
   }
 
   runApp(const MyUfapeApp());

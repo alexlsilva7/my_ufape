@@ -1,5 +1,6 @@
 import 'package:my_ufape/config/dependencies.dart';
 import 'package:my_ufape/core/debug/logarte.dart';
+import 'package:my_ufape/core/notifications/notification_service.dart';
 import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
 import 'package:workmanager/workmanager.dart';
@@ -25,15 +26,11 @@ void callbackDispatcher() {
 }
 
 Future<void> syncDataWithServer() async {
-  print('Iniciando sincronização em background...');
-  // Inicializa as dependências para o isolate de background
   await setupDependencies();
-
-  final sigaService =
-      injector.get<SigaBackgroundService>(key: 'siga_background');
   final settingsRepo = injector.get<SettingsRepository>();
+  final notificationService = NotificationService();
+  await notificationService.init();
 
-  // Garante que a sincronização automática ainda está habilitada
   if (!settingsRepo.isAutoSyncEnabled) {
     await Workmanager().cancelAll();
     logarte.log(
@@ -42,7 +39,9 @@ Future<void> syncDataWithServer() async {
     return;
   }
 
-  // Verifica se já existe uma sincronização em andamento antes de iniciar
+  final sigaService =
+      injector.get<SigaBackgroundService>(key: 'siga_background');
+
   if (sigaService.isSyncing) {
     logarte.log(
         'Sincronização em background ignorada: outra sincronização já está em andamento (${sigaService.currentSyncOperation}).',
@@ -50,24 +49,37 @@ Future<void> syncDataWithServer() async {
     return;
   }
 
-  logarte.log('Iniciando tarefa de sincronização em background...',
+  if (settingsRepo.isDebugOverlayEnabled) {
+    await notificationService.showDebugNotification(
+      'My UFAPE Sync',
+      'Iniciando sincronização em background...',
+    );
+  }
+
+  logarte.log('Iniciando sincronização em background...',
       source: 'BackgroundSync');
 
   try {
     await sigaService.runFullBackgroundSync();
-    // Atualiza o timestamp da última sincronização realizada pelo Workmanager
-    try {
-      //await settingsRepo.updateLastSyncTimestamp();
-      logarte.log('Último timestamp de sincronização atualizado.',
-          source: 'BackgroundSync');
-    } catch (e) {
-      logarte.log('Falha ao atualizar o timestamp de sincronização: $e',
-          source: 'BackgroundSync');
+
+    if (settingsRepo.isDebugOverlayEnabled) {
+      await notificationService.showDebugNotification(
+        'My UFAPE Sync',
+        'Sincronização concluída com sucesso!',
+      );
     }
     logarte.log('Tarefa de sincronização em background finalizada com sucesso.',
         source: 'BackgroundSync');
   } catch (e) {
+    if (settingsRepo.isDebugOverlayEnabled) {
+      await notificationService.showDebugNotification(
+        'My UFAPE Sync',
+        'Falha na sincronização: ${e.toString()}',
+      );
+    }
     logarte.log('Erro na sincronização em background: $e',
         source: 'BackgroundSync');
   }
+
+  await settingsRepo.scheduleSyncTask();
 }

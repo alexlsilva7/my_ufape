@@ -182,9 +182,9 @@ class SettingsRepositoryImpl extends ChangeNotifier
       isAutoSyncEnabled = newState;
 
       if (newState) {
-        await schedulePeriodicSync();
+        await scheduleSyncTask();
       } else {
-        await cancelPeriodicSync();
+        await cancelSyncTask();
       }
 
       notifyListeners();
@@ -195,22 +195,53 @@ class SettingsRepositoryImpl extends ChangeNotifier
   }
 
   @override
-  Future<void> schedulePeriodicSync() async {
-    const uniqueTaskName = "my-ufape-data-sync";
-    await Workmanager().registerPeriodicTask(
-      uniqueTaskName,
-      "data_sync",
-      frequency: const Duration(hours: 1), // Aumentar a frequência para 1 hora
-      constraints: Constraints(
-        networkType: NetworkType.connected,
-      ),
-    );
+  Future<void> scheduleSyncTask() async {
+    await cancelSyncTask(); // Sempre cancele a tarefa anterior
+
+    if (syncMode == SyncMode.fixedTime) {
+      final now = DateTime.now();
+      final targetTime = syncFixedTime;
+
+      var scheduledDate = DateTime(
+          now.year, now.month, now.day, targetTime.hour, targetTime.minute);
+
+      if (scheduledDate.isBefore(now)) {
+        scheduledDate = scheduledDate.add(const Duration(days: 1));
+      }
+
+      final initialDelay = scheduledDate.difference(now);
+
+      await Workmanager().registerOneOffTask(
+        "my-ufape-data-sync-fixed",
+        "data_sync",
+        initialDelay: initialDelay,
+        constraints: Constraints(networkType: NetworkType.connected),
+      );
+      // Salva o timestamp para feedback visual
+      await _localStoragePreferencesService
+          .setNextSyncTimestamp(scheduledDate.millisecondsSinceEpoch);
+    } else {
+      // Modo Intervalo
+      await Workmanager().registerPeriodicTask(
+        "my-ufape-data-sync-periodic",
+        "data_sync",
+        frequency: syncInterval,
+        constraints: Constraints(networkType: NetworkType.connected),
+      );
+      // Salva o timestamp para feedback visual
+      final nextSync = DateTime.now().add(syncInterval);
+      await _localStoragePreferencesService
+          .setNextSyncTimestamp(nextSync.millisecondsSinceEpoch);
+    }
+    notifyListeners();
   }
 
   @override
-  Future<void> cancelPeriodicSync() async {
-    const uniqueTaskName = "my-ufape-data-sync";
-    await Workmanager().cancelByUniqueName(uniqueTaskName);
+  Future<void> cancelSyncTask() async {
+    await Workmanager().cancelByUniqueName("my-ufape-data-sync-periodic");
+    await Workmanager().cancelByUniqueName("my-ufape-data-sync-fixed");
+    await _localStoragePreferencesService.setNextSyncTimestamp(0);
+    notifyListeners();
   }
 
   @override
@@ -251,7 +282,8 @@ class SettingsRepositoryImpl extends ChangeNotifier
       await _secureStorage.write(key: 'password', value: login.password);
       notifyListeners();
       return Success(unit);
-    } catch (e, s) {
+    }
+    catch (e, s) {
       return Failure(AppException('Falha ao salvar credenciais: $e', s));
     }
   }
@@ -281,4 +313,38 @@ class SettingsRepositoryImpl extends ChangeNotifier
     });
     return allCompleted;
   }
+
+  @override
+  Duration get syncInterval => _localStoragePreferencesService.syncInterval;
+
+  @override
+  Future<void> setSyncInterval(Duration interval) async {
+    await _localStoragePreferencesService.setSyncInterval(interval);
+    notifyListeners();
+    await scheduleSyncTask();
+  }
+
+  @override
+  SyncMode get syncMode => _localStoragePreferencesService.syncMode;
+
+  @override
+  Future<void> setSyncMode(SyncMode mode) async {
+    await _localStoragePreferencesService.setSyncMode(mode);
+    notifyListeners();
+    await scheduleSyncTask();
+  }
+
+  @override
+  TimeOfDay get syncFixedTime => _localStoragePreferencesService.syncFixedTime;
+
+  @override
+  Future<void> setSyncFixedTime(TimeOfDay time) async {
+    await _localStoragePreferencesService.setSyncFixedTime(time);
+    notifyListeners();
+    await scheduleSyncTask();
+  }
+
+  @override
+  int get nextSyncTimestamp =>
+      _localStoragePreferencesService.nextSyncTimestamp;
 }
