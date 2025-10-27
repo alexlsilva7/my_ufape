@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:my_ufape/config/dependencies.dart';
@@ -11,8 +10,11 @@ import 'package:result_dart/result_dart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
 import 'package:local_auth/local_auth.dart';
+// ignore: depend_on_referenced_packages
 import 'package:local_auth_android/local_auth_android.dart';
+// ignore: depend_on_referenced_packages
 import 'package:local_auth_darwin/local_auth_darwin.dart';
+import 'package:workmanager/workmanager.dart';
 
 import './settings_repository.dart';
 
@@ -174,15 +176,41 @@ class SettingsRepositoryImpl extends ChangeNotifier
 
   @override
   AsyncResult<Unit> toggleAutoSync() async {
-    await _localStoragePreferencesService.toggleAutoSync();
-    isAutoSyncEnabled = !isAutoSyncEnabled;
-    notifyListeners();
-    return Success(unit);
+    try {
+      final newState = !isAutoSyncEnabled;
+      await _localStoragePreferencesService.toggleAutoSync();
+      isAutoSyncEnabled = newState;
+
+      if (newState) {
+        await schedulePeriodicSync();
+      } else {
+        await cancelPeriodicSync();
+      }
+
+      notifyListeners();
+      return Success(unit);
+    } catch (e, s) {
+      return Failure(AppException(e.toString(), s));
+    }
   }
 
   @override
-  AsyncResult<Unit> updateLastSyncTimestamp() async {
-    return _localStoragePreferencesService.updateLastSyncTimestamp();
+  Future<void> schedulePeriodicSync() async {
+    const uniqueTaskName = "my-ufape-data-sync";
+    await Workmanager().registerPeriodicTask(
+      uniqueTaskName,
+      "data_sync",
+      frequency: const Duration(hours: 1), // Aumentar a frequência para 1 hora
+      constraints: Constraints(
+        networkType: NetworkType.connected,
+      ),
+    );
+  }
+
+  @override
+  Future<void> cancelPeriodicSync() async {
+    const uniqueTaskName = "my-ufape-data-sync";
+    await Workmanager().cancelByUniqueName(uniqueTaskName);
   }
 
   @override

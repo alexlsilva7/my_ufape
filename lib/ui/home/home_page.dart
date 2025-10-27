@@ -60,7 +60,7 @@ class _HomePageState extends State<HomePage> {
       }
 
       if (_isLoggedIn) {
-        _sigaService.performAutomaticSyncIfNeeded();
+        //_sigaService.performAutomaticSyncIfNeeded();
       }
     };
     _sigaService.loginNotifier.addListener(_loginListener);

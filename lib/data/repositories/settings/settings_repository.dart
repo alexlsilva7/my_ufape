@@ -12,7 +12,6 @@ abstract interface class SettingsRepository extends ChangeNotifier {
   int get lastSyncTimestamp;
   bool isAutoSyncEnabled = true;
   AsyncResult<Unit> toggleAutoSync();
-  AsyncResult<Unit> updateLastSyncTimestamp();
 
   bool isBiometricAuthEnabled = false;
   bool isBiometricAvailable = false;
@@ -34,4 +33,7 @@ abstract interface class SettingsRepository extends ChangeNotifier {
   Future<void> saveSyncStatus(Map<SyncStep, StepStatus> status);
   Map<SyncStep, StepStatus> getSyncStatus();
   Future<void> clearSyncStatus();
+
+  Future<void> schedulePeriodicSync();
+  Future<void> cancelPeriodicSync();
 }

@@ -141,9 +141,13 @@ Future<void> setupDependencies() async {
     ),
   );
 
-  injector.addLazySingleton(() => InitialSyncViewModel(
+  injector.addLazySingleton(
+    () => InitialSyncViewModel(
       injector.get<SigaBackgroundService>(key: 'siga_background'),
-      injector.get()));
+      injector.get<UserRepository>(),
+      injector.get<SettingsRepository>(),
+    ),
+  );
 
   injector.addLazySingleton(
     () => TimetableViewModel(

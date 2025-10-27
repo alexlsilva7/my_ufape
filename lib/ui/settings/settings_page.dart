@@ -3,6 +3,7 @@ import 'package:logarte/logarte.dart';
 import 'package:my_ufape/config/dependencies.dart';
 import 'package:my_ufape/core/debug/logarte.dart';
 import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
+import 'package:my_ufape/data/repositories/user/user_repository.dart';
 
 import 'package:my_ufape/data/services/shorebird/shorebird_service.dart';
 import 'package:share_plus/share_plus.dart';
@@ -18,13 +19,30 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   late SettingsRepository _settingsRepository;
+  late UserRepository _userRepository;
   late ShorebirdService _shorebirdService;
+
+  DateTime? _lastSyncTime;
 
   @override
   void initState() {
     super.initState();
     _settingsRepository = injector.get<SettingsRepository>();
     _shorebirdService = injector.get<ShorebirdService>();
+    _userRepository = injector.get<UserRepository>();
+    _loadLastSyncTime();
+  }
+
+  Future<void> _loadLastSyncTime() async {
+    final result = await _userRepository.getUser();
+    result.fold((user) {
+      setState(() {
+        _lastSyncTime = user.lastBackgroundSync;
+      });
+    }, (error) {
+      logarte.log('Erro ao carregar última sincronização: $error',
+          source: 'SettingsPage');
+    });
   }
 
   Future<void> _launchURL(String url) async {
@@ -60,6 +78,13 @@ class _SettingsPageState extends State<SettingsPage> {
         );
       }
     }
+  }
+
+  String _formatTimestamp(int timestamp) {
+    final dateTime = DateTime.fromMillisecondsSinceEpoch(timestamp).toLocal();
+    // Formata a data e hora conforme desejado dd/MM/yyyy HH:mm
+    return '${dateTime.day.toString().padLeft(2, '0')}/${dateTime.month.toString().padLeft(2, '0')}/${dateTime.year} '
+        '${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
   }
 
   @override
@@ -173,6 +198,16 @@ class _SettingsPageState extends State<SettingsPage> {
                           onChanged: (value) async {
                             await _settingsRepository.toggleAutoSync();
                           },
+                        ),
+                        ListTile(
+                          leading: const Icon(Icons.access_time),
+                          title: const Text('Última sincronização'),
+                          subtitle: Text(
+                            _lastSyncTime != null
+                                ? '${_lastSyncTime!.day.toString().padLeft(2, '0')}/${_lastSyncTime!.month.toString().padLeft(2, '0')}/${_lastSyncTime!.year} '
+                                    '${_lastSyncTime!.hour.toString().padLeft(2, '0')}:${_lastSyncTime!.minute.toString().padLeft(2, '0')}'
+                                : '...',
+                          ),
                         ),
                         if (_settingsRepository.isBiometricAvailable) ...[
                           const Divider(height: 1),

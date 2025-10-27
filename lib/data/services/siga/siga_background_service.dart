@@ -166,7 +166,7 @@ class SigaBackgroundService extends ChangeNotifier {
       await navigateAndExtractTimetable();
       await goToHome();
       await navigateAndExtractSchoolHistory();
-      await _settings.updateLastSyncTimestamp();
+      //await _settings.updateLastSyncTimestamp();
     } finally {
       goToHome();
       isSyncing = false;
@@ -327,6 +327,30 @@ class SigaBackgroundService extends ChangeNotifier {
       _authFailureNotifier.dispose();
     } catch (_) {}
     // Não chamar notifyListeners depois do dispose
+  }
+
+  @override
+  void dispose() {
+    // 1. Cancela timers PRIMEIRO
+    _cancelReconnectTimer();
+    _statusTimer?.cancel();
+    _statusTimer = null;
+
+    // 2. Completa pendings
+    if (_loginCompleter != null && !_loginCompleter!.isCompleted) {
+      _loginCompleter!.complete(false);
+    }
+    _loginCompleter = null;
+
+    // 3. Dispose dos notifiers
+    loginNotifier.dispose();
+    _authFailureNotifier.dispose();
+
+    // 4. Limpa o controller (não tem dispose mas limpa referência)
+    _controller = null;
+
+    // 5. OBRIGATÓRIO: chama super.dispose() por último
+    super.dispose();
   }
 
   Future<void> _injectLoginScript(String username, String password) async {
@@ -552,10 +576,26 @@ class SigaBackgroundService extends ChangeNotifier {
     if (_controller == null) throw Exception('Controller não inicializado');
     logarte.log('Starting grade extraction from SIGA...');
 
+    // Se já existe uma sincronização global em andamento (ex: Background),
+    // não tentamos adquirir o lock novamente para evitar falha por lock.
+    bool localLockAcquired = false;
+    if (!_isSyncing) {
+      if (!_acquireSyncLock('Notas')) {
+        throw SyncInProgressException(
+            'Sincronização de $_currentSyncOperation já em andamento. '
+            'Aguarde a conclusão ou tente novamente em alguns instantes.');
+      }
+      localLockAcquired = true;
+    } else {
+      logarte.log(
+          'Usando lock existente ($_currentSyncOperation) para extração de notas',
+          source: 'SigaBackgroundService');
+    }
+
     // Script para clicar no link de notas dentro do iframe
     const script2 = """
       new Promise((resolve, reject) => {
-        const maxTries = 200;
+        const maxTries = 1500;
         let tries = 0;
         const interval = setInterval(() => {
           const iframe = document.getElementsByTagName('iframe')[0];
@@ -607,6 +647,8 @@ class SigaBackgroundService extends ChangeNotifier {
         'Failed to navigate and extract grades: $e, isLoggedIn=$_isLoggedIn',
       );
       throw Exception('Erro ao navegar e extrair notas: $e');
+    } finally {
+      if (localLockAcquired) _releaseSyncLock();
     }
   }
 
@@ -696,6 +738,20 @@ class SigaBackgroundService extends ChangeNotifier {
     if (_controller == null) throw Exception('Controller não inicializado');
     logarte.log('Starting profile extraction from SIGA...');
 
+    bool localLockAcquired = false;
+    if (!_isSyncing) {
+      if (!_acquireSyncLock('Perfil Curricular')) {
+        throw SyncInProgressException(
+            'Sincronização de $_currentSyncOperation já em andamento. '
+            'Aguarde a conclusão ou tente novamente em alguns instantes.');
+      }
+      localLockAcquired = true;
+    } else {
+      logarte.log(
+          'Usando lock existente ($_currentSyncOperation) para extração de perfil',
+          source: 'SigaBackgroundService');
+    }
+
     try {
       // 1. Navega para o menu de detalhamento
       await _controller!.runJavaScript(SigaScripts.scriptNav());
@@ -757,6 +813,8 @@ class SigaBackgroundService extends ChangeNotifier {
         'Failed to navigate and extract profile: $e, isLoggedIn=$_isLoggedIn',
       );
       throw Exception('Erro ao navegar e extrair perfil: $e');
+    } finally {
+      if (localLockAcquired) _releaseSyncLock();
     }
   }
 
@@ -796,6 +854,20 @@ class SigaBackgroundService extends ChangeNotifier {
   Future<List<ScheduledSubject>> navigateAndExtractTimetable() async {
     if (_controller == null) throw Exception('Controller não inicializado');
     logarte.log('Starting timetable extraction from SIGA...');
+
+    bool localLockAcquired = false;
+    if (!_isSyncing) {
+      if (!_acquireSyncLock('Grade de Horário')) {
+        throw SyncInProgressException(
+            'Sincronização de $_currentSyncOperation já em andamento. '
+            'Aguarde a conclusão ou tente novamente em alguns instantes.');
+      }
+      localLockAcquired = true;
+    } else {
+      logarte.log(
+          'Usando lock existente ($_currentSyncOperation) para extração de grade',
+          source: 'SigaBackgroundService');
+    }
 
     try {
       // 1. Navega para o menu de detalhamento
@@ -876,6 +948,8 @@ class SigaBackgroundService extends ChangeNotifier {
         'Failed to navigate and extract timetable: $e, isLoggedIn=$_isLoggedIn',
       );
       throw Exception('Erro ao navegar e extrair grade de horário: $e');
+    } finally {
+      if (localLockAcquired) _releaseSyncLock();
     }
   }
 
@@ -896,6 +970,20 @@ class SigaBackgroundService extends ChangeNotifier {
   Future<User> navigateAndExtractUser() async {
     if (_controller == null) throw Exception('Controller não inicializado');
     logarte.log('Starting user data extraction from SIGA...');
+
+    bool localLockAcquired = false;
+    if (!_isSyncing) {
+      if (!_acquireSyncLock('Dados do Usuário')) {
+        throw SyncInProgressException(
+            'Sincronização de $_currentSyncOperation já em andamento. '
+            'Aguarde a conclusão ou tente novamente em alguns instantes.');
+      }
+      localLockAcquired = true;
+    } else {
+      logarte.log(
+          'Usando lock existente ($_currentSyncOperation) para extração de dados do usuário',
+          source: 'SigaBackgroundService');
+    }
 
     try {
       // 1. Navega para o menu de detalhamento
@@ -949,14 +1037,24 @@ class SigaBackgroundService extends ChangeNotifier {
         'Failed to navigate and extract user data: $e, isLoggedIn=$_isLoggedIn',
       );
       throw Exception('Erro ao navegar e extrair dados do usuário: $e');
+    } finally {
+      if (localLockAcquired) _releaseSyncLock();
     }
   }
 
   Future<void> navigateAndExtractSchoolHistory() async {
-    if (!_acquireSyncLock('Histórico Escolar')) {
-      throw SyncInProgressException(
-          'Sincronização de $_currentSyncOperation já em andamento. '
-          'Aguarde a conclusão ou tente novamente em alguns instantes.');
+    bool localLockAcquired = false;
+    if (!_isSyncing) {
+      if (!_acquireSyncLock('Histórico Escolar')) {
+        throw SyncInProgressException(
+            'Sincronização de $_currentSyncOperation já em andamento. '
+            'Aguarde a conclusão ou tente novamente em alguns instantes.');
+      }
+      localLockAcquired = true;
+    } else {
+      logarte.log(
+          'Usando lock existente ($_currentSyncOperation) para extração de histórico',
+          source: 'SigaBackgroundService');
     }
 
     try {
@@ -1040,7 +1138,7 @@ class SigaBackgroundService extends ChangeNotifier {
       await goToHome();
       throw Exception('Error navigating and extracting history: $e');
     } finally {
-      _releaseSyncLock();
+      if (localLockAcquired) _releaseSyncLock();
     }
   }
 
@@ -1079,6 +1177,20 @@ class SigaBackgroundService extends ChangeNotifier {
   Future<Map<String, dynamic>> navigateAndExtractAcademicAchievement() async {
     if (_controller == null) throw Exception('Controller not initialized');
     logarte.log('Starting academic achievement extraction from SIGA...');
+
+    bool localLockAcquired = false;
+    if (!_isSyncing) {
+      if (!_acquireSyncLock('Aproveitamento Acadêmico')) {
+        throw SyncInProgressException(
+            'Sincronização de $_currentSyncOperation já em andamento. '
+            'Aguarde a conclusão ou tente novamente em alguns instantes.');
+      }
+      localLockAcquired = true;
+    } else {
+      logarte.log(
+          'Usando lock existente ($_currentSyncOperation) para aproveitamento acadêmico',
+          source: 'SigaBackgroundService');
+    }
 
     try {
       // 1. Navegação (sem alterações)
@@ -1269,6 +1381,8 @@ class SigaBackgroundService extends ChangeNotifier {
       goToHome(); // Tenta voltar para home mesmo em erro
       throw Exception(
           'Error navigating and extracting academic achievement: $e');
+    } finally {
+      if (localLockAcquired) _releaseSyncLock();
     }
   }
 
@@ -1302,5 +1416,89 @@ class SigaBackgroundService extends ChangeNotifier {
     });
 
     return completer.future;
+  }
+
+  /// Executa uma sincronização completa em segundo plano.
+  /// Tenta fazer login com credenciais salvas e extrai todos os dados.
+  Future<void> runFullBackgroundSync() async {
+    // Verifica se já está sincronizando ANTES de qualquer operação
+    (await _userRepository.getUser()).fold((user) async {
+      user.lastBackgroundSync = DateTime.now();
+      await _userRepository.upsertUser(user);
+    }, (error) {
+      logarte.log('Erro ao obter usuário atual: $error',
+          source: 'SigaBackgroundService');
+    });
+
+    if (_isSyncing) {
+      logarte.log(
+          'Background Sync: Sincronização já em andamento ($_currentSyncOperation). Abortando chamada duplicada.',
+          source: 'SigaBackgroundService');
+      throw SyncInProgressException(
+          'Sincronização de $_currentSyncOperation já em andamento. '
+          'Aguarde a conclusão ou tente novamente em alguns instantes.');
+    }
+
+    // Garante que o serviço e o controller da webview estejam prontos.
+    await initialize();
+
+    // Aguarda um tempo para a tentativa de login automática inicial.
+    await Future.delayed(const Duration(seconds: 15));
+
+    if (!isLoggedIn) {
+      logarte.log('Background Sync: Não está logado. Tentando reconectar...',
+          source: 'SigaBackgroundService');
+      final success = await reconnect();
+      if (!success) {
+        logarte.log('Background Sync: Falha na reconexão. Abortando.',
+            source: 'SigaBackgroundService');
+        return;
+      }
+      // Aguarda a página carregar após a reconexão.
+      await Future.delayed(const Duration(seconds: 10));
+    }
+
+    if (!_acquireSyncLock('Sincronização em Background')) {
+      logarte.log(
+          'Background Sync: Não foi possível iniciar, outra sincronização já está em andamento.',
+          source: 'SigaBackgroundService');
+      throw SyncInProgressException(
+          'Sincronização de $_currentSyncOperation já em andamento. '
+          'Aguarde a conclusão ou tente novamente em alguns instantes.');
+    }
+
+    try {
+      logarte.log('Iniciando extração de dados em background...',
+          source: 'SigaBackgroundService');
+
+      _updateSyncStatus('Sincronizando notas...');
+      await navigateAndExtractGrades();
+      await goToHome();
+      await Future.delayed(const Duration(seconds: 1));
+
+      _updateSyncStatus('Sincronizando horário...');
+      await navigateAndExtractTimetable();
+      await goToHome();
+      await Future.delayed(const Duration(seconds: 1));
+
+      _updateSyncStatus('Sincronizando histórico...');
+      await navigateAndExtractSchoolHistory();
+      await goToHome();
+      await Future.delayed(const Duration(seconds: 1));
+
+      _updateSyncStatus('Sincronizando perfil...');
+      await navigateAndExtractProfile();
+
+      _updateSyncStatus('Sincronização em background concluída.');
+      logarte.log(
+          'Sincronização completa em background finalizada com sucesso.',
+          source: 'SigaBackgroundService');
+    } catch (e) {
+      logarte.log('A sincronização completa em background falhou: $e',
+          source: 'SigaBackgroundService');
+    } finally {
+      await goToHome();
+      _releaseSyncLock();
+    }
   }
 }

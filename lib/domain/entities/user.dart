@@ -22,6 +22,8 @@ class User {
   String situation;
   String currentPeriod;
 
+  DateTime? lastBackgroundSync;
+
   double? overallAverage;
   double? overallCoefficient;
 

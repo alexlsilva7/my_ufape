@@ -88,8 +88,8 @@ class LocalStoragePreferencesService {
 
   AsyncResult<Unit> updateLastSyncTimestamp() async {
     try {
-      await prefs.setInt(
-          _lastSyncTimestampKey, DateTime.now().millisecondsSinceEpoch);
+      await prefs.setInt(_lastSyncTimestampKey,
+          DateTime.now().toLocal().millisecondsSinceEpoch);
       return Success(unit);
     } catch (e, s) {
       return Failure(AppException(e.toString(), s));
