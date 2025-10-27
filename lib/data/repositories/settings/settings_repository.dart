@@ -45,8 +45,7 @@ abstract interface class SettingsRepository extends ChangeNotifier {
   TimeOfDay get syncFixedTime;
   Future<void> setSyncFixedTime(TimeOfDay time);
 
-  int get nextSyncTimestamp;
-
   Future<void> scheduleSyncTask();
   Future<void> cancelSyncTask();
+  Future<void> updateNextSyncTimestamp();
 }

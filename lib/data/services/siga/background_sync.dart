@@ -81,5 +81,13 @@ Future<void> syncDataWithServer() async {
         source: 'BackgroundSync');
   }
 
-  await settingsRepo.scheduleSyncTask();
+  // Se o modo for 'fixedTime', a tarefa precisa ser reagendada para o dia seguinte.
+  // Se for 'interval', a tarefa periódica já continuará executando,
+  // mas ainda precisamos atualizar o timestamp para a UI.
+  if (settingsRepo.syncMode == SyncMode.fixedTime) {
+    await settingsRepo.scheduleSyncTask(); // Apenas reagenda se for one-off
+  } else {
+    await settingsRepo
+        .updateNextSyncTimestamp(); // Apenas atualiza o timestamp para tarefas periódicas
+  }
 }

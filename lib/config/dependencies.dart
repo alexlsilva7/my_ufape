@@ -56,6 +56,7 @@ Future<void> setupDependencies() async {
       injector.get<SharedPreferences>(),
       injector.get<FlutterSecureStorage>(),
       injector.get<Database>(),
+      injector.get<UserRepository>(),
     ),
   );
 

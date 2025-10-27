@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:logarte/logarte.dart';
 import 'package:my_ufape/config/dependencies.dart';
@@ -6,6 +8,7 @@ import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
 import 'package:my_ufape/data/repositories/user/user_repository.dart';
 
 import 'package:my_ufape/data/services/shorebird/shorebird_service.dart';
+import 'package:my_ufape/domain/entities/user.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:terminate_restart/terminate_restart.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -24,6 +27,9 @@ class _SettingsPageState extends State<SettingsPage> {
 
   DateTime? _lastSyncTime;
   double? _currentSliderValue;
+  DateTime? _nextSyncTime;
+
+  StreamSubscription<User?>? _userStream;
 
   @override
   void initState() {
@@ -31,20 +37,20 @@ class _SettingsPageState extends State<SettingsPage> {
     _settingsRepository = injector.get<SettingsRepository>();
     _shorebirdService = injector.get<ShorebirdService>();
     _userRepository = injector.get<UserRepository>();
-    _loadLastSyncTime();
+    _userStream = _userRepository.userStream().listen((user) {
+      setState(() {
+        _lastSyncTime = user?.lastBackgroundSync;
+        _nextSyncTime = user?.nextSyncTimestamp;
+      });
+    });
+
     _currentSliderValue = _settingsRepository.syncInterval.inMinutes.toDouble();
   }
 
-  Future<void> _loadLastSyncTime() async {
-    final result = await _userRepository.getUser();
-    result.fold((user) {
-      setState(() {
-        _lastSyncTime = user.lastBackgroundSync;
-      });
-    }, (error) {
-      logarte.log('Erro ao carregar última sincronização: $error',
-          source: 'SettingsPage');
-    });
+  @override
+  void dispose() {
+    _userStream?.cancel();
+    super.dispose();
   }
 
   Future<void> _launchURL(String url) async {
@@ -197,8 +203,6 @@ class _SettingsPageState extends State<SettingsPage> {
                         const Divider(height: 1),
                         SwitchListTile(
                           title: const Text('Sincronização em segundo plano'),
-                          subtitle: const Text(
-                              'Manter dados atualizados periodicamente'),
                           secondary: Icon(
                             _settingsRepository.isAutoSyncEnabled
                                 ? Icons.sync
@@ -254,6 +258,10 @@ class _SettingsPageState extends State<SettingsPage> {
                                   _settingsRepository.setSyncInterval(
                                       Duration(minutes: value.round()));
                                 },
+                                inactiveColor: Theme.of(context)
+                                    .colorScheme
+                                    .primary
+                                    .withValues(alpha: 0.3),
                               ),
                             ),
                           ] else ...[
@@ -274,87 +282,104 @@ class _SettingsPageState extends State<SettingsPage> {
                               },
                             ),
                           ],
-                          ListTile(
-                            leading: const Icon(Icons.update),
-                            title: const Text('Próxima Sincronização'),
-                            subtitle: Text(_settingsRepository
-                                        .nextSyncTimestamp >
-                                    0
-                                ? 'Agendada para: ${_formatTimestamp(_settingsRepository.nextSyncTimestamp)}'
-                                : 'Nenhuma sincronização agendada'),
-                          ),
-                        ],
-                        ListTile(
-                          leading: const Icon(Icons.access_time),
-                          title: const Text('Última sincronização'),
-                          subtitle: Text(
-                            _lastSyncTime != null
-                                ? '${_lastSyncTime!.day.toString().padLeft(2, '0')}/${_lastSyncTime!.month.toString().padLeft(2, '0')}/${_lastSyncTime!.year} '
-                                    '${_lastSyncTime!.hour.toString().padLeft(2, '0')}:${_lastSyncTime!.minute.toString().padLeft(2, '0')}'
-                                : '...',
-                          ),
-                        ),
-                        if (_settingsRepository.isBiometricAvailable) ...[
-                          const Divider(height: 1),
-                          SwitchListTile(
-                            title: const Text('Acesso com Biometria'),
-                            subtitle: const Text(
-                                'Use sua digital ou rosto para entrar'),
-                            secondary: Icon(
-                              _settingsRepository.isBiometricAuthEnabled
-                                  ? Icons.fingerprint
-                                  : Icons.fingerprint_outlined,
+                          if (_settingsRepository.syncMode == SyncMode.interval)
+                            AnimatedSwitcher(
+                              duration: const Duration(milliseconds: 300),
+                              switchInCurve: Curves.easeOut,
+                              switchOutCurve: Curves.easeIn,
+                              transitionBuilder:
+                                  (Widget child, Animation<double> animation) {
+                                return FadeTransition(
+                                  opacity: animation,
+                                  child: child,
+                                );
+                              },
+                              child: ListTile(
+                                key: ValueKey<int?>(
+                                    _nextSyncTime?.millisecondsSinceEpoch),
+                                leading: const Icon(Icons.update),
+                                title: const Text('Próxima Sincronização'),
+                                subtitle: Text(
+                                  _nextSyncTime != null
+                                      ? 'Agendada para: ${_formatTimestamp(_nextSyncTime!.millisecondsSinceEpoch)}'
+                                      : '...',
+                                ),
+                              ),
                             ),
-                            value: _settingsRepository.isBiometricAuthEnabled,
-                            onChanged: (value) async {
-                              if (value) {
-                                // Ao ativar, pede a biometria para confirmar a identidade
-                                final didAuthenticate =
+                          ListTile(
+                            leading: const Icon(Icons.access_time),
+                            title: const Text('Última sincronização'),
+                            subtitle: Text(
+                              _lastSyncTime != null
+                                  ? '${_lastSyncTime!.day.toString().padLeft(2, '0')}/${_lastSyncTime!.month.toString().padLeft(2, '0')}/${_lastSyncTime!.year} '
+                                      '${_lastSyncTime!.hour.toString().padLeft(2, '0')}:${_lastSyncTime!.minute.toString().padLeft(2, '0')}'
+                                  : '...',
+                            ),
+                          ),
+                          if (_settingsRepository.isBiometricAvailable) ...[
+                            const Divider(height: 1),
+                            SwitchListTile(
+                              title: const Text('Acesso com Biometria'),
+                              subtitle: const Text(
+                                  'Use sua digital ou rosto para entrar'),
+                              secondary: Icon(
+                                _settingsRepository.isBiometricAuthEnabled
+                                    ? Icons.fingerprint
+                                    : Icons.fingerprint_outlined,
+                              ),
+                              value: _settingsRepository.isBiometricAuthEnabled,
+                              onChanged: (value) async {
+                                if (value) {
+                                  // Ao ativar, pede a biometria para confirmar a identidade
+                                  final didAuthenticate =
+                                      await _settingsRepository
+                                          .authenticateWithBiometrics();
+                                  if (didAuthenticate) {
                                     await _settingsRepository
-                                        .authenticateWithBiometrics();
-                                if (didAuthenticate) {
+                                        .toggleBiometricAuth();
+                                  } else {
+                                    if (mounted) {
+                                      // ignore: use_build_context_synchronously
+                                      ScaffoldMessenger.of(context)
+                                          .showSnackBar(
+                                        const SnackBar(
+                                            content: Text(
+                                                'Autenticação falhou. Tente novamente.')),
+                                      );
+                                    }
+                                  }
+                                } else {
+                                  // Ao desativar, apenas desliga a configuração
                                   await _settingsRepository
                                       .toggleBiometricAuth();
-                                } else {
-                                  if (mounted) {
-                                    // ignore: use_build_context_synchronously
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(
-                                          content: Text(
-                                              'Autenticação falhou. Tente novamente.')),
-                                    );
-                                  }
                                 }
-                              } else {
-                                // Ao desativar, apenas desliga a configuração
-                                await _settingsRepository.toggleBiometricAuth();
-                              }
-                            },
-                          ),
-                        ],
-                        if (_settingsRepository.isDebugOverlayEnabled) ...[
+                              },
+                            ),
+                          ],
+                          if (_settingsRepository.isDebugOverlayEnabled) ...[
+                            const Divider(height: 1),
+                            SwitchListTile(
+                              title: const Text('Habilitar Debug'),
+                              secondary: const Icon(Icons.bug_report),
+                              value: _settingsRepository.isDebugOverlayEnabled,
+                              onChanged: (value) async {
+                                await _settingsRepository.toggleDebugOverlay();
+                              },
+                            ),
+                          ],
                           const Divider(height: 1),
-                          SwitchListTile(
-                            title: const Text('Habilitar Debug'),
-                            secondary: const Icon(Icons.bug_report),
-                            value: _settingsRepository.isDebugOverlayEnabled,
-                            onChanged: (value) async {
-                              await _settingsRepository.toggleDebugOverlay();
-                            },
+                          ListTile(
+                            leading: const Icon(Icons.restore,
+                                color: Colors.red), // Ícone alterado
+                            title: const Text(
+                              'Restaurar Aplicativo', // Texto alterado
+                              style: TextStyle(color: Colors.red),
+                            ),
+                            subtitle: const Text(
+                                'Apaga todos os dados e credenciais'), // Subtítulo alterado
+                            onTap: () => _showResetDialog(), // Método alterado
                           ),
                         ],
-                        const Divider(height: 1),
-                        ListTile(
-                          leading: const Icon(Icons.restore,
-                              color: Colors.red), // Ícone alterado
-                          title: const Text(
-                            'Restaurar Aplicativo', // Texto alterado
-                            style: TextStyle(color: Colors.red),
-                          ),
-                          subtitle: const Text(
-                              'Apaga todos os dados e credenciais'), // Subtítulo alterado
-                          onTap: () => _showResetDialog(), // Método alterado
-                        ),
                       ],
                     ),
                   ),

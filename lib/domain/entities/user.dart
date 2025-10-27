@@ -23,6 +23,8 @@ class User {
   String currentPeriod;
 
   DateTime? lastBackgroundSync;
+  DateTime? lastSuccessfulSync;
+  DateTime? nextSyncTimestamp;
 
   double? overallAverage;
   double? overallCoefficient;
@@ -38,6 +40,9 @@ class User {
     required this.shift,
     required this.situation,
     required this.currentPeriod,
+    this.lastBackgroundSync,
+    this.lastSuccessfulSync,
+    this.nextSyncTimestamp,
     this.overallAverage,
     this.overallCoefficient,
   });

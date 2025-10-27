@@ -31,5 +31,10 @@ class HomeViewModel extends ChangeNotifier {
         notifyListeners();
       },
     );
+
+    _userRepository.userStream().listen((user) {
+      _user = user;
+      notifyListeners();
+    });
   }
 }

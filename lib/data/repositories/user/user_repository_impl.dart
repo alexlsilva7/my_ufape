@@ -18,4 +18,9 @@ class UserRepositoryImpl implements UserRepository {
   AsyncResult<User> getUser() {
     return _userService.getUser();
   }
+
+  @override
+  Stream<User?> userStream() {
+    return _userService.watchUser();
+  }
 }

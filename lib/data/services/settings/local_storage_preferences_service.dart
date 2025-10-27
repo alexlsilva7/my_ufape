@@ -18,7 +18,6 @@ class LocalStoragePreferencesService {
   static const String _syncIntervalKey = 'sync_interval_minutes';
   static const String _syncModeKey = 'sync_mode';
   static const String _syncFixedTimeKey = 'sync_fixed_time';
-  static const String _nextSyncTimestampKey = 'next_sync_timestamp';
 
   LocalStoragePreferencesService(this.prefs);
 
@@ -136,11 +135,5 @@ class LocalStoragePreferencesService {
   Future<void> setSyncFixedTime(TimeOfDay time) async {
     final timeString = '${time.hour}:${time.minute}';
     await prefs.setString(_syncFixedTimeKey, timeString);
-  }
-
-  int get nextSyncTimestamp => prefs.getInt(_nextSyncTimestampKey) ?? 0;
-
-  Future<void> setNextSyncTimestamp(int timestamp) async {
-    await prefs.setInt(_nextSyncTimestampKey, timestamp);
   }
 }

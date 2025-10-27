@@ -16,6 +16,8 @@ import 'package:local_auth_android/local_auth_android.dart';
 import 'package:local_auth_darwin/local_auth_darwin.dart';
 import 'package:workmanager/workmanager.dart';
 
+import 'package:my_ufape/data/repositories/user/user_repository.dart';
+
 import './settings_repository.dart';
 
 class SettingsRepositoryImpl extends ChangeNotifier
@@ -24,6 +26,7 @@ class SettingsRepositoryImpl extends ChangeNotifier
   final SharedPreferences _prefs;
   final FlutterSecureStorage _secureStorage;
   final Database _database;
+  final UserRepository _userRepository;
   final LocalAuthentication _localAuth = LocalAuthentication();
 
   late ThemeMode _themeMode;
@@ -33,6 +36,7 @@ class SettingsRepositoryImpl extends ChangeNotifier
     this._prefs,
     this._secureStorage,
     this._database,
+    this._userRepository,
   ) {
     _themeMode = _localStoragePreferencesService.themeMode;
     isDebugOverlayEnabled =
@@ -195,6 +199,39 @@ class SettingsRepositoryImpl extends ChangeNotifier
   }
 
   @override
+  Future<void> updateNextSyncTimestamp() async {
+    if (!isAutoSyncEnabled) {
+      final user = (await _userRepository.getUser()).getOrNull();
+      if (user != null) {
+        user.nextSyncTimestamp = null;
+        _userRepository.upsertUser(user);
+      }
+      notifyListeners();
+      return;
+    }
+
+    DateTime nextSync;
+    if (syncMode == SyncMode.fixedTime) {
+      final now = DateTime.now();
+      final targetTime = syncFixedTime;
+      nextSync = DateTime(
+          now.year, now.month, now.day, targetTime.hour, targetTime.minute);
+      if (nextSync.isBefore(now)) {
+        nextSync = nextSync.add(const Duration(days: 1));
+      }
+    } else {
+      nextSync = DateTime.now().add(syncInterval);
+    }
+    final user = (await _userRepository.getUser()).getOrNull();
+    if (user != null) {
+      user.nextSyncTimestamp = nextSync;
+      _userRepository.upsertUser(user);
+    }
+
+    notifyListeners();
+  }
+
+  @override
   Future<void> scheduleSyncTask() async {
     await cancelSyncTask(); // Sempre cancele a tarefa anterior
 
@@ -217,9 +254,6 @@ class SettingsRepositoryImpl extends ChangeNotifier
         initialDelay: initialDelay,
         constraints: Constraints(networkType: NetworkType.connected),
       );
-      // Salva o timestamp para feedback visual
-      await _localStoragePreferencesService
-          .setNextSyncTimestamp(scheduledDate.millisecondsSinceEpoch);
     } else {
       // Modo Intervalo
       await Workmanager().registerPeriodicTask(
@@ -228,19 +262,21 @@ class SettingsRepositoryImpl extends ChangeNotifier
         frequency: syncInterval,
         constraints: Constraints(networkType: NetworkType.connected),
       );
-      // Salva o timestamp para feedback visual
-      final nextSync = DateTime.now().add(syncInterval);
-      await _localStoragePreferencesService
-          .setNextSyncTimestamp(nextSync.millisecondsSinceEpoch);
     }
-    notifyListeners();
+    await updateNextSyncTimestamp();
   }
 
   @override
   Future<void> cancelSyncTask() async {
     await Workmanager().cancelByUniqueName("my-ufape-data-sync-periodic");
     await Workmanager().cancelByUniqueName("my-ufape-data-sync-fixed");
-    await _localStoragePreferencesService.setNextSyncTimestamp(0);
+
+    final user = (await _userRepository.getUser()).getOrNull();
+    if (user != null) {
+      user.nextSyncTimestamp = null;
+      _userRepository.upsertUser(user);
+    }
+
     notifyListeners();
   }
 
@@ -282,8 +318,7 @@ class SettingsRepositoryImpl extends ChangeNotifier
       await _secureStorage.write(key: 'password', value: login.password);
       notifyListeners();
       return Success(unit);
-    }
-    catch (e, s) {
+    } catch (e, s) {
       return Failure(AppException('Falha ao salvar credenciais: $e', s));
     }
   }
@@ -343,8 +378,4 @@ class SettingsRepositoryImpl extends ChangeNotifier
     notifyListeners();
     await scheduleSyncTask();
   }
-
-  @override
-  int get nextSyncTimestamp =>
-      _localStoragePreferencesService.nextSyncTimestamp;
 }
