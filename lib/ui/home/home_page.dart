@@ -1,3 +1,4 @@
+import 'package:my_ufape/ui/home/widgets/connectivity_status_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:my_ufape/core/debug/logarte.dart';
 import 'package:my_ufape/core/ui/gen/assets.gen.dart';
@@ -482,29 +483,7 @@ class _HomePageState extends State<HomePage> {
                         ),
                         Row(
                           children: [
-                            ListenableBuilder(
-                                listenable: _sigaService,
-                                builder: (context, child) {
-                                  if (_sigaService.isSyncing) {
-                                    return AnimatedRotation(
-                                      turns: 1,
-                                      duration: const Duration(seconds: 60),
-                                      child: Icon(
-                                        Icons.sync_rounded,
-                                        size: 20,
-                                        color: Colors.greenAccent.shade200,
-                                      ),
-                                    );
-                                  } else {
-                                    return Icon(
-                                      _isLoggedIn ? Icons.wifi : Icons.wifi_off,
-                                      size: 20,
-                                      color: _isLoggedIn
-                                          ? Colors.greenAccent.shade200
-                                          : Colors.red,
-                                    );
-                                  }
-                                }),
+                            const ConnectivityStatusWidget(),
                             ValueListenableBuilder<bool>(
                               valueListenable:
                                   _shorebirdService.isUpdateReadyToInstall,

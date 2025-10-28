@@ -1,11 +1,14 @@
 import 'package:brasil_fields/brasil_fields.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
 import 'package:my_ufape/app_widget.dart';
 import 'package:my_ufape/config/dependencies.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
 import 'package:routefly/routefly.dart';
+
 import '../../core/ui/gen/assets.gen.dart';
 
 class LoginPage extends StatefulWidget {
@@ -30,6 +33,34 @@ class _LoginPageState extends State<LoginPage> {
       setState(() {
         _isLoading = true;
       });
+
+      // --- INÍCIO DA VERIFICAÇÃO DE CONECTIVIDADE ---
+
+      // 1. Verifica se há alguma conexão de rede ativa (Wi-Fi, Dados Móveis, etc.)
+      final connectivityResult = await Connectivity().checkConnectivity();
+      if (connectivityResult.contains(ConnectivityResult.none)) {
+        if (mounted) {
+          _showNoInternetSnackbar();
+          setState(() {
+            _isLoading = false;
+          });
+        }
+        return; // Para a execução aqui
+      }
+
+      // 2. Verifica se a conexão ativa realmente tem acesso à internet
+      final hasInternet = await InternetConnectionChecker().hasConnection;
+      if (!hasInternet) {
+        if (mounted) {
+          _showNoInternetSnackbar();
+          setState(() {
+            _isLoading = false;
+          });
+        }
+        return; // Para a execução aqui
+      }
+
+      // --- FIM DA VERIFICAÇÃO DE CONECTIVIDADE ---
 
       final username = _usernameController.text;
       final password = _passwordController.text;
@@ -71,6 +102,23 @@ class _LoginPageState extends State<LoginPage> {
         }
       }
     }
+  }
+
+  // 👇 Adicione este método auxiliar dentro da classe _LoginPageState
+  void _showNoInternetSnackbar() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Row(
+          children: [
+            Icon(Icons.wifi_off, color: Colors.white),
+            SizedBox(width: 8),
+            Text('Sem conexão com a internet.',
+                style: TextStyle(color: Colors.white)),
+          ],
+        ),
+        backgroundColor: Colors.red.shade600,
+      ),
+    );
   }
 
   @override
