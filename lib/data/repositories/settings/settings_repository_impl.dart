@@ -163,6 +163,7 @@ class SettingsRepositoryImpl extends ChangeNotifier
       // Notifica listeners para atualizar a UI se necessário (ex: modo escuro voltando ao padrão)
       _themeMode = ThemeMode.system;
       isDebugOverlayEnabled = false;
+      cancelSyncTask();
       notifyListeners();
 
       return Success(unit);
@@ -263,6 +264,7 @@ class SettingsRepositoryImpl extends ChangeNotifier
         constraints: Constraints(networkType: NetworkType.connected),
       );
     }
+    await _localStoragePreferencesService.setSyncTaskRegistered(true);
     await updateNextSyncTimestamp();
   }
 
@@ -270,6 +272,8 @@ class SettingsRepositoryImpl extends ChangeNotifier
   Future<void> cancelSyncTask() async {
     await Workmanager().cancelByUniqueName("my-ufape-data-sync-periodic");
     await Workmanager().cancelByUniqueName("my-ufape-data-sync-fixed");
+
+    await _localStoragePreferencesService.setSyncTaskRegistered(false);
 
     final user = (await _userRepository.getUser()).getOrNull();
     if (user != null) {
@@ -377,5 +381,14 @@ class SettingsRepositoryImpl extends ChangeNotifier
     await _localStoragePreferencesService.setSyncFixedTime(time);
     notifyListeners();
     await scheduleSyncTask();
+  }
+
+  @override
+  bool get isSyncTaskRegistered => _localStoragePreferencesService.isSyncTaskRegistered;
+
+  @override
+  Future<void> setSyncTaskRegistered(bool value) async {
+    await _localStoragePreferencesService.setSyncTaskRegistered(value);
+    notifyListeners();
   }
 }

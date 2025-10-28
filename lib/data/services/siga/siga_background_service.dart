@@ -1421,6 +1421,13 @@ class SigaBackgroundService extends ChangeNotifier {
   /// Executa uma sincronização completa em segundo plano.
   /// Tenta fazer login com credenciais salvas e extrai todos os dados.
   Future<void> runFullBackgroundSync() async {
+    if (!_settings.isAutoSyncEnabled ||
+        !(await _settings.isInitialSyncCompleted())) {
+      logarte.log(
+          'Background Sync: Sincronização automática desativada ou inicial não concluída. Abortando.',
+          source: 'SigaBackgroundService');
+      return;
+    }
     // Verifica se já está sincronizando ANTES de qualquer operação
     (await _userRepository.getUser()).fold((user) async {
       user.lastBackgroundSync = DateTime.now();

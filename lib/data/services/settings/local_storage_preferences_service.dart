@@ -18,6 +18,7 @@ class LocalStoragePreferencesService {
   static const String _syncIntervalKey = 'sync_interval_minutes';
   static const String _syncModeKey = 'sync_mode';
   static const String _syncFixedTimeKey = 'sync_fixed_time';
+  static const String _syncTaskRegisteredKey = 'sync_task_registered';
 
   LocalStoragePreferencesService(this.prefs);
 
@@ -135,5 +136,11 @@ class LocalStoragePreferencesService {
   Future<void> setSyncFixedTime(TimeOfDay time) async {
     final timeString = '${time.hour}:${time.minute}';
     await prefs.setString(_syncFixedTimeKey, timeString);
+  }
+
+  bool get isSyncTaskRegistered => prefs.getBool(_syncTaskRegisteredKey) ?? false;
+
+  Future<void> setSyncTaskRegistered(bool value) async {
+    await prefs.setBool(_syncTaskRegisteredKey, value);
   }
 }

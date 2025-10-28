@@ -13,8 +13,6 @@ Future<void> main() async {
   TerminateRestart.instance.initialize();
   Workmanager().initialize(callbackDispatcher);
   await SystemChrome.setPreferredOrientations([
-    DeviceOrientation.landscapeLeft,
-    DeviceOrientation.landscapeRight,
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
   ]);
@@ -22,7 +20,8 @@ Future<void> main() async {
   await setupDependencies();
 
   final settingsRepository = injector.get<SettingsRepository>();
-  if (settingsRepository.isAutoSyncEnabled) {
+  if (settingsRepository.isAutoSyncEnabled &&
+      !settingsRepository.isSyncTaskRegistered) {
     await settingsRepository.scheduleSyncTask();
   }
 
