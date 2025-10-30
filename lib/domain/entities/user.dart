@@ -2,6 +2,13 @@ import 'package:isar_community/isar.dart';
 
 part 'user.g.dart';
 
+enum SyncStatus {
+  idle,
+  inProgress,
+  success,
+  failed,
+}
+
 @collection
 class User {
   Id id = Isar.autoIncrement;
@@ -22,8 +29,11 @@ class User {
   String situation;
   String currentPeriod;
 
-  DateTime? lastBackgroundSync;
-  DateTime? lastSuccessfulSync;
+  @Enumerated(EnumType.name)
+  SyncStatus lastSyncStatus;
+  DateTime? lastSyncAttempt;
+  DateTime? lastSyncSuccess;
+  String? lastSyncMessage;
   DateTime? nextSyncTimestamp;
 
   double? overallAverage;
@@ -40,8 +50,10 @@ class User {
     required this.shift,
     required this.situation,
     required this.currentPeriod,
-    this.lastBackgroundSync,
-    this.lastSuccessfulSync,
+    this.lastSyncStatus = SyncStatus.idle,
+    this.lastSyncAttempt,
+    this.lastSyncSuccess,
+    this.lastSyncMessage,
     this.nextSyncTimestamp,
     this.overallAverage,
     this.overallCoefficient,
