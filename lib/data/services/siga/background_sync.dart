@@ -70,6 +70,16 @@ Future<void> syncDataWithServer() async {
     }
     logarte.log('Tarefa de sincronização em background finalizada com sucesso.',
         source: 'BackgroundSync');
+
+    // Se o modo for 'fixedTime', a tarefa precisa ser reagendada para o dia seguinte.
+    // Se for 'interval', a tarefa periódica já continuará executando,
+    // mas ainda precisamos atualizar o timestamp para a UI.
+    if (settingsRepo.syncMode == SyncMode.interval) {
+      await settingsRepo.scheduleSyncTask(); // Apenas reagenda se for one-off
+    } else {
+      await settingsRepo
+          .updateNextSyncTimestamp(); // Apenas atualiza o timestamp para tarefas periódicas
+    }
   } catch (e) {
     if (settingsRepo.isDebugOverlayEnabled) {
       await notificationService.showDebugNotification(
@@ -79,15 +89,5 @@ Future<void> syncDataWithServer() async {
     }
     logarte.log('Erro na sincronização em background: $e',
         source: 'BackgroundSync');
-  }
-
-  // Se o modo for 'fixedTime', a tarefa precisa ser reagendada para o dia seguinte.
-  // Se for 'interval', a tarefa periódica já continuará executando,
-  // mas ainda precisamos atualizar o timestamp para a UI.
-  if (settingsRepo.syncMode == SyncMode.fixedTime) {
-    await settingsRepo.scheduleSyncTask(); // Apenas reagenda se for one-off
-  } else {
-    await settingsRepo
-        .updateNextSyncTimestamp(); // Apenas atualiza o timestamp para tarefas periódicas
   }
 }

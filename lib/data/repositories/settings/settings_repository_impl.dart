@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:my_ufape/config/dependencies.dart';
 import 'package:my_ufape/core/database/database.dart';
+import 'package:my_ufape/core/debug/logarte.dart';
 import 'package:my_ufape/core/exceptions/app_exception.dart';
 import 'package:my_ufape/data/services/settings/local_storage_preferences_service.dart';
 import 'package:my_ufape/domain/entities/login.dart';
@@ -185,6 +186,7 @@ class SettingsRepositoryImpl extends ChangeNotifier
       final newState = !isAutoSyncEnabled;
       await _localStoragePreferencesService.toggleAutoSync();
       isAutoSyncEnabled = newState;
+      notifyListeners();
 
       if (newState) {
         await scheduleSyncTask();
@@ -201,6 +203,7 @@ class SettingsRepositoryImpl extends ChangeNotifier
 
   @override
   Future<void> updateNextSyncTimestamp() async {
+    logarte.log('updateNextSyncTimestamp chamado', source: 'SettingsRepository');
     if (!isAutoSyncEnabled) {
       final user = (await _userRepository.getUser()).getOrNull();
       if (user != null) {
@@ -211,22 +214,16 @@ class SettingsRepositoryImpl extends ChangeNotifier
       return;
     }
 
-    DateTime nextSync;
-    if (syncMode == SyncMode.fixedTime) {
-      final now = DateTime.now();
-      final targetTime = syncFixedTime;
-      nextSync = DateTime(
-          now.year, now.month, now.day, targetTime.hour, targetTime.minute);
-      if (nextSync.isBefore(now)) {
-        nextSync = nextSync.add(const Duration(days: 1));
-      }
-    } else {
+    DateTime? nextSync;
+    if (syncMode == SyncMode.interval) {
       nextSync = DateTime.now().add(syncInterval);
     }
+    
     final user = (await _userRepository.getUser()).getOrNull();
     if (user != null) {
       user.nextSyncTimestamp = nextSync;
       _userRepository.upsertUser(user);
+      logarte.log('Próxima sincronização atualizada para: $nextSync', source: 'SettingsRepository');
     }
 
     notifyListeners();
@@ -384,7 +381,8 @@ class SettingsRepositoryImpl extends ChangeNotifier
   }
 
   @override
-  bool get isSyncTaskRegistered => _localStoragePreferencesService.isSyncTaskRegistered;
+  bool get isSyncTaskRegistered =>
+      _localStoragePreferencesService.isSyncTaskRegistered;
 
   @override
   Future<void> setSyncTaskRegistered(bool value) async {

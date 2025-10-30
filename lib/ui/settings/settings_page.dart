@@ -42,6 +42,8 @@ class _SettingsPageState extends State<SettingsPage> {
     _shorebirdService = injector.get<ShorebirdService>();
     _userRepository = injector.get<UserRepository>();
     _userStream = _userRepository.userStream().listen((user) {
+      logarte.log('userStream listener chamado com o usuário: ${user?.name}',
+          source: 'SettingsPage');
       setState(() {
         _lastSyncAttempt = user?.lastSyncAttempt;
         _lastSyncSuccess = user?.lastSyncSuccess;
@@ -134,6 +136,7 @@ class _SettingsPageState extends State<SettingsPage> {
           listenable:
               Listenable.merge([_settingsRepository, _shorebirdService]),
           builder: (context, child) {
+            logarte.log('ListenableBuilder builder chamado', source: 'SettingsPage');
             return Padding(
               padding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 16.0),
@@ -259,6 +262,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                 onChanged: (double value) {
                                   setState(() {
                                     _currentSliderValue = value;
+                                    _nextSyncTime = DateTime.now().add(Duration(minutes: value.round()));
                                   });
                                 },
                                 onChangeEnd: (double value) {
@@ -472,7 +476,8 @@ class _SettingsPageState extends State<SettingsPage> {
         color = Colors.green;
         statusText = 'Sincronizado com sucesso';
         if (_lastSyncSuccess != null) {
-          subtitle = 'em ${_formatTimestamp(_lastSyncSuccess!.millisecondsSinceEpoch)}';
+          subtitle =
+              'em ${_formatTimestamp(_lastSyncSuccess!.millisecondsSinceEpoch)}';
         }
         break;
       case SyncStatus.failed:
@@ -480,7 +485,8 @@ class _SettingsPageState extends State<SettingsPage> {
         color = Colors.red;
         statusText = 'Falha na sincronização';
         if (_lastSyncAttempt != null) {
-          subtitle = 'Tentativa em ${_formatTimestamp(_lastSyncAttempt!.millisecondsSinceEpoch)}\n';
+          subtitle =
+              'Tentativa em ${_formatTimestamp(_lastSyncAttempt!.millisecondsSinceEpoch)}\n';
         }
         if (_lastSyncMessage != null) {
           subtitle = (subtitle ?? '') + _lastSyncMessage!;

@@ -136,8 +136,9 @@ class InitialSyncViewModel extends ChangeNotifier {
   void _checkCompletionAndNavigate() async {
     if (isSyncComplete) {
       (await _userRepository.getUser()).onSuccess((user) async {
-        user.lastBackgroundSync = DateTime.now();
+        user.lastSyncAttempt = DateTime.now();
         await _userRepository.upsertUser(user);
+        _settingsRepository.updateNextSyncTimestamp();
       });
       await Future.delayed(const Duration(milliseconds: 1500));
       navigateToHome.value = true;
