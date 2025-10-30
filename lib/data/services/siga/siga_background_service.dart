@@ -321,6 +321,7 @@ class SigaBackgroundService extends ChangeNotifier {
   Future<void> disposeService() async {
     _statusTimer?.cancel();
     _statusTimer = null;
+    await _controller?.loadRequest(Uri.parse('about:blank'));
     _controller = null;
     try {
       loginNotifier.dispose();
@@ -1522,6 +1523,7 @@ class SigaBackgroundService extends ChangeNotifier {
     } finally {
       await goToHome();
       _releaseSyncLock();
+      await disposeService();
     }
   }
 }

@@ -136,7 +136,6 @@ class _SettingsPageState extends State<SettingsPage> {
           listenable:
               Listenable.merge([_settingsRepository, _shorebirdService]),
           builder: (context, child) {
-            logarte.log('ListenableBuilder builder chamado', source: 'SettingsPage');
             return Padding(
               padding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 16.0),
@@ -262,7 +261,8 @@ class _SettingsPageState extends State<SettingsPage> {
                                 onChanged: (double value) {
                                   setState(() {
                                     _currentSliderValue = value;
-                                    _nextSyncTime = DateTime.now().add(Duration(minutes: value.round()));
+                                    _nextSyncTime = DateTime.now()
+                                        .add(Duration(minutes: value.round()));
                                   });
                                 },
                                 onChangeEnd: (double value) {
