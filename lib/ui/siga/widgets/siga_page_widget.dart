@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:my_ufape/app_widget.dart';
 import 'package:my_ufape/config/dependencies.dart';

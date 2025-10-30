@@ -1428,53 +1428,57 @@ class SigaBackgroundService extends ChangeNotifier {
           source: 'SigaBackgroundService');
       return;
     }
-    // Verifica se já está sincronizando ANTES de qualquer operação
-    (await _userRepository.getUser()).fold((user) async {
-      user.lastBackgroundSync = DateTime.now();
-      await _userRepository.upsertUser(user);
-    }, (error) {
-      logarte.log('Erro ao obter usuário atual: $error',
+
+    final userResult = await _userRepository.getUser();
+    if (userResult.isError()) {
+      logarte.log(
+          'Background Sync: Não foi possível obter o usuário para iniciar a sincronização.',
           source: 'SigaBackgroundService');
-    });
+      return;
+    }
+    final user = userResult.getOrThrow();
+
+    // Atualiza o status para IN_PROGRESS
+    user.lastSyncStatus = SyncStatus.inProgress;
+    user.lastSyncAttempt = DateTime.now();
+    user.lastSyncMessage = null;
+    await _userRepository.upsertUser(user);
 
     if (_isSyncing) {
       logarte.log(
           'Background Sync: Sincronização já em andamento ($_currentSyncOperation). Abortando chamada duplicada.',
           source: 'SigaBackgroundService');
-      throw SyncInProgressException(
-          'Sincronização de $_currentSyncOperation já em andamento. '
-          'Aguarde a conclusão ou tente novamente em alguns instantes.');
-    }
-
-    // Garante que o serviço e o controller da webview estejam prontos.
-    await initialize();
-
-    // Aguarda um tempo para a tentativa de login automática inicial.
-    await Future.delayed(const Duration(seconds: 15));
-
-    if (!isLoggedIn) {
-      logarte.log('Background Sync: Não está logado. Tentando reconectar...',
-          source: 'SigaBackgroundService');
-      final success = await reconnect();
-      if (!success) {
-        logarte.log('Background Sync: Falha na reconexão. Abortando.',
-            source: 'SigaBackgroundService');
-        return;
-      }
-      // Aguarda a página carregar após a reconexão.
-      await Future.delayed(const Duration(seconds: 10));
-    }
-
-    if (!_acquireSyncLock('Sincronização em Background')) {
-      logarte.log(
-          'Background Sync: Não foi possível iniciar, outra sincronização já está em andamento.',
-          source: 'SigaBackgroundService');
-      throw SyncInProgressException(
-          'Sincronização de $_currentSyncOperation já em andamento. '
-          'Aguarde a conclusão ou tente novamente em alguns instantes.');
+      // Mesmo que aborte, registra a tentativa
+      user.lastSyncStatus = SyncStatus.failed;
+      user.lastSyncMessage = 'Tentativa de sincronização duplicada.';
+      await _userRepository.upsertUser(user);
+      return;
     }
 
     try {
+      await initialize();
+      await Future.delayed(const Duration(seconds: 15));
+
+      if (!isLoggedIn) {
+        logarte.log('Background Sync: Não está logado. Tentando reconectar...',
+            source: 'SigaBackgroundService');
+        final success = await reconnect();
+        if (!success) {
+          logarte.log('Background Sync: Falha na reconexão. Abortando.',
+              source: 'SigaBackgroundService');
+          throw Exception('Falha na reconexão durante a sincronização.');
+        }
+        await Future.delayed(const Duration(seconds: 10));
+      }
+
+      if (!_acquireSyncLock('Sincronização em Background')) {
+        logarte.log(
+            'Background Sync: Não foi possível iniciar, outra sincronização já está em andamento.',
+            source: 'SigaBackgroundService');
+        throw SyncInProgressException(
+            'Sincronização de $_currentSyncOperation já em andamento. ');
+      }
+
       logarte.log('Iniciando extração de dados em background...',
           source: 'SigaBackgroundService');
 
@@ -1500,9 +1504,21 @@ class SigaBackgroundService extends ChangeNotifier {
       logarte.log(
           'Sincronização completa em background finalizada com sucesso.',
           source: 'SigaBackgroundService');
+
+      // Atualiza o status para SUCCESS
+      final currentUser = (await _userRepository.getUser()).getOrThrow();
+      currentUser.lastSyncStatus = SyncStatus.success;
+      currentUser.lastSyncSuccess = DateTime.now();
+      await _userRepository.upsertUser(currentUser);
     } catch (e) {
       logarte.log('A sincronização completa em background falhou: $e',
           source: 'SigaBackgroundService');
+
+      // Atualiza o status para FAILED
+      final currentUser = (await _userRepository.getUser()).getOrThrow();
+      currentUser.lastSyncStatus = SyncStatus.failed;
+      currentUser.lastSyncMessage = e.toString();
+      await _userRepository.upsertUser(currentUser);
     } finally {
       await goToHome();
       _releaseSyncLock();

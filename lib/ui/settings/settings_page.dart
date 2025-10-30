@@ -25,7 +25,11 @@ class _SettingsPageState extends State<SettingsPage> {
   late UserRepository _userRepository;
   late ShorebirdService _shorebirdService;
 
-  DateTime? _lastSyncTime;
+  DateTime? _lastSyncAttempt;
+  DateTime? _lastSyncSuccess;
+  SyncStatus? _lastSyncStatus;
+  String? _lastSyncMessage;
+
   double? _currentSliderValue;
   DateTime? _nextSyncTime;
 
@@ -39,7 +43,10 @@ class _SettingsPageState extends State<SettingsPage> {
     _userRepository = injector.get<UserRepository>();
     _userStream = _userRepository.userStream().listen((user) {
       setState(() {
-        _lastSyncTime = user?.lastBackgroundSync;
+        _lastSyncAttempt = user?.lastSyncAttempt;
+        _lastSyncSuccess = user?.lastSyncSuccess;
+        _lastSyncStatus = user?.lastSyncStatus;
+        _lastSyncMessage = user?.lastSyncMessage;
         _nextSyncTime = user?.nextSyncTimestamp;
       });
     });
@@ -306,16 +313,7 @@ class _SettingsPageState extends State<SettingsPage> {
                                 ),
                               ),
                             ),
-                          ListTile(
-                            leading: const Icon(Icons.access_time),
-                            title: const Text('Última sincronização'),
-                            subtitle: Text(
-                              _lastSyncTime != null
-                                  ? '${_lastSyncTime!.day.toString().padLeft(2, '0')}/${_lastSyncTime!.month.toString().padLeft(2, '0')}/${_lastSyncTime!.year} '
-                                      '${_lastSyncTime!.hour.toString().padLeft(2, '0')}:${_lastSyncTime!.minute.toString().padLeft(2, '0')}'
-                                  : '...',
-                            ),
-                          ),
+                          _buildSyncStatusTile(),
                           if (_settingsRepository.isBiometricAvailable) ...[
                             const Divider(height: 1),
                             SwitchListTile(
@@ -454,6 +452,52 @@ class _SettingsPageState extends State<SettingsPage> {
           },
         ),
       ),
+    );
+  }
+
+  Widget _buildSyncStatusTile() {
+    IconData icon;
+    Color color;
+    String statusText;
+    String? subtitle;
+
+    switch (_lastSyncStatus) {
+      case SyncStatus.inProgress:
+        icon = Icons.sync;
+        color = Colors.blue;
+        statusText = 'Sincronização em andamento...';
+        break;
+      case SyncStatus.success:
+        icon = Icons.check_circle;
+        color = Colors.green;
+        statusText = 'Sincronizado com sucesso';
+        if (_lastSyncSuccess != null) {
+          subtitle = 'em ${_formatTimestamp(_lastSyncSuccess!.millisecondsSinceEpoch)}';
+        }
+        break;
+      case SyncStatus.failed:
+        icon = Icons.error;
+        color = Colors.red;
+        statusText = 'Falha na sincronização';
+        if (_lastSyncAttempt != null) {
+          subtitle = 'Tentativa em ${_formatTimestamp(_lastSyncAttempt!.millisecondsSinceEpoch)}\n';
+        }
+        if (_lastSyncMessage != null) {
+          subtitle = (subtitle ?? '') + _lastSyncMessage!;
+        }
+        break;
+      default:
+        icon = Icons.hourglass_empty;
+        color = Colors.grey;
+        statusText = 'Sincronização pendente';
+        break;
+    }
+
+    return ListTile(
+      leading: Icon(icon, color: color),
+      title: Text(statusText, style: TextStyle(color: color)),
+      subtitle: subtitle != null ? Text(subtitle) : null,
+      isThreeLine: subtitle != null && subtitle.contains('\n'),
     );
   }
 
