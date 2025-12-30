@@ -44,11 +44,11 @@ class PendingSubjectsCard extends StatelessWidget {
         color: isDark ? theme.colorScheme.surface : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: theme.colorScheme.outline.withOpacity(0.2),
+          color: theme.colorScheme.outline.withValues(alpha: 0.2),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -86,7 +86,7 @@ class PendingSubjectsCard extends StatelessWidget {
                           '${subjects.length} disciplinas • ${displayTotalHours}h',
                           style: TextStyle(
                             fontSize: 13,
-                            color: theme.colorScheme.onSurface.withOpacity(0.6),
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                           ),
                         ),
                       ],
@@ -102,7 +102,7 @@ class PendingSubjectsCard extends StatelessWidget {
               child: Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: Colors.green.withOpacity(0.1),
+                  color: Colors.green.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Row(
@@ -155,9 +155,9 @@ class PendingSubjectsCard extends StatelessWidget {
                       decoration: BoxDecoration(
                         color: isDark
                             ? theme.colorScheme.surfaceContainerHighest
-                                .withOpacity(0.3)
+                                .withValues(alpha: 0.3)
                             : theme.colorScheme.surfaceContainerHighest
-                                .withOpacity(0.5),
+                                .withValues(alpha: 0.5),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: Row(
@@ -181,7 +181,7 @@ class PendingSubjectsCard extends StatelessWidget {
                                 style: TextStyle(
                                   fontSize: 13,
                                   color: theme.colorScheme.onSurface
-                                      .withOpacity(0.7),
+                                      .withValues(alpha: 0.7),
                                 ),
                               ),
                             ),
@@ -194,7 +194,7 @@ class PendingSubjectsCard extends StatelessWidget {
                                 vertical: 4,
                               ),
                               decoration: BoxDecoration(
-                                color: Colors.orange.withOpacity(0.15),
+                                color: Colors.orange.withValues(alpha: 0.15),
                                 borderRadius: BorderRadius.circular(6),
                               ),
                               child: Text(

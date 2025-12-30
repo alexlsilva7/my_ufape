@@ -21,7 +21,21 @@ class SchoolHistoryViewModel extends ChangeNotifier {
   String? _errorMessage;
   String? get errorMessage => _errorMessage;
 
-  SchoolHistoryViewModel(this._repository, this._sigaService);
+  String get syncStatusMessage => _sigaService.syncStatusMessage;
+
+  SchoolHistoryViewModel(this._repository, this._sigaService) {
+    _sigaService.addListener(_onSigaServiceUpdate);
+  }
+
+  void _onSigaServiceUpdate() {
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _sigaService.removeListener(_onSigaServiceUpdate);
+    super.dispose();
+  }
 
   User? currentUser;
 
@@ -50,7 +64,16 @@ class SchoolHistoryViewModel extends ChangeNotifier {
   }
 
   Future<void> syncFromSiga() async {
+    // Verifica localmente primeiro (otimização)
     if (_isSyncing) return;
+
+    // Verifica globalmente no serviço
+    if (_sigaService.isSyncing) {
+      _errorMessage =
+          'Sincronização já em andamento: ${_sigaService.currentSyncOperation}';
+      notifyListeners();
+      return;
+    }
 
     _isSyncing = true;
     _errorMessage = null;
@@ -59,6 +82,8 @@ class SchoolHistoryViewModel extends ChangeNotifier {
     try {
       await _sigaService.navigateAndExtractSchoolHistory();
       await loadHistory();
+    } on SyncInProgressException catch (e) {
+      _errorMessage = e.message;
     } catch (e) {
       _errorMessage = "Sync error: ${e.toString()}";
     } finally {

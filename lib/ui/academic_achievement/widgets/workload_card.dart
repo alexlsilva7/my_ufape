@@ -24,8 +24,40 @@ class WorkloadCard extends StatelessWidget {
         data: item,
       );
 
+      // Primeiro, processar e filtrar os filhos normalmente
+      List<IndexedTreeNode<WorkloadSummaryItem>> validChildren = [];
+
       for (var i = 0; i < item.children.length; i++) {
-        node.add(convertToTreeNode(item.children[i], i));
+        var newNode = convertToTreeNode(item.children[i], i);
+        // Aplicar a filtragem original
+        if (newNode.data != null &&
+                (newNode.data!.toCompleteHours != null &&
+                    newNode.data!.toCompleteHours! == 0 &&
+                    newNode.data!.completedHours != null &&
+                    newNode.data!.completedHours! == 0) ||
+            (newNode.data!.completedHours == 0 &&
+                newNode.data!.toCompleteHours == null) ||
+            (newNode.data!.completedHours == 0 &&
+                newNode.data!.toCompleteHours == 0)) {
+          continue;
+        }
+        validChildren.add(newNode);
+      }
+
+      // Depois da filtragem, verificar se deve pular nível intermediário
+      // Se após filtrar sobrou apenas 1 filho e esse filho tem outros filhos,
+      // pular o nível intermediário
+      if (validChildren.length == 1 &&
+          validChildren[0].childrenAsList.isNotEmpty) {
+        // Adicionar os netos diretamente
+        for (var grandchild in validChildren[0].childrenAsList) {
+          node.add(grandchild);
+        }
+      } else {
+        // Caso normal: adicionar os filhos válidos
+        for (var child in validChildren) {
+          node.add(child);
+        }
       }
 
       return node;
@@ -59,11 +91,11 @@ class WorkloadCard extends StatelessWidget {
         color: isDark ? theme.colorScheme.surface : Colors.white,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: theme.colorScheme.outline.withOpacity(0.2),
+          color: theme.colorScheme.outline.withValues(alpha: 0.2),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -99,8 +131,7 @@ class WorkloadCard extends StatelessWidget {
                         Text(
                           '$totalCategories categorias',
                           style: TextStyle(
-                            fontSize: 13,
-                            color: theme.colorScheme.onSurface.withOpacity(0.6),
+color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                           ),
                         ),
                       ],
@@ -123,7 +154,7 @@ class WorkloadCard extends StatelessWidget {
               indentation: Indentation(
                 style: IndentStyle.roundJoint,
                 width: 24,
-                color: theme.colorScheme.primary.withOpacity(0.3),
+                color: theme.colorScheme.primary.withValues(alpha: 0.3),
               ),
               expansionIndicatorBuilder: (context, node) {
                 if (node.childrenAsList.isEmpty) {
@@ -171,11 +202,11 @@ class _WorkloadTreeItem extends StatelessWidget {
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           color: isDark
-              ? theme.colorScheme.surfaceContainerHighest.withOpacity(0.3)
-              : theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
+              ? theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3)
+              : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
-            color: theme.colorScheme.outline.withOpacity(0.1),
+            color: theme.colorScheme.outline.withValues(alpha: 0.1),
           ),
         ),
         child: Column(
@@ -274,7 +305,7 @@ class _HoursBadge extends StatelessWidget {
         Icon(
           icon,
           size: 14,
-          color: theme.colorScheme.onSurface.withOpacity(0.6),
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
         ),
         const SizedBox(width: 6),
         Text(
@@ -282,7 +313,7 @@ class _HoursBadge extends StatelessWidget {
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w500,
-            color: theme.colorScheme.onSurface.withOpacity(0.8),
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
           ),
         ),
       ],

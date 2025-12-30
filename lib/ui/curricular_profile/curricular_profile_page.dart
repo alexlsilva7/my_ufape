@@ -582,7 +582,7 @@ class _CurricularProfilePageState extends State<CurricularProfilePage> {
       padding: const EdgeInsets.symmetric(vertical: 8),
       itemCount: blockNames.length,
       itemBuilder: (context, index) {
-        final blockName = blockNames[index];
+        var blockName = blockNames[index];
         final subjects = blocks[blockName]!;
         return _buildBlockCard(blockName, subjects);
       },
@@ -590,6 +590,20 @@ class _CurricularProfilePageState extends State<CurricularProfilePage> {
   }
 
   Widget _buildBlockCard(String blockName, List<Subject> subjects) {
+    var name = blockName;
+
+    if (blockName.contains('OU CICLO BÁSICO')) {
+      name = name.replaceAll('OU CICLO BÁSICO', '').trim();
+    }
+    if (blockName.contains('OU TRONCO COMUM')) {
+      name = name.replaceAll('OU TRONCO COMUM', '').trim();
+    }
+    if (blockName.contains('ÁREA TEMÁTICA-')) {
+      name = name.replaceAll('ÁREA TEMÁTICA-', '').trim();
+    }
+    if (blockName.contains('COMPONENTES OPTATIVOS')) {
+      name = name.replaceAll('COMPONENTES OPTATIVOS', 'OPTATIVOS').trim();
+    }
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 4),
       elevation: 0,
@@ -597,7 +611,7 @@ class _CurricularProfilePageState extends State<CurricularProfilePage> {
       child: Theme(
         data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
         child: ExpansionTile(
-          title: Text(blockName,
+          title: Text(name,
               style:
                   const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
           subtitle: Text('${subjects.length} disciplina(s)',

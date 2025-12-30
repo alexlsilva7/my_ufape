@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
+import 'package:my_ufape/data/repositories/user/user_repository.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
 
 enum SyncStep {
@@ -15,9 +16,11 @@ enum StepStatus { idle, running, success, failure }
 
 class InitialSyncViewModel extends ChangeNotifier {
   final SigaBackgroundService _sigaService;
+  final UserRepository _userRepository;
   final SettingsRepository _settingsRepository;
 
-  InitialSyncViewModel(this._sigaService, this._settingsRepository);
+  InitialSyncViewModel(
+      this._sigaService, this._userRepository, this._settingsRepository);
 
   final Map<SyncStep, StepStatus> _status = {
     for (var step in SyncStep.values) step: StepStatus.idle
@@ -132,7 +135,10 @@ class InitialSyncViewModel extends ChangeNotifier {
 
   void _checkCompletionAndNavigate() async {
     if (isSyncComplete) {
-      await _settingsRepository.updateLastSyncTimestamp();
+      (await _userRepository.getUser()).onSuccess((user) async {
+        user.lastBackgroundSync = DateTime.now();
+        await _userRepository.upsertUser(user);
+      });
       await Future.delayed(const Duration(milliseconds: 1500));
       navigateToHome.value = true;
     }

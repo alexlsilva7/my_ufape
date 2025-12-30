@@ -57,6 +57,7 @@ Future<void> setupDependencies() async {
       injector.get<SharedPreferences>(),
       injector.get<FlutterSecureStorage>(),
       injector.get<Database>(),
+      injector.get<UserRepository>(),
     ),
   );
 
@@ -142,9 +143,13 @@ Future<void> setupDependencies() async {
     ),
   );
 
-  injector.addLazySingleton(() => InitialSyncViewModel(
+  injector.addLazySingleton(
+    () => InitialSyncViewModel(
       injector.get<SigaBackgroundService>(key: 'siga_background'),
-      injector.get()));
+      injector.get<UserRepository>(),
+      injector.get<SettingsRepository>(),
+    ),
+  );
 
   injector.addLazySingleton(
     () => TimetableViewModel(

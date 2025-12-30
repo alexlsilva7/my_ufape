@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:my_ufape/core/exceptions/app_exception.dart';
+import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
 import 'package:my_ufape/ui/initial_sync/initial_sync_view_model.dart';
 import 'package:result_dart/result_dart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -18,6 +19,10 @@ class LocalStoragePreferencesService {
 
   static const String urlUfape = 'https://siga.ufape.edu.br/ufape/index.jsp';
   static const String urlUpe = 'https://siga.upe.br/upe/index.jsp';
+  static const String _syncIntervalKey = 'sync_interval_minutes';
+  static const String _syncModeKey = 'sync_mode';
+  static const String _syncFixedTimeKey = 'sync_fixed_time';
+  static const String _syncTaskRegisteredKey = 'sync_task_registered';
 
   LocalStoragePreferencesService(this.prefs);
 
@@ -92,8 +97,8 @@ class LocalStoragePreferencesService {
 
   AsyncResult<Unit> updateLastSyncTimestamp() async {
     try {
-      await prefs.setInt(
-          _lastSyncTimestampKey, DateTime.now().millisecondsSinceEpoch);
+      await prefs.setInt(_lastSyncTimestampKey,
+          DateTime.now().toLocal().millisecondsSinceEpoch);
       return Success(unit);
     } catch (e, s) {
       return Failure(AppException(e.toString(), s));
@@ -113,5 +118,37 @@ class LocalStoragePreferencesService {
 
   Future<void> setSigaUrl(String url) async {
     await prefs.setString(_sigaUrlKey, url);
+  Duration get syncInterval =>
+      Duration(minutes: prefs.getInt(_syncIntervalKey) ?? 60);
+
+  Future<void> setSyncInterval(Duration interval) async {
+    await prefs.setInt(_syncIntervalKey, interval.inMinutes);
+  }
+
+  SyncMode get syncMode {
+    final syncModeName = prefs.getString(_syncModeKey) ?? SyncMode.interval.name;
+    return SyncMode.values.firstWhere((e) => e.name == syncModeName,
+        orElse: () => SyncMode.interval);
+  }
+
+  Future<void> setSyncMode(SyncMode mode) async {
+    await prefs.setString(_syncModeKey, mode.name);
+  }
+
+  TimeOfDay get syncFixedTime {
+    final timeString = prefs.getString(_syncFixedTimeKey) ?? '22:00';
+    final parts = timeString.split(':');
+    return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
+  }
+
+  Future<void> setSyncFixedTime(TimeOfDay time) async {
+    final timeString = '${time.hour}:${time.minute}';
+    await prefs.setString(_syncFixedTimeKey, timeString);
+  }
+
+  bool get isSyncTaskRegistered => prefs.getBool(_syncTaskRegisteredKey) ?? false;
+
+  Future<void> setSyncTaskRegistered(bool value) async {
+    await prefs.setBool(_syncTaskRegisteredKey, value);
   }
 }

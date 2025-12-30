@@ -60,4 +60,14 @@ class UserService {
       return Failure(Exception('Erro ao buscar usuário: $e'));
     }
   }
+
+  Stream<User?> watchUser() async* {
+    final isar = await _database.connection;
+    final user = await isar.users.where().findFirst();
+    if (user != null) {
+      yield* isar.users.watchObject(user.id, fireImmediately: true);
+    } else {
+      yield null;
+    }
+  }
 }

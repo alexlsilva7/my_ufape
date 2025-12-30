@@ -53,6 +53,10 @@ class _SchoolHistoryPageState extends State<SchoolHistoryPage> {
             return _buildLoadingState(context);
           }
 
+          if (_viewModel.isSyncing) {
+            return _buildSyncingState(context);
+          }
+
           if (_viewModel.errorMessage != null) {
             return _buildErrorState(context, isDark);
           }
@@ -106,6 +110,69 @@ class _SchoolHistoryPageState extends State<SchoolHistoryPage> {
     );
   }
 
+  Widget _buildSyncingState(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(24.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Theme.of(context)
+                    .colorScheme
+                    .primary
+                    .withValues(alpha: 0.1),
+                shape: BoxShape.circle,
+              ),
+              child: CircularProgressIndicator(
+                color: Theme.of(context).colorScheme.primary,
+                strokeWidth: 3,
+              ),
+            ),
+            const SizedBox(height: 24),
+            Text(
+              'Sincronizando com o SIGA',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                _viewModel.syncStatusMessage.isEmpty
+                    ? 'Preparando sincronização...'
+                    : _viewModel.syncStatusMessage,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.primary,
+                      fontWeight: FontWeight.w500,
+                    ),
+                textAlign: TextAlign.center,
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Por favor, aguarde...',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.6),
+                  ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildErrorState(BuildContext context, bool isDark) {
     return Center(
       child: Padding(
@@ -139,7 +206,7 @@ class _SchoolHistoryPageState extends State<SchoolHistoryPage> {
             const SizedBox(height: 24),
             ElevatedButton.icon(
               onPressed: () {
-                _viewModel.loadHistory();
+                _viewModel.syncFromSiga();
               },
               icon: const Icon(Icons.refresh),
               label: const Text('Tentar novamente'),

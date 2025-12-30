@@ -42,38 +42,53 @@ const UserSchema = CollectionSchema(
       name: r'entryType',
       type: IsarType.string,
     ),
-    r'name': PropertySchema(
+    r'lastBackgroundSync': PropertySchema(
       id: 5,
+      name: r'lastBackgroundSync',
+      type: IsarType.dateTime,
+    ),
+    r'lastSuccessfulSync': PropertySchema(
+      id: 6,
+      name: r'lastSuccessfulSync',
+      type: IsarType.dateTime,
+    ),
+    r'name': PropertySchema(
+      id: 7,
       name: r'name',
       type: IsarType.string,
     ),
+    r'nextSyncTimestamp': PropertySchema(
+      id: 8,
+      name: r'nextSyncTimestamp',
+      type: IsarType.dateTime,
+    ),
     r'overallAverage': PropertySchema(
-      id: 6,
+      id: 9,
       name: r'overallAverage',
       type: IsarType.double,
     ),
     r'overallCoefficient': PropertySchema(
-      id: 7,
+      id: 10,
       name: r'overallCoefficient',
       type: IsarType.double,
     ),
     r'profile': PropertySchema(
-      id: 8,
+      id: 11,
       name: r'profile',
       type: IsarType.string,
     ),
     r'registration': PropertySchema(
-      id: 9,
+      id: 12,
       name: r'registration',
       type: IsarType.string,
     ),
     r'shift': PropertySchema(
-      id: 10,
+      id: 13,
       name: r'shift',
       type: IsarType.string,
     ),
     r'situation': PropertySchema(
-      id: 11,
+      id: 14,
       name: r'situation',
       type: IsarType.string,
     )
@@ -149,13 +164,16 @@ void _userSerialize(
   writer.writeString(offsets[2], object.currentPeriod);
   writer.writeString(offsets[3], object.entryPeriod);
   writer.writeString(offsets[4], object.entryType);
-  writer.writeString(offsets[5], object.name);
-  writer.writeDouble(offsets[6], object.overallAverage);
-  writer.writeDouble(offsets[7], object.overallCoefficient);
-  writer.writeString(offsets[8], object.profile);
-  writer.writeString(offsets[9], object.registration);
-  writer.writeString(offsets[10], object.shift);
-  writer.writeString(offsets[11], object.situation);
+  writer.writeDateTime(offsets[5], object.lastBackgroundSync);
+  writer.writeDateTime(offsets[6], object.lastSuccessfulSync);
+  writer.writeString(offsets[7], object.name);
+  writer.writeDateTime(offsets[8], object.nextSyncTimestamp);
+  writer.writeDouble(offsets[9], object.overallAverage);
+  writer.writeDouble(offsets[10], object.overallCoefficient);
+  writer.writeString(offsets[11], object.profile);
+  writer.writeString(offsets[12], object.registration);
+  writer.writeString(offsets[13], object.shift);
+  writer.writeString(offsets[14], object.situation);
 }
 
 User _userDeserialize(
@@ -170,13 +188,16 @@ User _userDeserialize(
     currentPeriod: reader.readString(offsets[2]),
     entryPeriod: reader.readString(offsets[3]),
     entryType: reader.readString(offsets[4]),
-    name: reader.readString(offsets[5]),
-    overallAverage: reader.readDoubleOrNull(offsets[6]),
-    overallCoefficient: reader.readDoubleOrNull(offsets[7]),
-    profile: reader.readString(offsets[8]),
-    registration: reader.readString(offsets[9]),
-    shift: reader.readString(offsets[10]),
-    situation: reader.readString(offsets[11]),
+    lastBackgroundSync: reader.readDateTimeOrNull(offsets[5]),
+    lastSuccessfulSync: reader.readDateTimeOrNull(offsets[6]),
+    name: reader.readString(offsets[7]),
+    nextSyncTimestamp: reader.readDateTimeOrNull(offsets[8]),
+    overallAverage: reader.readDoubleOrNull(offsets[9]),
+    overallCoefficient: reader.readDoubleOrNull(offsets[10]),
+    profile: reader.readString(offsets[11]),
+    registration: reader.readString(offsets[12]),
+    shift: reader.readString(offsets[13]),
+    situation: reader.readString(offsets[14]),
   );
   object.id = id;
   return object;
@@ -200,18 +221,24 @@ P _userDeserializeProp<P>(
     case 4:
       return (reader.readString(offset)) as P;
     case 5:
-      return (reader.readString(offset)) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 6:
-      return (reader.readDoubleOrNull(offset)) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 7:
-      return (reader.readDoubleOrNull(offset)) as P;
+      return (reader.readString(offset)) as P;
     case 8:
-      return (reader.readString(offset)) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 9:
-      return (reader.readString(offset)) as P;
+      return (reader.readDoubleOrNull(offset)) as P;
     case 10:
-      return (reader.readString(offset)) as P;
+      return (reader.readDoubleOrNull(offset)) as P;
     case 11:
+      return (reader.readString(offset)) as P;
+    case 12:
+      return (reader.readString(offset)) as P;
+    case 13:
+      return (reader.readString(offset)) as P;
+    case 14:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -1199,6 +1226,146 @@ extension UserQueryFilter on QueryBuilder<User, User, QFilterCondition> {
     });
   }
 
+  QueryBuilder<User, User, QAfterFilterCondition> lastBackgroundSyncIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'lastBackgroundSync',
+      ));
+    });
+  }
+
+  QueryBuilder<User, User, QAfterFilterCondition>
+      lastBackgroundSyncIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'lastBackgroundSync',
+      ));
+    });
+  }
+
+  QueryBuilder<User, User, QAfterFilterCondition> lastBackgroundSyncEqualTo(
+      DateTime? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'lastBackgroundSync',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<User, User, QAfterFilterCondition> lastBackgroundSyncGreaterThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'lastBackgroundSync',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<User, User, QAfterFilterCondition> lastBackgroundSyncLessThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'lastBackgroundSync',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<User, User, QAfterFilterCondition> lastBackgroundSyncBetween(
+    DateTime? lower,
+    DateTime? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'lastBackgroundSync',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<User, User, QAfterFilterCondition> lastSuccessfulSyncIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'lastSuccessfulSync',
+      ));
+    });
+  }
+
+  QueryBuilder<User, User, QAfterFilterCondition>
+      lastSuccessfulSyncIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'lastSuccessfulSync',
+      ));
+    });
+  }
+
+  QueryBuilder<User, User, QAfterFilterCondition> lastSuccessfulSyncEqualTo(
+      DateTime? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'lastSuccessfulSync',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<User, User, QAfterFilterCondition> lastSuccessfulSyncGreaterThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'lastSuccessfulSync',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<User, User, QAfterFilterCondition> lastSuccessfulSyncLessThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'lastSuccessfulSync',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<User, User, QAfterFilterCondition> lastSuccessfulSyncBetween(
+    DateTime? lower,
+    DateTime? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'lastSuccessfulSync',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<User, User, QAfterFilterCondition> nameEqualTo(
     String value, {
     bool caseSensitive = true,
@@ -1323,6 +1490,75 @@ extension UserQueryFilter on QueryBuilder<User, User, QFilterCondition> {
       return query.addFilterCondition(FilterCondition.greaterThan(
         property: r'name',
         value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<User, User, QAfterFilterCondition> nextSyncTimestampIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'nextSyncTimestamp',
+      ));
+    });
+  }
+
+  QueryBuilder<User, User, QAfterFilterCondition> nextSyncTimestampIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'nextSyncTimestamp',
+      ));
+    });
+  }
+
+  QueryBuilder<User, User, QAfterFilterCondition> nextSyncTimestampEqualTo(
+      DateTime? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'nextSyncTimestamp',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<User, User, QAfterFilterCondition> nextSyncTimestampGreaterThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'nextSyncTimestamp',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<User, User, QAfterFilterCondition> nextSyncTimestampLessThan(
+    DateTime? value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'nextSyncTimestamp',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<User, User, QAfterFilterCondition> nextSyncTimestampBetween(
+    DateTime? lower,
+    DateTime? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'nextSyncTimestamp',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
       ));
     });
   }
@@ -2066,6 +2302,30 @@ extension UserQuerySortBy on QueryBuilder<User, User, QSortBy> {
     });
   }
 
+  QueryBuilder<User, User, QAfterSortBy> sortByLastBackgroundSync() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastBackgroundSync', Sort.asc);
+    });
+  }
+
+  QueryBuilder<User, User, QAfterSortBy> sortByLastBackgroundSyncDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastBackgroundSync', Sort.desc);
+    });
+  }
+
+  QueryBuilder<User, User, QAfterSortBy> sortByLastSuccessfulSync() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastSuccessfulSync', Sort.asc);
+    });
+  }
+
+  QueryBuilder<User, User, QAfterSortBy> sortByLastSuccessfulSyncDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastSuccessfulSync', Sort.desc);
+    });
+  }
+
   QueryBuilder<User, User, QAfterSortBy> sortByName() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.asc);
@@ -2075,6 +2335,18 @@ extension UserQuerySortBy on QueryBuilder<User, User, QSortBy> {
   QueryBuilder<User, User, QAfterSortBy> sortByNameDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.desc);
+    });
+  }
+
+  QueryBuilder<User, User, QAfterSortBy> sortByNextSyncTimestamp() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'nextSyncTimestamp', Sort.asc);
+    });
+  }
+
+  QueryBuilder<User, User, QAfterSortBy> sortByNextSyncTimestampDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'nextSyncTimestamp', Sort.desc);
     });
   }
 
@@ -2224,6 +2496,30 @@ extension UserQuerySortThenBy on QueryBuilder<User, User, QSortThenBy> {
     });
   }
 
+  QueryBuilder<User, User, QAfterSortBy> thenByLastBackgroundSync() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastBackgroundSync', Sort.asc);
+    });
+  }
+
+  QueryBuilder<User, User, QAfterSortBy> thenByLastBackgroundSyncDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastBackgroundSync', Sort.desc);
+    });
+  }
+
+  QueryBuilder<User, User, QAfterSortBy> thenByLastSuccessfulSync() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastSuccessfulSync', Sort.asc);
+    });
+  }
+
+  QueryBuilder<User, User, QAfterSortBy> thenByLastSuccessfulSyncDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'lastSuccessfulSync', Sort.desc);
+    });
+  }
+
   QueryBuilder<User, User, QAfterSortBy> thenByName() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.asc);
@@ -2233,6 +2529,18 @@ extension UserQuerySortThenBy on QueryBuilder<User, User, QSortThenBy> {
   QueryBuilder<User, User, QAfterSortBy> thenByNameDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.desc);
+    });
+  }
+
+  QueryBuilder<User, User, QAfterSortBy> thenByNextSyncTimestamp() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'nextSyncTimestamp', Sort.asc);
+    });
+  }
+
+  QueryBuilder<User, User, QAfterSortBy> thenByNextSyncTimestampDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'nextSyncTimestamp', Sort.desc);
     });
   }
 
@@ -2346,10 +2654,28 @@ extension UserQueryWhereDistinct on QueryBuilder<User, User, QDistinct> {
     });
   }
 
+  QueryBuilder<User, User, QDistinct> distinctByLastBackgroundSync() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'lastBackgroundSync');
+    });
+  }
+
+  QueryBuilder<User, User, QDistinct> distinctByLastSuccessfulSync() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'lastSuccessfulSync');
+    });
+  }
+
   QueryBuilder<User, User, QDistinct> distinctByName(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'name', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<User, User, QDistinct> distinctByNextSyncTimestamp() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'nextSyncTimestamp');
     });
   }
 
@@ -2431,9 +2757,27 @@ extension UserQueryProperty on QueryBuilder<User, User, QQueryProperty> {
     });
   }
 
+  QueryBuilder<User, DateTime?, QQueryOperations> lastBackgroundSyncProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'lastBackgroundSync');
+    });
+  }
+
+  QueryBuilder<User, DateTime?, QQueryOperations> lastSuccessfulSyncProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'lastSuccessfulSync');
+    });
+  }
+
   QueryBuilder<User, String, QQueryOperations> nameProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'name');
+    });
+  }
+
+  QueryBuilder<User, DateTime?, QQueryOperations> nextSyncTimestampProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'nextSyncTimestamp');
     });
   }
 

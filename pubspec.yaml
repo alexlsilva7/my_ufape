@@ -1,7 +1,7 @@
 name: my_ufape
 description: "Aplicativo auxiliar para alunos da UFAPE"
 publish_to: 'none'
-version: 0.1.15
+version: 0.1.17
 
 environment:
   sdk: ^3.6.2
@@ -19,7 +19,6 @@ dependencies:
   shared_preferences: ^2.5.3
   result_command: ^2.1.0
   brasil_fields: ^1.18.0
-  flutter_local_notifications: ^18.0.1
   permission_handler: ^11.3.1
   # isar
   isar_community: ^3.3.0-dev.3
@@ -37,6 +36,10 @@ dependencies:
   gpt_markdown: ^1.1.4
   animated_tree_view: ^2.3.0
   validatorless: ^1.2.5
+  workmanager: ^0.9.0+3
+  flutter_local_notifications: ^19.5.0
+  connectivity_plus: ^7.0.0
+  internet_connection_checker: ^1.0.0+1
 
 dev_dependencies:
   flutter_test:

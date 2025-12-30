@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:my_ufape/config/dependencies.dart';
@@ -11,8 +10,13 @@ import 'package:result_dart/result_dart.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
 import 'package:local_auth/local_auth.dart';
+// ignore: depend_on_referenced_packages
 import 'package:local_auth_android/local_auth_android.dart';
+// ignore: depend_on_referenced_packages
 import 'package:local_auth_darwin/local_auth_darwin.dart';
+import 'package:workmanager/workmanager.dart';
+
+import 'package:my_ufape/data/repositories/user/user_repository.dart';
 
 import './settings_repository.dart';
 
@@ -22,6 +26,7 @@ class SettingsRepositoryImpl extends ChangeNotifier
   final SharedPreferences _prefs;
   final FlutterSecureStorage _secureStorage;
   final Database _database;
+  final UserRepository _userRepository;
   final LocalAuthentication _localAuth = LocalAuthentication();
 
   late ThemeMode _themeMode;
@@ -31,6 +36,7 @@ class SettingsRepositoryImpl extends ChangeNotifier
     this._prefs,
     this._secureStorage,
     this._database,
+    this._userRepository,
   ) {
     _themeMode = _localStoragePreferencesService.themeMode;
     isDebugOverlayEnabled =
@@ -91,7 +97,6 @@ class SettingsRepositoryImpl extends ChangeNotifier
       return await _localAuth.authenticate(
         authMessages: const <AuthMessages>[
           AndroidAuthMessages(
-            signInTitle: 'Autenticação biométrica necessária',
             cancelButton: 'Cancelar',
             goToSettingsButton: 'Ir para configurações',
             goToSettingsDescription:
@@ -99,7 +104,6 @@ class SettingsRepositoryImpl extends ChangeNotifier
             biometricNotRecognized:
                 'Biometria não reconhecida. Tente novamente.',
             biometricSuccess: 'Biometria reconhecida com sucesso.',
-            deviceCredentialsRequiredTitle: 'Autenticação necessária',
             deviceCredentialsSetupDescription:
                 'Por favor, configure suas credenciais do dispositivo para usar esta funcionalidade.',
           ),
@@ -159,6 +163,7 @@ class SettingsRepositoryImpl extends ChangeNotifier
       // Notifica listeners para atualizar a UI se necessário (ex: modo escuro voltando ao padrão)
       _themeMode = ThemeMode.system;
       isDebugOverlayEnabled = false;
+      cancelSyncTask();
       notifyListeners();
 
       return Success(unit);
@@ -176,15 +181,107 @@ class SettingsRepositoryImpl extends ChangeNotifier
 
   @override
   AsyncResult<Unit> toggleAutoSync() async {
-    await _localStoragePreferencesService.toggleAutoSync();
-    isAutoSyncEnabled = !isAutoSyncEnabled;
-    notifyListeners();
-    return Success(unit);
+    try {
+      final newState = !isAutoSyncEnabled;
+      await _localStoragePreferencesService.toggleAutoSync();
+      isAutoSyncEnabled = newState;
+
+      if (newState) {
+        await scheduleSyncTask();
+      } else {
+        await cancelSyncTask();
+      }
+
+      notifyListeners();
+      return Success(unit);
+    } catch (e, s) {
+      return Failure(AppException(e.toString(), s));
+    }
   }
 
   @override
-  AsyncResult<Unit> updateLastSyncTimestamp() async {
-    return _localStoragePreferencesService.updateLastSyncTimestamp();
+  Future<void> updateNextSyncTimestamp() async {
+    if (!isAutoSyncEnabled) {
+      final user = (await _userRepository.getUser()).getOrNull();
+      if (user != null) {
+        user.nextSyncTimestamp = null;
+        _userRepository.upsertUser(user);
+      }
+      notifyListeners();
+      return;
+    }
+
+    DateTime nextSync;
+    if (syncMode == SyncMode.fixedTime) {
+      final now = DateTime.now();
+      final targetTime = syncFixedTime;
+      nextSync = DateTime(
+          now.year, now.month, now.day, targetTime.hour, targetTime.minute);
+      if (nextSync.isBefore(now)) {
+        nextSync = nextSync.add(const Duration(days: 1));
+      }
+    } else {
+      nextSync = DateTime.now().add(syncInterval);
+    }
+    final user = (await _userRepository.getUser()).getOrNull();
+    if (user != null) {
+      user.nextSyncTimestamp = nextSync;
+      _userRepository.upsertUser(user);
+    }
+
+    notifyListeners();
+  }
+
+  @override
+  Future<void> scheduleSyncTask() async {
+    await cancelSyncTask(); // Sempre cancele a tarefa anterior
+
+    if (syncMode == SyncMode.fixedTime) {
+      final now = DateTime.now();
+      final targetTime = syncFixedTime;
+
+      var scheduledDate = DateTime(
+          now.year, now.month, now.day, targetTime.hour, targetTime.minute);
+
+      if (scheduledDate.isBefore(now)) {
+        scheduledDate = scheduledDate.add(const Duration(days: 1));
+      }
+
+      final initialDelay = scheduledDate.difference(now);
+
+      await Workmanager().registerOneOffTask(
+        "my-ufape-data-sync-fixed",
+        "data_sync",
+        initialDelay: initialDelay,
+        constraints: Constraints(networkType: NetworkType.connected),
+      );
+    } else {
+      // Modo Intervalo
+      await Workmanager().registerPeriodicTask(
+        "my-ufape-data-sync-periodic",
+        "data_sync",
+        frequency: syncInterval,
+        constraints: Constraints(networkType: NetworkType.connected),
+      );
+    }
+    await _localStoragePreferencesService.setSyncTaskRegistered(true);
+    await updateNextSyncTimestamp();
+  }
+
+  @override
+  Future<void> cancelSyncTask() async {
+    await Workmanager().cancelByUniqueName("my-ufape-data-sync-periodic");
+    await Workmanager().cancelByUniqueName("my-ufape-data-sync-fixed");
+
+    await _localStoragePreferencesService.setSyncTaskRegistered(false);
+
+    final user = (await _userRepository.getUser()).getOrNull();
+    if (user != null) {
+      user.nextSyncTimestamp = null;
+      _userRepository.upsertUser(user);
+    }
+
+    notifyListeners();
   }
 
   @override
@@ -275,5 +372,41 @@ class SettingsRepositoryImpl extends ChangeNotifier
     } catch (e, s) {
       return Failure(AppException(e.toString(), s));
     }
+  Duration get syncInterval => _localStoragePreferencesService.syncInterval;
+
+  @override
+  Future<void> setSyncInterval(Duration interval) async {
+    await _localStoragePreferencesService.setSyncInterval(interval);
+    notifyListeners();
+    await scheduleSyncTask();
+  }
+
+  @override
+  SyncMode get syncMode => _localStoragePreferencesService.syncMode;
+
+  @override
+  Future<void> setSyncMode(SyncMode mode) async {
+    await _localStoragePreferencesService.setSyncMode(mode);
+    notifyListeners();
+    await scheduleSyncTask();
+  }
+
+  @override
+  TimeOfDay get syncFixedTime => _localStoragePreferencesService.syncFixedTime;
+
+  @override
+  Future<void> setSyncFixedTime(TimeOfDay time) async {
+    await _localStoragePreferencesService.setSyncFixedTime(time);
+    notifyListeners();
+    await scheduleSyncTask();
+  }
+
+  @override
+  bool get isSyncTaskRegistered => _localStoragePreferencesService.isSyncTaskRegistered;
+
+  @override
+  Future<void> setSyncTaskRegistered(bool value) async {
+    await _localStoragePreferencesService.setSyncTaskRegistered(value);
+    notifyListeners();
   }
 }
