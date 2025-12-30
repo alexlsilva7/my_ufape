@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:my_ufape/config/dependencies.dart';
 import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
 
+import 'package:my_ufape/data/services/settings/local_storage_preferences_service.dart';
 import 'package:my_ufape/data/services/shorebird/shorebird_service.dart';
+
 import 'package:terminate_restart/terminate_restart.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -133,6 +135,45 @@ class _SettingsPageState extends State<SettingsPage> {
                               ),
                             ],
                           ),
+                        ),
+                        const Divider(height: 1),
+                        ListTile(
+                          leading: const Icon(Icons.school_outlined),
+                          title: const Text('Instituição'),
+                          subtitle: Text(_settingsRepository.sigaUrl ==
+                                  LocalStoragePreferencesService.urlUpe
+                              ? 'UPE'
+                              : 'UFAPE'),
+                          onTap: () {
+                            showDialog(
+                              context: context,
+                              builder: (context) => SimpleDialog(
+                                title: const Text('Selecionar Instituição'),
+                                children: [
+                                  SimpleDialogOption(
+                                    padding: const EdgeInsets.all(20),
+                                    child: const Text('UFAPE'),
+                                    onPressed: () {
+                                      _settingsRepository.setSigaUrl(
+                                          LocalStoragePreferencesService
+                                              .urlUfape);
+                                      Navigator.pop(context);
+                                    },
+                                  ),
+                                  SimpleDialogOption(
+                                    padding: const EdgeInsets.all(20),
+                                    child: const Text('UPE'),
+                                    onPressed: () {
+                                      _settingsRepository.setSigaUrl(
+                                          LocalStoragePreferencesService
+                                              .urlUpe);
+                                      Navigator.pop(context);
+                                    },
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
                         ),
                         const Divider(height: 1),
                         SwitchListTile(

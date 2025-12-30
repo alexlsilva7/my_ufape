@@ -8,6 +8,9 @@ import 'package:my_ufape/data/services/siga/siga_background_service.dart';
 import 'package:routefly/routefly.dart';
 import '../../core/ui/gen/assets.gen.dart';
 
+import 'package:my_ufape/data/services/settings/local_storage_preferences_service.dart';
+import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
+
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
@@ -24,6 +27,14 @@ class _LoginPageState extends State<LoginPage> {
 
   // Storage seguro para salvar credenciais
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+  final SettingsRepository _settings = injector.get();
+  String _selectedUrl = LocalStoragePreferencesService.urlUfape;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedUrl = _settings.sigaUrl;
+  }
 
   Future<void> _handleLogin() async {
     if (_formKey.currentState!.validate()) {
@@ -123,12 +134,52 @@ class _LoginPageState extends State<LoginPage> {
                               ),
                     ),
                     const SizedBox(height: 8),
+                    // --- DROPDOWN DA INSTITUIÇÃO ---
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).inputDecorationTheme.fillColor,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Theme.of(context).dividerColor,
+                        ),
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _selectedUrl,
+                          isExpanded: true,
+                          icon: const Icon(Icons.school),
+                          items: const [
+                            DropdownMenuItem(
+                              value: LocalStoragePreferencesService.urlUfape,
+                              child: Text('UFAPE'),
+                            ),
+                            DropdownMenuItem(
+                              value: LocalStoragePreferencesService.urlUpe,
+                              child: Text('UPE'),
+                            ),
+                          ],
+                          onChanged: (value) async {
+                            if (value != null) {
+                              setState(() {
+                                _selectedUrl = value;
+                              });
+                              // Salva e reinicia o serviço SIGA em background
+                              await _settings.setSigaUrl(value);
+                            }
+                          },
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
                     Text(
                       'Use suas credenciais do SIGA para entrar',
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                     const SizedBox(height: 24),
+
                     // Campo de Usuário
                     TextFormField(
                       controller: _usernameController,

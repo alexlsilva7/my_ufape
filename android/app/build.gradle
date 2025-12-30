@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.alexlopes.myufape.my_ufape"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk = 36
     ndkVersion = "26.1.10909125"
 
     compileOptions {

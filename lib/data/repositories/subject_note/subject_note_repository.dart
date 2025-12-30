@@ -8,4 +8,6 @@ abstract interface class SubjectNoteRepository {
   AsyncResult<bool> upsertSubjectNote(SubjectNote note);
   AsyncResult<bool> updateSubjectNote(SubjectNote note);
   AsyncResult<bool> deleteSubjectNoteById(int id);
+  AsyncResult<SubjectNote> getSubjectNoteByNameAndSemester(
+      String name, String semester);
 }

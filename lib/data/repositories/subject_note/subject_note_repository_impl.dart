@@ -29,6 +29,12 @@ class SubjectNoteRepositoryImpl implements SubjectNoteRepository {
   }
 
   @override
+  AsyncResult<SubjectNote> getSubjectNoteByNameAndSemester(
+      String name, String semester) {
+    return _subjectNoteService.getSubjectNoteByNameAndSemester(name, semester);
+  }
+
+  @override
   AsyncResult<bool> updateSubjectNote(SubjectNote note) {
     return _subjectNoteService.updateSubjectNote(note);
   }

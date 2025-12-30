@@ -18,6 +18,7 @@ import 'package:my_ufape/data/parsers/profile_parser.dart';
 import 'package:my_ufape/data/services/siga/siga_scripts.dart';
 import 'package:my_ufape/domain/entities/user.dart';
 import 'package:my_ufape/data/repositories/user/user_repository.dart';
+import 'package:my_ufape/data/services/notification/notification_service.dart';
 
 /// Serviço que mantém um WebViewController em memória
 /// para manter a sessão SIGA viva e expor métodos de extração.
@@ -34,6 +35,7 @@ class SigaBackgroundService extends ChangeNotifier {
   final UserRepository _userRepository = injector.get();
   final SchoolHistoryRepository _schoolHistoryRepository = injector.get();
   final AcademicAchievementRepository _achievementRepository = injector.get();
+  final NotificationService _notificationService = injector.get();
 
   WebViewController? _controller;
   WebViewController? get controller => _controller;
@@ -129,6 +131,8 @@ class SigaBackgroundService extends ChangeNotifier {
   Future<void> initialize() async {
     if (_controller != null) return;
 
+    final baseUrl = _settings.sigaUrl;
+
     statusMessage = 'Inicializando webview';
     notifyListeners();
 
@@ -145,7 +149,7 @@ class SigaBackgroundService extends ChangeNotifier {
             statusMessage = '';
             notifyListeners();
 
-            if (url.contains('siga.ufape.edu.br/ufape/index.jsp')) {
+            if (url.contains('index.jsp')) {
               try {
                 await _controller
                     ?.runJavaScript(SigaScripts.loginPageStylesScript);
@@ -195,10 +199,11 @@ class SigaBackgroundService extends ChangeNotifier {
 
     // Carrega a página inicial do SIGA
     await _controller!.loadRequest(
-      Uri.parse('https://siga.ufape.edu.br/ufape/index.jsp'),
+      Uri.parse(baseUrl),
     );
 
     // Inicia timer periódico para verificar status de login
+
     _statusTimer = Timer.periodic(const Duration(seconds: 2), (_) {
       _checkLoginStatus();
     });
@@ -220,9 +225,11 @@ class SigaBackgroundService extends ChangeNotifier {
     _pendingUsername = username;
     _pendingPassword = password;
 
+    final baseUrl = _settings.sigaUrl;
+
     // Força o recarregamento da página de login para acionar o onPageFinished
     await _controller?.loadRequest(
-      Uri.parse('https://siga.ufape.edu.br/ufape/index.jsp'),
+      Uri.parse(baseUrl),
     );
 
     try {
@@ -520,6 +527,10 @@ class SigaBackgroundService extends ChangeNotifier {
       // 5. Extrai as notas
       final grades = await extractGrades();
 
+      // --- LÓGICA DE DETECÇÃO DE NOTAS NOVAS ---
+      await _checkForNewGradesAndNotify(grades);
+      // -----------------------------------------
+
       // 6. Salva no banco de dados
       for (final grade in grades) {
         await _subjectNoteRepository.upsertSubjectNote(grade);
@@ -533,6 +544,60 @@ class SigaBackgroundService extends ChangeNotifier {
         'Failed to navigate and extract grades: $e, isLoggedIn=$_isLoggedIn',
       );
       throw Exception('Erro ao navegar e extrair notas: $e');
+    }
+  }
+
+  /// Compara as notas extraídas com as salvas no banco e notifica alterações
+  Future<void> _checkForNewGradesAndNotify(
+      List<SubjectNote> fetchedGrades) async {
+    // Filtra apenas disciplinas que estão sendo cursadas
+    final currentSubjects = fetchedGrades.where((s) {
+      final situacao = s.situacao.toUpperCase();
+      // Ajuste conforme a string exata do SIGA, geralmente contém "CURSANDO" ou "MATRICULADO"
+      return !situacao.contains('APROVADO') &&
+          !situacao.contains('REPROVADO') &&
+          !situacao.contains('DISPENSADO') &&
+          !situacao.contains('TRANCADO');
+    }).toList();
+
+    for (final newSubjectData in currentSubjects) {
+      // Busca a versão salva no banco
+      final result =
+          await _subjectNoteRepository.getSubjectNoteByNameAndSemester(
+              newSubjectData.nome, newSubjectData.semestre);
+
+      result.fold((savedSubjectData) {
+        // Se encontrou no banco, compara as notas
+        final savedNotas = savedSubjectData.notas;
+        final newNotas = newSubjectData.notas;
+
+        newNotas.forEach((key, value) {
+          // Ignora chaves de "Faltas" ou "Situação" se estiverem no map de notas
+          if (key.toLowerCase().contains('falta')) return;
+
+          final oldValue = savedNotas[key];
+
+          // Se a nota não existia antes OU se o valor mudou (ex: de "-" para "8.0")
+          // E o novo valor não é vazio ou traço
+          if ((oldValue == null || oldValue != value) &&
+              value.trim().isNotEmpty &&
+              value != '-') {
+            // Dispara notificação
+            _notificationService.showGradeNotification(
+              subjectName: newSubjectData.nome,
+              gradeKey: key,
+              gradeValue: value,
+            );
+
+            logarte.log(
+                'Nova nota detectada: ${newSubjectData.nome} - $key: $value');
+          }
+        });
+      }, (error) {
+        // Se não encontrou no banco (primeira vez syncando essa matéria),
+        // geralmente não notificamos tudo de uma vez para não spamar,
+        // a menos que queira notificar a "entrada" da disciplina.
+      });
     }
   }
 

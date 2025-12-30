@@ -14,6 +14,10 @@ class LocalStoragePreferencesService {
   static const String _biometricAuthKey = 'biometric_auth_enabled';
   static const String _themeModeKey = 'theme_mode';
   static const String _syncStatusKey = 'initial_sync_status';
+  static const String _sigaUrlKey = 'siga_institution_url';
+
+  static const String urlUfape = 'https://siga.ufape.edu.br/ufape/index.jsp';
+  static const String urlUpe = 'https://siga.upe.br/upe/index.jsp';
 
   LocalStoragePreferencesService(this.prefs);
 
@@ -103,5 +107,11 @@ class LocalStoragePreferencesService {
     } catch (e, s) {
       return Failure(AppException(e.toString(), s));
     }
+  }
+
+  String get sigaUrl => prefs.getString(_sigaUrlKey) ?? urlUfape;
+
+  Future<void> setSigaUrl(String url) async {
+    await prefs.setString(_sigaUrlKey, url);
   }
 }

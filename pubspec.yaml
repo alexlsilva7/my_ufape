@@ -19,6 +19,8 @@ dependencies:
   shared_preferences: ^2.5.3
   result_command: ^2.1.0
   brasil_fields: ^1.18.0
+  flutter_local_notifications: ^18.0.1
+  permission_handler: ^11.3.1
   # isar
   isar_community: ^3.3.0-dev.3
   isar_community_flutter_libs: ^3.3.0-dev.3

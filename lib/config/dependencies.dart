@@ -34,6 +34,7 @@ import 'package:my_ufape/ui/splash/splash_view_model.dart';
 import 'package:my_ufape/ui/subjects/subjects_view_model.dart';
 import 'package:my_ufape/ui/timetable/timetable_view_model.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:my_ufape/data/services/notification/notification_service.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
 import 'package:my_ufape/data/services/shorebird/shorebird_service.dart';
 import 'package:my_ufape/ui/initial_sync/initial_sync_view_model.dart';
@@ -174,6 +175,8 @@ Future<void> setupDependencies() async {
         injector.get<SigaBackgroundService>(key: 'siga_background'),
       ));
 
+  injector.addSingleton(NotificationService.new);
+
   // Registrar serviço SIGA: uma instância para background (sincronização)
   // e outra para uso pela UI (WebView). Usamos keys para diferenciar.
   injector.addInstance<SigaBackgroundService>(
@@ -204,6 +207,15 @@ Future<void> setupDependencies() async {
     //await injector.get<SigaBackgroundService>(key: 'siga_ui').initialize();
   } catch (_) {
     logarte.log('Falha ao inicializar SigaBackgroundService',
+        source: 'setupDependencies');
+  }
+
+  // Inicializa serviço de notificação
+  try {
+    await injector.get<NotificationService>().init();
+    await injector.get<NotificationService>().requestPermissions();
+  } catch (_) {
+    logarte.log('Falha ao inicializar NotificationService',
         source: 'setupDependencies');
   }
 

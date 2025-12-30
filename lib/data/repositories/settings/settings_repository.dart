@@ -34,4 +34,7 @@ abstract interface class SettingsRepository extends ChangeNotifier {
   Future<void> saveSyncStatus(Map<SyncStep, StepStatus> status);
   Map<SyncStep, StepStatus> getSyncStatus();
   Future<void> clearSyncStatus();
+
+  String get sigaUrl;
+  AsyncResult<Unit> setSigaUrl(String url);
 }

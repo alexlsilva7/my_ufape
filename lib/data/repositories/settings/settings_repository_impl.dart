@@ -255,4 +255,25 @@ class SettingsRepositoryImpl extends ChangeNotifier
     });
     return allCompleted;
   }
+
+  @override
+  String get sigaUrl => _localStoragePreferencesService.sigaUrl;
+
+  @override
+  AsyncResult<Unit> setSigaUrl(String url) async {
+    try {
+      await _localStoragePreferencesService.setSigaUrl(url);
+
+      // Reinicia o serviço do SIGA para pegar a nova URL
+      final sigaService =
+          injector.get<SigaBackgroundService>(key: 'siga_background');
+      await sigaService.disposeService();
+      await sigaService.initialize();
+
+      notifyListeners();
+      return Success(unit);
+    } catch (e, s) {
+      return Failure(AppException(e.toString(), s));
+    }
+  }
 }
