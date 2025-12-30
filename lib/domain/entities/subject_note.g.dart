@@ -86,7 +86,7 @@ const SubjectNoteSchema = CollectionSchema(
   getId: _subjectNoteGetId,
   getLinks: _subjectNoteGetLinks,
   attach: _subjectNoteAttach,
-  version: '3.3.0-dev.3',
+  version: '3.3.0',
 );
 
 int _subjectNoteEstimateSize(

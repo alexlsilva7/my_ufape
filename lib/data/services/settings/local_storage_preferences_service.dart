@@ -118,6 +118,8 @@ class LocalStoragePreferencesService {
 
   Future<void> setSigaUrl(String url) async {
     await prefs.setString(_sigaUrlKey, url);
+  }
+
   Duration get syncInterval =>
       Duration(minutes: prefs.getInt(_syncIntervalKey) ?? 60);
 
@@ -126,7 +128,8 @@ class LocalStoragePreferencesService {
   }
 
   SyncMode get syncMode {
-    final syncModeName = prefs.getString(_syncModeKey) ?? SyncMode.interval.name;
+    final syncModeName =
+        prefs.getString(_syncModeKey) ?? SyncMode.interval.name;
     return SyncMode.values.firstWhere((e) => e.name == syncModeName,
         orElse: () => SyncMode.interval);
   }
@@ -146,7 +149,8 @@ class LocalStoragePreferencesService {
     await prefs.setString(_syncFixedTimeKey, timeString);
   }
 
-  bool get isSyncTaskRegistered => prefs.getBool(_syncTaskRegisteredKey) ?? false;
+  bool get isSyncTaskRegistered =>
+      prefs.getBool(_syncTaskRegisteredKey) ?? false;
 
   Future<void> setSyncTaskRegistered(bool value) async {
     await prefs.setBool(_syncTaskRegisteredKey, value);

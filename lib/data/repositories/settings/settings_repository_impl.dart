@@ -372,6 +372,9 @@ class SettingsRepositoryImpl extends ChangeNotifier
     } catch (e, s) {
       return Failure(AppException(e.toString(), s));
     }
+  }
+
+  @override
   Duration get syncInterval => _localStoragePreferencesService.syncInterval;
 
   @override
@@ -402,7 +405,8 @@ class SettingsRepositoryImpl extends ChangeNotifier
   }
 
   @override
-  bool get isSyncTaskRegistered => _localStoragePreferencesService.isSyncTaskRegistered;
+  bool get isSyncTaskRegistered =>
+      _localStoragePreferencesService.isSyncTaskRegistered;
 
   @override
   Future<void> setSyncTaskRegistered(bool value) async {
