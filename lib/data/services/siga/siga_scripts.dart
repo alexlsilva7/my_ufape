@@ -162,6 +162,134 @@ class SigaScripts {
     """;
   }
 
+  /// Verifica se há mensagem de erro de CAPTCHA ou se o widget está visível
+  static String checkCaptchaErrorScript() {
+    return """
+    (function() {
+      const bodyText = document.body.innerText;
+      // Verifica mensagem de texto
+      if (bodyText.includes('Captcha Inválido') || bodyText.includes('texto da imagem incorreto')) {
+        return true;
+      }
+      
+      // Verifica se o widget do reCAPTCHA está presente e visível
+      const captchaWidget = document.getElementById('widget-captcha');
+      if (captchaWidget && captchaWidget.offsetParent !== null) {
+         // Às vezes o widget existe mas não foi ativado, verifica se tem iframe dentro
+         if(captchaWidget.querySelector('iframe')) {
+            return true;
+         }
+      }
+      
+      return false;
+    })();
+    """;
+  }
+
+  /// Verifica se o CAPTCHA foi resolvido com sucesso (checkmark visível)
+  static String checkCaptchaCompletedScript() {
+    return """
+    (function() {
+      // 1. Verifica se o checkmark do reCAPTCHA está presente
+      const checkmark = document.querySelector('.recaptcha-checkbox-checkmark');
+      if (checkmark) {
+        // O checkmark existe, mas precisamos verificar se está visível
+        // Quando resolvido, o elemento tem estilo que o torna visível
+        const style = window.getComputedStyle(checkmark);
+        if (style.display !== 'none' && style.visibility !== 'hidden') {
+          return true;
+        }
+      }
+      
+      // 2. Verifica também pelo aria-checked do checkbox do reCAPTCHA
+      const checkbox = document.querySelector('.recaptcha-checkbox[aria-checked="true"]');
+      if (checkbox) {
+        return true;
+      }
+      
+      // 3. Verifica se a mensagem de sucesso do reCAPTCHA está visível
+      const successBanner = document.querySelector('.rc-anchor-pt a[href*="google.com/recaptcha"]');
+      if (successBanner) {
+        const anchor = successBanner.closest('.rc-anchor');
+        if (anchor && anchor.classList.contains('rc-anchor-normal')) {
+          const checkedBox = anchor.querySelector('[aria-checked="true"]');
+          if (checkedBox) return true;
+        }
+      }
+      
+      return false;
+    })();
+    """;
+  }
+
+  /// CSS para limpar a tela de login e focar no CAPTCHA
+  /// Este substitui ou complementa o `loginPageStylesScript`
+  static const String cleanLoginPageForCaptchaScript = """
+  (function() {
+      'use strict';
+      
+      // Remove elementos desnecessários
+      const toRemove = [
+        '#subviewTopo\\\\:j_id_jsp_1157490793_1pc2', // Topo antigo
+        '#areaTotal > div.wrapper-box-topo', // Topo novo
+        '#j_id_jsp_1880941391_4', // Coluna esquerda (avisos, menu lateral)
+        '.coluna-esquerda',
+        '#j_id_jsp_1880941391_47', // Rodapé
+        '.Rodape',
+        '#espacoVazioRodape',
+        'div[layout="block"]', // Banners
+        '#divAvisoNavegador',
+        '#conteinerAjuda',
+        '#containerAcessibilidade'
+      ];
+
+      toRemove.forEach(sel => {
+        try {
+          const els = document.querySelectorAll(sel);
+          els.forEach(e => e.style.display = 'none');
+        } catch(e){}
+      });
+
+      // Ajusta o container de login para tela cheia/centralizado
+      const loginContainer = document.querySelector('.login.ui-corner-all');
+      if (loginContainer) {
+        loginContainer.style.position = 'absolute';
+        loginContainer.style.top = '50%';
+        loginContainer.style.left = '50%';
+        loginContainer.style.transform = 'translate(-50%, -50%)';
+        loginContainer.style.width = '90%';
+        loginContainer.style.maxWidth = '400px';
+        loginContainer.style.margin = '0';
+        loginContainer.style.float = 'none';
+        loginContainer.style.backgroundColor = '#fff';
+        loginContainer.style.zIndex = '9999';
+        
+        // Garante que os inputs e o captcha estejam visíveis
+        const inputs = loginContainer.querySelectorAll('input');
+        inputs.forEach(i => {
+            i.style.width = '100%';
+            i.style.marginBottom = '10px';
+            i.style.padding = '10px';
+        });
+        
+        const captcha = document.getElementById('widget-captcha');
+        if(captcha) {
+            captcha.style.transform = 'scale(0.85)'; // Reduz um pouco para caber em telas pequenas
+            captcha.style.transformOrigin = '0 0';
+            captcha.style.marginBottom = '20px';
+        }
+      }
+      
+      // Ajusta o fundo
+      document.body.style.backgroundColor = '#f0f2f5';
+      const conteudoDiv = document.querySelector('.Conteudo');
+      if(conteudoDiv) {
+        conteudoDiv.style.width = '100%';
+        conteudoDiv.style.background = 'transparent';
+      }
+  })();
+  """;
+
   static String extractGradesScript() => """
 (function() {
   try {

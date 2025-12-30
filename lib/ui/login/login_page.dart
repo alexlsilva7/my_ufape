@@ -6,6 +6,7 @@ import 'package:my_ufape/app_widget.dart';
 import 'package:my_ufape/config/dependencies.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
 import 'package:routefly/routefly.dart';
+import 'package:validatorless/validatorless.dart';
 import '../../core/ui/gen/assets.gen.dart';
 
 import 'package:my_ufape/data/services/settings/local_storage_preferences_service.dart';
@@ -30,11 +31,21 @@ class _LoginPageState extends State<LoginPage> {
   final SettingsRepository _settings = injector.get();
   String _selectedUrl = LocalStoragePreferencesService.urlUfape;
 
+  late final SigaBackgroundService _sigaService;
+
   @override
   void initState() {
     super.initState();
     _selectedUrl = _settings.sigaUrl;
+
+    // Inicializa o serviço SIGA
+    _sigaService = injector.get<SigaBackgroundService>(key: 'siga_background');
+    _sigaService.captchaRequiredNotifier.addListener(_onCaptchaChange);
+    _sigaService.loginNotifier.addListener(_onLoginSuccess);
   }
+
+  /// Flag para indicar que estamos aguardando resolução de CAPTCHA
+  bool _waitingForCaptcha = false;
 
   Future<void> _handleLogin() async {
     if (_formKey.currentState!.validate()) {
@@ -45,6 +56,7 @@ class _LoginPageState extends State<LoginPage> {
       final username = _usernameController.text;
       final password = _passwordController.text;
 
+      // Salva credenciais primeiro
       try {
         await _secureStorage.write(key: 'username', value: username);
         await _secureStorage.write(key: 'password', value: password);
@@ -62,9 +74,8 @@ class _LoginPageState extends State<LoginPage> {
         return;
       }
 
-      final sigaService =
-          injector.get<SigaBackgroundService>(key: 'siga_background');
-      final success = await sigaService.login(username, password);
+      // Tenta fazer login - se CAPTCHA aparecer, o listener _onCaptchaChange vai detectar
+      final success = await _sigaService.login(username, password);
 
       if (mounted) {
         setState(() {
@@ -72,13 +83,17 @@ class _LoginPageState extends State<LoginPage> {
         });
 
         if (success) {
+          _waitingForCaptcha = false;
           Routefly.navigate(routePaths.initialSync);
         } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text(
-                    'Falha no login. Verifique suas credenciais e conexão.')),
-          );
+          // Login falhou - verifica se foi por CAPTCHA
+          if (!_sigaService.captchaRequiredNotifier.value) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                  content: Text(
+                      'Falha no login. Verifique suas credenciais e conexão.')),
+            );
+          }
         }
       }
     }
@@ -86,9 +101,43 @@ class _LoginPageState extends State<LoginPage> {
 
   @override
   void dispose() {
+    _sigaService.captchaRequiredNotifier.removeListener(_onCaptchaChange);
+    _sigaService.loginNotifier.removeListener(_onLoginSuccess);
     _usernameController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  /// Chamado quando o estado do CAPTCHA muda
+  void _onCaptchaChange() {
+    final hasCaptcha = _sigaService.captchaRequiredNotifier.value;
+
+    // Se CAPTCHA foi detectado durante tentativa de login
+    if (hasCaptcha && mounted && _isLoading) {
+      _waitingForCaptcha = true;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content:
+              Text('Validação de segurança necessária. Resolva o Captcha.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      Routefly.push(routePaths.siga);
+    }
+  }
+
+  /// Chamado quando o login é bem sucedido
+  void _onLoginSuccess() {
+    // Navega se login bem sucedido E (está carregando OU estava aguardando captcha)
+    if (_sigaService.loginNotifier.value &&
+        mounted &&
+        (_isLoading || _waitingForCaptcha)) {
+      setState(() {
+        _isLoading = false;
+        _waitingForCaptcha = false;
+      });
+      Routefly.navigate(routePaths.initialSync);
+    }
   }
 
   @override
@@ -189,12 +238,7 @@ class _LoginPageState extends State<LoginPage> {
                         prefixIcon: Icon(Icons.person_outline),
                       ),
                       keyboardType: TextInputType.number,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Por favor, insira seu CPF';
-                        }
-                        return null;
-                      },
+                      validator: Validatorless.cpf('CPF inválido'),
                       inputFormatters: [
                         FilteringTextInputFormatter.digitsOnly,
                         CpfInputFormatter(),
@@ -222,12 +266,7 @@ class _LoginPageState extends State<LoginPage> {
                           },
                         ),
                       ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Por favor, insira sua senha';
-                        }
-                        return null;
-                      },
+                      validator: Validatorless.required('Senha obrigatória'),
                     ),
                     const SizedBox(height: 8),
                     const SizedBox(height: 24),

@@ -64,6 +64,7 @@ class _HomePageState extends State<HomePage> {
       }
     };
     _sigaService.loginNotifier.addListener(_loginListener);
+    _sigaService.captchaRequiredNotifier.addListener(_handleCaptchaRequirement);
     _sigaService.initialize();
     // Carregar próximas aulas ao iniciar
     _loadNextClasses();
@@ -87,10 +88,28 @@ class _HomePageState extends State<HomePage> {
     try {
       _viewModel.removeListener(() {});
       _sigaService.loginNotifier.removeListener(_loginListener);
+      _sigaService.captchaRequiredNotifier
+          .removeListener(_handleCaptchaRequirement);
       _shorebirdService.isUpdateReadyToInstall
           .removeListener(_showUpdateBanner);
     } catch (_) {}
     super.dispose();
+  }
+
+  /// Redireciona para a tela do SIGA quando CAPTCHA é detectado
+  void _handleCaptchaRequirement() {
+    if (_sigaService.captchaRequiredNotifier.value && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              "Atenção: Resolva o 'Não sou um robô' para continuar a sincronização."),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 6),
+        ),
+      );
+      // Navega para a tela do SIGA onde a WebView interativa vive
+      Routefly.push(routePaths.siga);
+    }
   }
 
   bool get _isUpdateAvailable => _shorebirdService.isUpdateReadyToInstall.value;

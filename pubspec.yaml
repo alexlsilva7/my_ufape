@@ -36,6 +36,7 @@ dependencies:
   local_auth: ^2.3.0
   gpt_markdown: ^1.1.4
   animated_tree_view: ^2.3.0
+  validatorless: ^1.2.5
 
 dev_dependencies:
   flutter_test:

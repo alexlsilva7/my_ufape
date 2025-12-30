@@ -47,6 +47,8 @@ class SigaBackgroundService extends ChangeNotifier {
   final ValueNotifier<bool> _authFailureNotifier = ValueNotifier(false);
   ValueListenable<bool> get authFailureNotifier => _authFailureNotifier;
 
+  final ValueNotifier<bool> captchaRequiredNotifier = ValueNotifier(false);
+
   // Credenciais obtidas do repositório e usadas para tentar login quando a página de login terminar de carregar
   String? _pendingUsername;
   String? _pendingPassword;
@@ -159,6 +161,13 @@ class SigaBackgroundService extends ChangeNotifier {
                   print('Erro ao aplicar estilos na página de login: $e');
                 }
               }
+
+              // Verifica CAPTCHA novamente após alguns segundos para conexões lentas
+              Future.delayed(const Duration(seconds: 4), () async {
+                if (_controller != null) {
+                  await _checkLoginStatus();
+                }
+              });
             }
 
             // Tenta injetar o script de login se houver credenciais pendentes.
@@ -268,6 +277,7 @@ class SigaBackgroundService extends ChangeNotifier {
     try {
       loginNotifier.dispose();
       _authFailureNotifier.dispose();
+      captchaRequiredNotifier.dispose();
     } catch (_) {}
     // Não chamar notifyListeners depois do dispose
   }
@@ -296,13 +306,77 @@ class SigaBackgroundService extends ChangeNotifier {
       final bool currentlyLoggedIn =
           result == true || result.toString() == 'true';
 
-      // 2. Se não estiver logado, verifica se é por erro de autenticação
+      // 2. Se não estiver logado, verifica erros específicos
       if (!currentlyLoggedIn) {
+        // Verifica erro de senha
         final errorScript = SigaScripts.checkAuthErrorScript();
         final authError =
             await _controller!.runJavaScriptReturningResult(errorScript);
         if (authError == true || authError.toString() == 'true') {
           _authFailureNotifier.value = true;
+        }
+
+        // --- NOVO: Verifica CAPTCHA ---
+        final captchaScript = SigaScripts.checkCaptchaErrorScript();
+        final captchaResult =
+            await _controller!.runJavaScriptReturningResult(captchaScript);
+        final bool hasCaptchaError =
+            captchaResult == true || captchaResult.toString() == 'true';
+
+        if (hasCaptchaError) {
+          // Verifica se o CAPTCHA foi resolvido (checkmark visível)
+          final completedScript = SigaScripts.checkCaptchaCompletedScript();
+          final completedResult =
+              await _controller!.runJavaScriptReturningResult(completedScript);
+          final bool captchaCompleted =
+              completedResult == true || completedResult.toString() == 'true';
+
+          if (captchaCompleted) {
+            // CAPTCHA foi resolvido! Reseta o flag e tenta login novamente
+            logarte.log('CAPTCHA resolvido pelo usuário!');
+            if (captchaRequiredNotifier.value) {
+              captchaRequiredNotifier.value = false;
+              notifyListeners();
+            }
+            // Tenta injetar login novamente com credenciais salvas
+            final creds = await _settings.getUserCredentials();
+            await creds.fold(
+              (loginData) async {
+                await _injectLoginScript(
+                    loginData.username, loginData.password);
+              },
+              (error) {},
+            );
+          } else {
+            // Aplica estilo limpo para o usuário resolver
+            await _controller
+                ?.runJavaScript(SigaScripts.cleanLoginPageForCaptchaScript);
+
+            // Avisa a UI que precisa mostrar o WebView
+            if (!captchaRequiredNotifier.value) {
+              captchaRequiredNotifier.value = true;
+              notifyListeners();
+            }
+
+            // Se houver um login automático pendente, cancelamos/falhamos para não ficar em loop
+            if (_loginCompleter != null && !_loginCompleter!.isCompleted) {
+              _loginCompleter!.complete(false);
+            }
+            return; // Interrompe fluxo automático
+          }
+        } else {
+          // Se não tem captcha, reseta o aviso
+          if (captchaRequiredNotifier.value) {
+            captchaRequiredNotifier.value = false;
+            notifyListeners();
+          }
+        }
+        // ------------------------------
+      } else {
+        // Se logou, limpa flag de captcha
+        if (captchaRequiredNotifier.value) {
+          captchaRequiredNotifier.value = false;
+          notifyListeners();
         }
       }
 
