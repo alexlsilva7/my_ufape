@@ -14,7 +14,6 @@ import 'package:local_auth/local_auth.dart';
 import 'package:local_auth_android/local_auth_android.dart';
 // ignore: depend_on_referenced_packages
 import 'package:local_auth_darwin/local_auth_darwin.dart';
-import 'package:flutter_background_service/flutter_background_service.dart';
 
 import 'package:my_ufape/data/repositories/user/user_repository.dart';
 
@@ -41,7 +40,7 @@ class SettingsRepositoryImpl extends ChangeNotifier
     _themeMode = _localStoragePreferencesService.themeMode;
     isDebugOverlayEnabled =
         _localStoragePreferencesService.isDebugOverlayEnabled;
-    isAutoSyncEnabled = _localStoragePreferencesService.isAutoSyncEnabled;
+    isSyncOnOpenEnabled = _localStoragePreferencesService.isSyncOnOpenEnabled;
     isBiometricAuthEnabled =
         _localStoragePreferencesService.isBiometricAuthEnabled;
     initBiometricAuth();
@@ -116,11 +115,10 @@ class SettingsRepositoryImpl extends ChangeNotifier
         ],
         localizedReason: 'Por favor, autentique-se para acessar o aplicativo',
         options: const AuthenticationOptions(
-          biometricOnly: false, // Permite outros métodos de autenticação
+          biometricOnly: false,
         ),
       );
     } catch (e) {
-      // Trata exceções, como o usuário não ter biometria configurada
       return false;
     }
   }
@@ -156,14 +154,12 @@ class SettingsRepositoryImpl extends ChangeNotifier
 
       // 3. Limpa Secure Storage (credenciais)
       await _secureStorage.deleteAll();
-      var sigaBackgroundService =
-          injector.get<SigaBackgroundService>(key: 'siga_background');
+      var sigaBackgroundService = injector.get<SigaBackgroundService>();
       await sigaBackgroundService.resetService();
 
-      // Notifica listeners para atualizar a UI se necessário (ex: modo escuro voltando ao padrão)
+      // Notifica listeners para atualizar a UI se necessário
       _themeMode = ThemeMode.system;
       isDebugOverlayEnabled = false;
-      cancelSyncTask();
       notifyListeners();
 
       return Success(unit);
@@ -173,25 +169,18 @@ class SettingsRepositoryImpl extends ChangeNotifier
   }
 
   @override
-  bool isAutoSyncEnabled = true;
+  bool isSyncOnOpenEnabled = true;
 
   @override
   int get lastSyncTimestamp =>
       _localStoragePreferencesService.lastSyncTimestamp;
 
   @override
-  AsyncResult<Unit> toggleAutoSync() async {
+  AsyncResult<Unit> toggleSyncOnOpen() async {
     try {
-      final newState = !isAutoSyncEnabled;
-      await _localStoragePreferencesService.toggleAutoSync();
-      isAutoSyncEnabled = newState;
-
-      if (newState) {
-        await scheduleSyncTask();
-      } else {
-        await cancelSyncTask();
-      }
-
+      final newState = !isSyncOnOpenEnabled;
+      await _localStoragePreferencesService.toggleSyncOnOpen();
+      isSyncOnOpenEnabled = newState;
       notifyListeners();
       return Success(unit);
     } catch (e, s) {
@@ -200,73 +189,13 @@ class SettingsRepositoryImpl extends ChangeNotifier
   }
 
   @override
-  Future<void> updateNextSyncTimestamp() async {
-    if (!isAutoSyncEnabled) {
-      final user = (await _userRepository.getUser()).getOrNull();
-      if (user != null) {
-        user.nextSyncTimestamp = null;
-        _userRepository.upsertUser(user);
-      }
-      notifyListeners();
-      return;
-    }
+  Future<void> updateLastSyncTimestamp() async {
+    await _localStoragePreferencesService.updateLastSyncTimestamp();
 
-    DateTime nextSync;
-    if (syncMode == SyncMode.fixedTime) {
-      final now = DateTime.now();
-      final targetTime = syncFixedTime;
-      nextSync = DateTime(
-          now.year, now.month, now.day, targetTime.hour, targetTime.minute);
-      if (nextSync.isBefore(now)) {
-        nextSync = nextSync.add(const Duration(days: 1));
-      }
-    } else {
-      nextSync = DateTime.now().add(syncInterval);
-    }
+    // Atualiza também no User para histórico
     final user = (await _userRepository.getUser()).getOrNull();
     if (user != null) {
-      user.nextSyncTimestamp = nextSync;
-      _userRepository.upsertUser(user);
-    }
-
-    notifyListeners();
-  }
-
-  @override
-  Future<void> scheduleSyncTask() async {
-    // Com flutter_background_service, o agendamento é manual.
-    // O serviço será iniciado sob demanda via triggerBackgroundSync().
-    await _localStoragePreferencesService.setSyncTaskRegistered(true);
-    await updateNextSyncTimestamp();
-  }
-
-  @override
-
-  /// Dispara a sincronização em background imediatamente.
-  /// Inicia o foreground service e envia o comando de sync.
-  Future<void> triggerBackgroundSync() async {
-    final service = FlutterBackgroundService();
-    var isRunning = await service.isRunning();
-    if (!isRunning) {
-      await service.startService();
-    }
-    // O serviço já inicia automaticamente a sincronização ao subir
-  }
-
-  @override
-  Future<void> cancelSyncTask() async {
-    // Para o serviço de background se estiver rodando
-    final service = FlutterBackgroundService();
-    var isRunning = await service.isRunning();
-    if (isRunning) {
-      service.invoke('stopService');
-    }
-
-    await _localStoragePreferencesService.setSyncTaskRegistered(false);
-
-    final user = (await _userRepository.getUser()).getOrNull();
-    if (user != null) {
-      user.nextSyncTimestamp = null;
+      user.lastBackgroundSync = DateTime.now();
       _userRepository.upsertUser(user);
     }
 
@@ -351,8 +280,7 @@ class SettingsRepositoryImpl extends ChangeNotifier
       await _localStoragePreferencesService.setSigaUrl(url);
 
       // Reinicia o serviço do SIGA para pegar a nova URL
-      final sigaService =
-          injector.get<SigaBackgroundService>(key: 'siga_background');
+      final sigaService = injector.get<SigaBackgroundService>();
       await sigaService.disposeService();
       await sigaService.initialize();
 
@@ -361,45 +289,5 @@ class SettingsRepositoryImpl extends ChangeNotifier
     } catch (e, s) {
       return Failure(AppException(e.toString(), s));
     }
-  }
-
-  @override
-  Duration get syncInterval => _localStoragePreferencesService.syncInterval;
-
-  @override
-  Future<void> setSyncInterval(Duration interval) async {
-    await _localStoragePreferencesService.setSyncInterval(interval);
-    notifyListeners();
-    await scheduleSyncTask();
-  }
-
-  @override
-  SyncMode get syncMode => _localStoragePreferencesService.syncMode;
-
-  @override
-  Future<void> setSyncMode(SyncMode mode) async {
-    await _localStoragePreferencesService.setSyncMode(mode);
-    notifyListeners();
-    await scheduleSyncTask();
-  }
-
-  @override
-  TimeOfDay get syncFixedTime => _localStoragePreferencesService.syncFixedTime;
-
-  @override
-  Future<void> setSyncFixedTime(TimeOfDay time) async {
-    await _localStoragePreferencesService.setSyncFixedTime(time);
-    notifyListeners();
-    await scheduleSyncTask();
-  }
-
-  @override
-  bool get isSyncTaskRegistered =>
-      _localStoragePreferencesService.isSyncTaskRegistered;
-
-  @override
-  Future<void> setSyncTaskRegistered(bool value) async {
-    await _localStoragePreferencesService.setSyncTaskRegistered(value);
-    notifyListeners();
   }
 }

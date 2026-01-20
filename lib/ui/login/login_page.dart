@@ -41,7 +41,7 @@ class _LoginPageState extends State<LoginPage> {
     _selectedUrl = _settings.sigaUrl;
 
     // Inicializa o serviço SIGA
-    _sigaService = injector.get<SigaBackgroundService>(key: 'siga_background');
+    _sigaService = injector.get<SigaBackgroundService>();
     _sigaService.captchaRequiredNotifier.addListener(_onCaptchaChange);
     _sigaService.loginNotifier.addListener(_onLoginSuccess);
   }

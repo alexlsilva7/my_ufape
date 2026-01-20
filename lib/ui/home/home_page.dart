@@ -28,7 +28,7 @@ class _HomePageState extends State<HomePage> {
   final HomeViewModel _viewModel = injector.get<HomeViewModel>();
 
   final SigaBackgroundService _sigaService =
-      injector.get<SigaBackgroundService>(key: 'siga_background');
+      injector.get<SigaBackgroundService>();
   final ShorebirdService _shorebirdService = injector.get<ShorebirdService>();
   final ScheduledSubjectRepository _scheduledRepo = injector.get();
   bool _isLoggedIn = false;
@@ -489,12 +489,45 @@ class _HomePageState extends State<HomePage> {
                                   ),
                                 ),
                                 const SizedBox(height: 2),
-                                Text(
-                                  'Bem-vindo ao My UFAPE',
-                                  style: TextStyle(
-                                    color: Colors.white.withValues(alpha: 0.9),
-                                    fontSize: 14,
-                                  ),
+                                ListenableBuilder(
+                                  listenable: _sigaService,
+                                  builder: (context, _) {
+                                    if (_sigaService.isSyncing) {
+                                      return Row(
+                                        children: [
+                                          SizedBox(
+                                            width: 12,
+                                            height: 12,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              valueColor:
+                                                  AlwaysStoppedAnimation<Color>(
+                                                      Colors.white.withValues(
+                                                          alpha: 0.9)),
+                                            ),
+                                          ),
+                                          const SizedBox(width: 6),
+                                          Text(
+                                            'Sincronizando dados...',
+                                            style: TextStyle(
+                                              color: Colors.white
+                                                  .withValues(alpha: 0.9),
+                                              fontSize: 14,
+                                              fontStyle: FontStyle.italic,
+                                            ),
+                                          ),
+                                        ],
+                                      );
+                                    }
+                                    return Text(
+                                      'Bem-vindo ao My UFAPE',
+                                      style: TextStyle(
+                                        color:
+                                            Colors.white.withValues(alpha: 0.9),
+                                        fontSize: 14,
+                                      ),
+                                    );
+                                  },
                                 ),
                               ],
                             ),

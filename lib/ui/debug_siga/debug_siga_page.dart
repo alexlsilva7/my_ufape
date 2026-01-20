@@ -14,8 +14,7 @@ class DebugSigaPage extends StatefulWidget {
 }
 
 class _DebugSigaPageState extends State<DebugSigaPage> {
-  final _sigaService =
-      injector.get<SigaBackgroundService>(key: 'siga_background');
+  final _sigaService = injector.get<SigaBackgroundService>();
   bool isLogarteOpen = false;
 
   @override

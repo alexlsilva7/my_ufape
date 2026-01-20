@@ -86,6 +86,10 @@ class SigaBackgroundService extends ChangeNotifier {
   String? _currentSyncOperation;
   String? get currentSyncOperation => _currentSyncOperation;
 
+  /// Flag para sinalizar cancelamento forçado
+  bool _cancelRequested = false;
+  bool get cancelRequested => _cancelRequested;
+
   /// Tenta adquirir o lock de sincronização
   /// Retorna true se conseguiu, false se já está sincronizando
   bool _acquireSyncLock(String operationName) {
@@ -96,12 +100,30 @@ class SigaBackgroundService extends ChangeNotifier {
       return false;
     }
 
+    _cancelRequested = false; // Reseta flag de cancelamento
     _isSyncing = true;
     _currentSyncOperation = operationName;
     _syncStatusMessage = 'Iniciando $operationName...';
     notifyListeners();
     logarte.log('Sync lock acquired for: $operationName');
     return true;
+  }
+
+  /// Cancela a sincronização em andamento para liberar o WebView para o usuário
+  void cancelSync() {
+    if (_isSyncing) {
+      _cancelRequested = true;
+      _isSyncing = false;
+      _currentSyncOperation = null;
+      _syncStatusMessage = '';
+      notifyListeners();
+
+      // Limpa a página para interromper scripts
+      _controller?.loadHtmlString('<html><body></body></html>');
+
+      logarte.log('Sincronização cancelada pelo usuário.',
+          source: 'SigaBackgroundService');
+    }
   }
 
   /// Libera o lock de sincronização
@@ -131,12 +153,21 @@ class SigaBackgroundService extends ChangeNotifier {
   final int _maxReconnectAttempts = 5;
   final Duration _reconnectBaseDelay = const Duration(seconds: 5);
 
+  /// Verifica se cancelamento foi solicitado durante a sincronização
+  void _checkCancellation() {
+    if (_cancelRequested) {
+      throw Exception('Sincronização cancelada pelo usuário');
+    }
+  }
+
   /// Realiza a sincronização automática se as condições forem atendidas.
+  /// Chamada pela HomePage ao abrir o app.
   Future<void> performAutomaticSyncIfNeeded(
-      {Duration syncInterval = const Duration(hours: 1)}) async {
+      {Duration syncInterval = const Duration(hours: 4),
+      bool ignoreSettings = false}) async {
     // 1. Verifica se a funcionalidade está habilitada pelo usuário
-    if (!_settings.isAutoSyncEnabled) {
-      logarte.log('Auto-sync is disabled by the user.');
+    if (!ignoreSettings && !_settings.isSyncOnOpenEnabled) {
+      logarte.log('Sync on open is disabled by the user.');
       return;
     }
 
@@ -146,7 +177,7 @@ class SigaBackgroundService extends ChangeNotifier {
       return;
     }
 
-    // 3. Define o intervalo mínimo para a sincronização (ex: 1 hora)
+    // 3. Define o intervalo mínimo para a sincronização (ex: 4 horas)
     final lastSync =
         DateTime.fromMillisecondsSinceEpoch(_settings.lastSyncTimestamp);
     final now = DateTime.now();
@@ -158,11 +189,12 @@ class SigaBackgroundService extends ChangeNotifier {
       return;
     }
 
-    logarte.log('Starting automatic background sync...');
+    logarte.log('Starting automatic foreground sync...');
     isSyncing = true;
 
     try {
       await _runSync();
+      await _settings.updateLastSyncTimestamp();
     } catch (e) {
       logarte.log('Automatic sync failed: $e');
     }
@@ -515,15 +547,9 @@ class SigaBackgroundService extends ChangeNotifier {
           }
           _reconnectAttempts = 0;
           _cancelReconnectTimer();
-
-          // Dispara sincronização automática se habilitada E se a sync inicial já foi feita
-          // Para evitar conflito com a tela de InitialSyncPage que roda na UI
-          final isInitialSyncDone = await _settings.isInitialSyncCompleted();
-          if (_settings.isAutoSyncEnabled && !_isSyncing && isInitialSyncDone) {
-            _settings.triggerBackgroundSync();
-          }
+          // Sincronização automática agora é feita pela HomePage ao abrir
         } else if (previous == true && !_isLoggedIn) {
-          // Logout inesperado: programar reconexão
+          // Logout inesperado: programar reconexão simples
           _scheduleReconnect();
         }
       }
@@ -1618,7 +1644,7 @@ class SigaBackgroundService extends ChangeNotifier {
   /// Executa uma sincronização completa em segundo plano.
   /// Tenta fazer login com credenciais salvas e extrai todos os dados.
   Future<void> runFullBackgroundSync() async {
-    if (!_settings.isAutoSyncEnabled ||
+    if (!_settings.isSyncOnOpenEnabled ||
         !(await _settings.isInitialSyncCompleted())) {
       logarte.log(
           'Background Sync: Sincronização automática desativada ou inicial não concluída. Abortando.',

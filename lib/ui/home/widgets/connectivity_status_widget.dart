@@ -18,7 +18,7 @@ class ConnectivityStatusWidget extends StatefulWidget {
 
 class _ConnectivityStatusWidgetState extends State<ConnectivityStatusWidget> {
   final SigaBackgroundService _sigaService =
-      injector.get<SigaBackgroundService>(key: 'siga_background');
+      injector.get<SigaBackgroundService>();
 
   late StreamSubscription<List<ConnectivityResult>> _connectivitySubscription;
   late StreamSubscription<InternetConnectionStatus>
