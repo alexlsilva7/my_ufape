@@ -10,9 +10,9 @@ class PieChartCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final totalAprovadas = analytics['totalAprovadas'] as int;
-    final totalCursando = analytics['totalCursando'] as int;
-    final totalReprovadas = analytics['totalReprovadas'] as int;
+    final totalAprovadas = analytics['totalAprovadas'] as int? ?? 0;
+    final totalCursando = analytics['totalCursando'] as int? ?? 0;
+    final totalReprovadas = analytics['totalReprovadas'] as int? ?? 0;
     final totalDispensadas = analytics['totalDispensadas'] as int? ?? 0;
     final total =
         totalAprovadas + totalCursando + totalReprovadas + totalDispensadas;

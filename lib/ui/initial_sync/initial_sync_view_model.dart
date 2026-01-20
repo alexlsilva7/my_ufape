@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart';
+import 'package:my_ufape/app_widget.dart';
 import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
 import 'package:my_ufape/data/repositories/user/user_repository.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
+import 'package:routefly/routefly.dart';
 
 enum SyncStep {
   timetable,
@@ -109,6 +111,7 @@ class InitialSyncViewModel extends ChangeNotifier {
     notifyListeners();
 
     for (final step in SyncStep.values) {
+      if (!_isSyncing) break; // Interrompe se cancelado
       if (_status[step] != StepStatus.success) {
         await _executeStep(step);
       }
@@ -142,5 +145,18 @@ class InitialSyncViewModel extends ChangeNotifier {
       await Future.delayed(const Duration(milliseconds: 1500));
       navigateToHome.value = true;
     }
+  }
+
+  /// Cancela a sincronização e faz logout, limpando todos os dados locais.
+  Future<void> cancelAndLogout() async {
+    // 1. Para qualquer sincronização em andamento
+    _isSyncing = false;
+
+    // 2. Navega para o login ANTES de limpar os dados
+    // para evitar que listeners de widgets descartados sejam notificados
+    Routefly.navigate(routePaths.login);
+
+    // 3. Limpa todos os dados locais (credenciais, banco, etc.)
+    await _settingsRepository.restoreApp();
   }
 }

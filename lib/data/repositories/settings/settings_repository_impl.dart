@@ -14,7 +14,7 @@ import 'package:local_auth/local_auth.dart';
 import 'package:local_auth_android/local_auth_android.dart';
 // ignore: depend_on_referenced_packages
 import 'package:local_auth_darwin/local_auth_darwin.dart';
-import 'package:workmanager/workmanager.dart';
+import 'package:flutter_background_service/flutter_background_service.dart';
 
 import 'package:my_ufape/data/repositories/user/user_repository.dart';
 
@@ -234,44 +234,33 @@ class SettingsRepositoryImpl extends ChangeNotifier
 
   @override
   Future<void> scheduleSyncTask() async {
-    await cancelSyncTask(); // Sempre cancele a tarefa anterior
-
-    if (syncMode == SyncMode.fixedTime) {
-      final now = DateTime.now();
-      final targetTime = syncFixedTime;
-
-      var scheduledDate = DateTime(
-          now.year, now.month, now.day, targetTime.hour, targetTime.minute);
-
-      if (scheduledDate.isBefore(now)) {
-        scheduledDate = scheduledDate.add(const Duration(days: 1));
-      }
-
-      final initialDelay = scheduledDate.difference(now);
-
-      await Workmanager().registerOneOffTask(
-        "my-ufape-data-sync-fixed",
-        "data_sync",
-        initialDelay: initialDelay,
-        constraints: Constraints(networkType: NetworkType.connected),
-      );
-    } else {
-      // Modo Intervalo
-      await Workmanager().registerPeriodicTask(
-        "my-ufape-data-sync-periodic",
-        "data_sync",
-        frequency: syncInterval,
-        constraints: Constraints(networkType: NetworkType.connected),
-      );
-    }
+    // Com flutter_background_service, o agendamento é manual.
+    // O serviço será iniciado sob demanda via triggerBackgroundSync().
     await _localStoragePreferencesService.setSyncTaskRegistered(true);
     await updateNextSyncTimestamp();
   }
 
   @override
+
+  /// Dispara a sincronização em background imediatamente.
+  /// Inicia o foreground service e envia o comando de sync.
+  Future<void> triggerBackgroundSync() async {
+    final service = FlutterBackgroundService();
+    var isRunning = await service.isRunning();
+    if (!isRunning) {
+      await service.startService();
+    }
+    // O serviço já inicia automaticamente a sincronização ao subir
+  }
+
+  @override
   Future<void> cancelSyncTask() async {
-    await Workmanager().cancelByUniqueName("my-ufape-data-sync-periodic");
-    await Workmanager().cancelByUniqueName("my-ufape-data-sync-fixed");
+    // Para o serviço de background se estiver rodando
+    final service = FlutterBackgroundService();
+    var isRunning = await service.isRunning();
+    if (isRunning) {
+      service.invoke('stopService');
+    }
 
     await _localStoragePreferencesService.setSyncTaskRegistered(false);
 

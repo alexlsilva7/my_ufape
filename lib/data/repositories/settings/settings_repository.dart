@@ -49,6 +49,7 @@ abstract interface class SettingsRepository extends ChangeNotifier {
 
   Future<void> scheduleSyncTask();
   Future<void> cancelSyncTask();
+  Future<void> triggerBackgroundSync();
   Future<void> updateNextSyncTimestamp();
 
   bool get isSyncTaskRegistered;

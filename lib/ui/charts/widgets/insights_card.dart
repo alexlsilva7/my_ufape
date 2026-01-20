@@ -15,7 +15,7 @@ class InsightsCard extends StatelessWidget {
     final insights = <Map<String, dynamic>>[];
 
     // Insight sobre aprovação
-    final approvalRate = analytics['approvalRate'] as double;
+    final approvalRate = analytics['approvalRate'] as double? ?? 0.0;
     if (approvalRate >= 90) {
       insights.add({
         'icon': Icons.star,
@@ -35,7 +35,7 @@ class InsightsCard extends StatelessWidget {
     }
 
     // Insight sobre média
-    final overallAverage = analytics['overallAverage'] as double;
+    final overallAverage = analytics['overallAverage'] as double? ?? 0.0;
     if (overallAverage >= 8.5) {
       insights.add({
         'icon': Icons.emoji_events,

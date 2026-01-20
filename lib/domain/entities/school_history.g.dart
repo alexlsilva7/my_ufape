@@ -58,7 +58,7 @@ const SchoolHistorySchema = CollectionSchema(
   getId: _schoolHistoryGetId,
   getLinks: _schoolHistoryGetLinks,
   attach: _schoolHistoryAttach,
-  version: '3.3.0',
+  version: '3.3.0-dev.3',
 );
 
 int _schoolHistoryEstimateSize(

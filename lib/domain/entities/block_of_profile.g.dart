@@ -55,7 +55,7 @@ const BlockOfProfileSchema = CollectionSchema(
   getId: _blockOfProfileGetId,
   getLinks: _blockOfProfileGetLinks,
   attach: _blockOfProfileAttach,
-  version: '3.3.0',
+  version: '3.3.0-dev.3',
 );
 
 int _blockOfProfileEstimateSize(

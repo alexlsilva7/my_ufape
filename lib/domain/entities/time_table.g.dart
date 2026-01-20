@@ -87,7 +87,7 @@ const ScheduledSubjectSchema = CollectionSchema(
   getId: _scheduledSubjectGetId,
   getLinks: _scheduledSubjectGetLinks,
   attach: _scheduledSubjectAttach,
-  version: '3.3.0',
+  version: '3.3.0-dev.3',
 );
 
 int _scheduledSubjectEstimateSize(

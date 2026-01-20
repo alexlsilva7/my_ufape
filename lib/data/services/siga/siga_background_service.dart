@@ -19,6 +19,8 @@ import 'package:my_ufape/data/services/siga/siga_scripts.dart';
 import 'package:my_ufape/domain/entities/user.dart';
 import 'package:my_ufape/data/repositories/user/user_repository.dart';
 import 'package:my_ufape/data/services/notification/notification_service.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
 
 /// Exceção lançada quando uma sincronização é tentada enquanto outra está em andamento
 class SyncInProgressException implements Exception {
@@ -64,6 +66,8 @@ class SigaBackgroundService extends ChangeNotifier {
 
   bool _isLoggedIn = false;
   bool get isLoggedIn => _isLoggedIn;
+
+  bool _isDisposed = false;
 
   bool _isSyncing = false;
   bool get isSyncing => _isSyncing;
@@ -118,6 +122,8 @@ class SigaBackgroundService extends ChangeNotifier {
   Timer? _statusTimer;
 
   final ValueNotifier<bool> loginNotifier = ValueNotifier(false);
+
+  StreamSubscription? _connectivitySubscription;
 
   // Reconexão automática: tentativas exponenciais quando detectamos logout inesperado
   int _reconnectAttempts = 0;
@@ -279,6 +285,33 @@ class SigaBackgroundService extends ChangeNotifier {
     }, (error) {
       // sem credenciais armazenadas
     });
+
+    // Monitora mudança de conectividade para reconectar
+    _connectivitySubscription =
+        Connectivity().onConnectivityChanged.listen((results) async {
+      // Verifica se realmente tem conexão (ping)
+      final hasConnection = await InternetConnectionChecker().hasConnection;
+
+      if (hasConnection && !_isLoggedIn && !_authFailureNotifier.value) {
+        logarte.log('Conexão detectada. Tentando reconectar...',
+            source: 'SigaBackgroundService');
+        // Ao voltar a internet, recarrega a página.
+        // O onPageFinished cuidará de injetar as credenciais se _pendingUsername estiver setado
+        // ou se chamarmos reconnect()
+
+        if (_controller != null) {
+          // Se tivermos credenciais salvas mas não pendentes, vamos setar pendentes de novo e reload
+          if (_pendingUsername == null) {
+            final storedCreds = await _settings.getUserCredentials();
+            storedCreds.fold((c) {
+              _pendingUsername = c.username;
+              _pendingPassword = c.password;
+            }, (err) {});
+          }
+          await _controller!.loadRequest(Uri.parse(baseUrl));
+        }
+      }
+    });
   }
 
   /// Realiza um login ativo, aguardando o resultado.
@@ -323,11 +356,21 @@ class SigaBackgroundService extends ChangeNotifier {
     } catch (_) {}
   }
 
-  /// Limpa recursos do serviço
-  Future<void> disposeService() async {
+  /// Para timers e limpa controller sem dar dispose nos notifiers
+  void _stopInternalResources() {
     _statusTimer?.cancel();
     _statusTimer = null;
+    _connectivitySubscription?.cancel();
+    _connectivitySubscription = null;
     _controller = null;
+    _cancelReconnectTimer();
+  }
+
+  /// Limpa recursos do serviço e INUTILIZA a instância (dispose notifiers)
+  /// Use apenas se a instância não for mais ser usada.
+  Future<void> disposeService() async {
+    _isDisposed = true;
+    _stopInternalResources();
     try {
       loginNotifier.dispose();
       _authFailureNotifier.dispose();
@@ -376,7 +419,7 @@ class SigaBackgroundService extends ChangeNotifier {
   }
 
   Future<void> _checkLoginStatus() async {
-    if (_controller == null) return;
+    if (_isDisposed || _controller == null) return;
     try {
       // 1. Verifica se está logado
       final script = SigaScripts.checkLoginScript();
@@ -472,6 +515,13 @@ class SigaBackgroundService extends ChangeNotifier {
           }
           _reconnectAttempts = 0;
           _cancelReconnectTimer();
+
+          // Dispara sincronização automática se habilitada E se a sync inicial já foi feita
+          // Para evitar conflito com a tela de InitialSyncPage que roda na UI
+          final isInitialSyncDone = await _settings.isInitialSyncCompleted();
+          if (_settings.isAutoSyncEnabled && !_isSyncing && isInitialSyncDone) {
+            _settings.triggerBackgroundSync();
+          }
         } else if (previous == true && !_isLoggedIn) {
           // Logout inesperado: programar reconexão
           _scheduleReconnect();
@@ -1084,15 +1134,33 @@ class SigaBackgroundService extends ChangeNotifier {
 
   /// Reseta o serviço para o estado inicial, limpando dados e sessão.
   Future<void> resetService() async {
-    await disposeService();
+    // Não chama disposeService() pois isso mata os notifiers do Singleton
+    _stopInternalResources();
+
+    // Garante que não está marcado como disposed caso reutilize
+    _isDisposed = false;
+
     _isLoggedIn = false;
-    loginNotifier.value = false;
+    // Reseta valores dos notifiers com segurança
+    try {
+      loginNotifier.value = false;
+      _authFailureNotifier.value = false;
+      captchaRequiredNotifier.value = false;
+    } catch (_) {
+      // Ignora se já estiver disposed (não deveria acontecer aqui com a correção)
+    }
+
     _pendingUsername = null;
     _pendingPassword = null;
+
+    if (_loginCompleter != null && !_loginCompleter!.isCompleted) {
+      _loginCompleter!.complete(false);
+    }
     _loginCompleter = null;
+
     _reconnectAttempts = 0;
-    _cancelReconnectTimer();
-    await disposeService();
+
+    // Reinicializa (recria controller e timers)
     await initialize();
   }
 
