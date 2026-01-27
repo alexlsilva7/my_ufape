@@ -6,6 +6,8 @@ import 'package:my_ufape/data/repositories/subject_note/subject_note_repository.
 import 'package:my_ufape/domain/entities/subject.dart';
 import 'package:my_ufape/domain/entities/time_table.dart';
 import 'package:my_ufape/ui/subjects/subjects_view_model.dart';
+import 'package:my_ufape/data/repositories/teaching_plan/teaching_plan_repository.dart';
+import 'package:my_ufape/domain/entities/teaching_plan.dart';
 import 'package:routefly/routefly.dart';
 
 class SubjectCard extends StatefulWidget {
@@ -114,6 +116,7 @@ class SubjectCard extends StatefulWidget {
                             const SizedBox(height: 10),
                             GroupedTimeSlots(slots: subject.timeSlots),
                           ],
+                          _TeachingPlanContent(subjectCode: subject.code),
                           const SizedBox(height: 20),
                           OutlinedButton(
                             onPressed: () async {
@@ -398,6 +401,77 @@ class GroupedTimeSlots extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: children,
+    );
+  }
+}
+
+class _TeachingPlanContent extends StatelessWidget {
+  final String subjectCode;
+
+  const _TeachingPlanContent({required this.subjectCode});
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<TeachingPlan?>(
+      future: injector.get<TeachingPlanRepository>().getBySubject(subjectCode),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData || snapshot.data == null) {
+          return const SizedBox.shrink();
+        }
+
+        final plan = snapshot.data!;
+        final today = DateTime.now();
+        final todayDate = DateTime(today.year, today.month, today.day);
+
+        // Verifica se há aula hoje
+        final topic = plan.topics.cast<ClassTopic?>().firstWhere(
+              (t) => t?.date != null && t!.date!.isAtSameMomentAs(todayDate),
+              orElse: () => null,
+            );
+
+        if (topic == null) return const SizedBox.shrink();
+
+        return Container(
+          width: double.infinity,
+          margin: const EdgeInsets.only(top: 20),
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Theme.of(context)
+                .colorScheme
+                .primaryContainer
+                .withValues(alpha: 0.3),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color:
+                  Theme.of(context).colorScheme.primary.withValues(alpha: 0.2),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.calendar_today,
+                      size: 16, color: Theme.of(context).colorScheme.primary),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Aula de Hoje',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: Theme.of(context).colorScheme.primary,
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              Text(
+                topic.content,
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }

@@ -20,12 +20,17 @@ class UpcomingClassData {
   /// Quantos dias até a aula (0 = hoje, 1 = amanhã, etc.)
   final int daysUntil;
 
+  final String? type; // "teorica", "pratica", etc.
+  final String? classContent; // Assunto da aula (do plano de ensino)
+
   const UpcomingClassData({
     required this.subject,
     required this.slot,
     required this.isOngoing,
     required this.dayName,
     required this.daysUntil,
+    this.type,
+    this.classContent,
   });
 
   /// Label amigável para exibição (AGORA, Hoje, Amanhã, ou nome do dia)
@@ -51,6 +56,7 @@ class UpcomingClassData {
         'dayName': dayName,
         'dayLabel': dayLabel,
         'daysUntil': daysUntil,
+        'classContent': classContent ?? '',
       };
 
   @override

@@ -116,12 +116,18 @@ class UpcomingClassesWidgetProvider : HomeWidgetProvider() {
             2 -> R.id.class_2_indicator
             else -> R.id.class_3_indicator
         }
+        val contentId = when (index) {
+            1 -> R.id.class_1_content
+            2 -> R.id.class_2_content
+            else -> R.id.class_3_content
+        }
 
         val subjectName = classData.optString("subjectName", "Aula")
         val startTime = classData.optString("startTime", "--:--")
         val endTime = classData.optString("endTime", "--:--")
         val isOngoing = classData.optBoolean("isOngoing", false)
         val dayLabel = classData.optString("dayLabel", "")
+        val classContent = classData.optString("classContent", "")
 
         val badge = when {
             isOngoing -> "AGORA"
@@ -139,6 +145,13 @@ class UpcomingClassesWidgetProvider : HomeWidgetProvider() {
         views.setTextViewText(nameId, subjectName)
         views.setTextViewText(timeId, "$startTime - $endTime")
         views.setInt(indicatorId, "setBackgroundColor", indicatorColor)
+
+        if (classContent.isNotEmpty()) {
+            views.setTextViewText(contentId, classContent)
+            views.setViewVisibility(contentId, View.VISIBLE)
+        } else {
+            views.setViewVisibility(contentId, View.GONE)
+        }
     }
 
     private fun hideClassView(views: RemoteViews, index: Int) {

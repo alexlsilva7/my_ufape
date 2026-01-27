@@ -40,6 +40,9 @@ import 'package:my_ufape/data/services/shorebird/shorebird_service.dart';
 import 'package:my_ufape/data/services/upcoming_classes/upcoming_classes_service.dart';
 import 'package:my_ufape/data/services/home_widget/home_widget_service.dart';
 import 'package:my_ufape/ui/initial_sync/initial_sync_view_model.dart';
+import 'package:my_ufape/data/services/gemini/teaching_plan_extraction_service.dart';
+import 'package:my_ufape/data/repositories/teaching_plan/teaching_plan_repository.dart';
+import 'package:my_ufape/data/repositories/teaching_plan/teaching_plan_repository_impl.dart';
 
 final injector = AutoInjector();
 
@@ -109,6 +112,7 @@ Future<void> setupDependencies() async {
   injector.addLazySingleton<UpcomingClassesService>(
     () => UpcomingClassesService(
       injector.get<ScheduledSubjectRepository>(),
+      injector.get<TeachingPlanRepository>(),
     ),
   );
 
@@ -197,6 +201,15 @@ Future<void> setupDependencies() async {
       ));
 
   injector.addSingleton(NotificationService.new);
+
+  injector.addLazySingleton<TeachingPlanExtractionService>(
+      TeachingPlanExtractionService.new);
+
+  injector.addLazySingleton<TeachingPlanRepository>(
+    () => TeachingPlanRepositoryImpl(
+      injector.get<Database>(),
+    ),
+  );
 
   // Serviço SIGA: instância única (Singleton)
   injector.addInstance<SigaBackgroundService>(

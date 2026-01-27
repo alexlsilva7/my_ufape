@@ -1,16 +1,15 @@
 import 'package:my_ufape/data/repositories/scheduled_subject/scheduled_subject_repository.dart';
+import 'package:my_ufape/data/repositories/teaching_plan/teaching_plan_repository.dart';
 import 'package:my_ufape/domain/entities/time_table.dart';
+import 'package:my_ufape/domain/entities/teaching_plan.dart';
 import 'package:my_ufape/domain/entities/upcoming_class_data.dart';
 import 'package:result_dart/result_dart.dart';
 
-/// Serviço para calcular as próximas aulas baseado no horário atual.
-///
-/// Extrai a lógica de cálculo de próximas aulas para ser reutilizada
-/// tanto no app Flutter quanto no Home Screen Widget.
 class UpcomingClassesService {
   final ScheduledSubjectRepository _scheduledRepo;
+  final TeachingPlanRepository _teachingPlanRepo; // Repositório adicionado
 
-  UpcomingClassesService(this._scheduledRepo);
+  UpcomingClassesService(this._scheduledRepo, this._teachingPlanRepo);
 
   /// Retorna as próximas aulas ordenadas por proximidade.
   ///
@@ -20,12 +19,15 @@ class UpcomingClassesService {
     try {
       final result = await _scheduledRepo.getAllScheduledSubjects();
 
-      return result.fold(
-        (subjects) {
-          final upcomingClasses = _calculateUpcomingClasses(subjects, limit);
+      // Precisa ser async agora, então usamos await dentro do fold
+      return await result.fold(
+        (subjects) async {
+          // Calcula a lista básica
+          final upcomingClasses =
+              await _calculateUpcomingClasses(subjects, limit);
           return Success(upcomingClasses);
         },
-        (error) => Failure(error),
+        (error) async => Failure(error), // Async wrapper
       );
     } catch (e) {
       return Failure(Exception('Erro ao calcular próximas aulas: $e'));
@@ -33,14 +35,16 @@ class UpcomingClassesService {
   }
 
   /// Calcula as próximas aulas a partir da lista de disciplinas.
-  List<UpcomingClassData> _calculateUpcomingClasses(
+  Future<List<UpcomingClassData>> _calculateUpcomingClasses(
     List<ScheduledSubject> subjects,
     int limit,
-  ) {
+  ) async {
     final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
     final todayIndex = now.weekday; // Monday=1 .. Sunday=7
     final nowMinutes = now.hour * 60 + now.minute;
 
+    // ... (lógica de agrupamento permanece igual) ...
     // Agrupar slots por disciplina + dia e mesclar horários contíguos
     final grouped = <String, List<TimeSlot>>{};
     final subjectByKey = <String, ScheduledSubject>{};
@@ -70,21 +74,17 @@ class UpcomingClassesService {
 
       for (var i = 1; i < slots.length; i++) {
         final s = slots[i];
-        // se o próximo começa exatamente quando o atual termina, mesclar
         if (s.startTime == currentEnd) {
           currentEnd = s.endTime;
         } else {
-          // finalizar intervalo atual
           final mergedSlot = TimeSlot.create(
               day: day, startTime: currentStart, endTime: currentEnd);
           intervals.add(_ClassInterval(subject: subject, slot: mergedSlot));
-          // iniciar novo intervalo
           currentStart = s.startTime;
           currentEnd = s.endTime;
         }
       }
 
-      // adicionar último intervalo
       final lastMerged = TimeSlot.create(
           day: day, startTime: currentStart, endTime: currentEnd);
       intervals.add(_ClassInterval(subject: subject, slot: lastMerged));
@@ -104,14 +104,12 @@ class UpcomingClassesService {
       bool isOngoing = false;
       int effectiveOffset;
 
-      // Se é hoje e está em andamento (já começou mas não terminou)
       if (offsetDays == 0 &&
           startMinutes <= nowMinutes &&
           endMinutes > nowMinutes) {
         isOngoing = true;
         effectiveOffset = 0;
       } else if (offsetDays == 0 && endMinutes <= nowMinutes) {
-        // Se é hoje mas já passou, empurra para próxima semana
         effectiveOffset = 7;
       } else {
         effectiveOffset = offsetDays;
@@ -131,17 +129,47 @@ class UpcomingClassesService {
     // ordenar por score (menor = próximo)
     upcoming.sort((a, b) => a.score.compareTo(b.score));
 
-    // Converter para UpcomingClassData e limitar
-    return upcoming
-        .take(limit)
-        .map((e) => UpcomingClassData(
-              subject: e.subject,
-              slot: e.slot,
-              isOngoing: e.isOngoing,
-              dayName: e.dayName,
-              daysUntil: e.daysUntil,
-            ))
-        .toList();
+    final limitedList = upcoming.take(limit).toList();
+    final resultList = <UpcomingClassData>[];
+
+    // Enriquecer com dados do Plano de Ensino
+    for (final item in limitedList) {
+      String? classContent;
+      String? type;
+
+      // Se a aula é hoje (daysUntil == 0), buscar tópico no plano
+      if (item.daysUntil == 0) {
+        try {
+          final plan = await _teachingPlanRepo.getBySubject(item.subject.code);
+          if (plan != null) {
+            // Tenta encontrar um tópico com a data de hoje
+            final topic = plan.topics.cast<ClassTopic?>().firstWhere(
+                  (t) => t?.date != null && t!.date!.isAtSameMomentAs(today),
+                  orElse: () => null,
+                );
+
+            if (topic != null) {
+              classContent = topic.content;
+              type = topic.type;
+            }
+          }
+        } catch (_) {
+          // Ignora erro ao buscar plano (opcional)
+        }
+      }
+
+      resultList.add(UpcomingClassData(
+        subject: item.subject,
+        slot: item.slot,
+        isOngoing: item.isOngoing,
+        dayName: item.dayName,
+        daysUntil: item.daysUntil,
+        classContent: classContent,
+        type: type,
+      ));
+    }
+
+    return resultList;
   }
 
   int _dayIndex(DayOfWeek day) {

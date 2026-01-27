@@ -290,4 +290,20 @@ class SettingsRepositoryImpl extends ChangeNotifier
       return Failure(AppException(e.toString(), s));
     }
   }
+
+  @override
+  Future<String?> getGeminiKey() async {
+    return await _secureStorage.read(key: 'user_gemini_key');
+  }
+
+  @override
+  AsyncResult<Unit> saveGeminiKey(String key) async {
+    try {
+      await _secureStorage.write(key: 'user_gemini_key', value: key);
+      notifyListeners();
+      return Success(unit);
+    } catch (e, s) {
+      return Failure(AppException('Falha ao salvar Gemini Key: $e', s));
+    }
+  }
 }

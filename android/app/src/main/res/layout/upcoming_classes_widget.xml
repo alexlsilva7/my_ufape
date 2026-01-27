@@ -72,6 +72,16 @@
                 android:layout_height="wrap_content"
                 android:textSize="11sp"
                 android:textColor="#666666" />
+
+            <TextView
+                android:id="@+id/class_1_content"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="10sp"
+                android:textColor="#888888"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:visibility="gone" />
         </LinearLayout>
     </LinearLayout>
 
@@ -129,6 +139,16 @@
                 android:layout_height="wrap_content"
                 android:textSize="11sp"
                 android:textColor="#666666" />
+
+            <TextView
+                android:id="@+id/class_2_content"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="10sp"
+                android:textColor="#888888"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:visibility="gone" />
         </LinearLayout>
     </LinearLayout>
 
@@ -186,6 +206,16 @@
                 android:layout_height="wrap_content"
                 android:textSize="11sp"
                 android:textColor="#666666" />
+
+            <TextView
+                android:id="@+id/class_3_content"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="10sp"
+                android:textColor="#888888"
+                android:maxLines="1"
+                android:ellipsize="end"
+                android:visibility="gone" />
         </LinearLayout>
     </LinearLayout>
 

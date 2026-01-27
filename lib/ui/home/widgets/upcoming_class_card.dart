@@ -58,6 +58,11 @@ class UpcomingClassCard extends StatelessWidget {
                   _SubjectName(name: classData.subject.name),
                   const SizedBox(height: 6),
                   _ClassDetails(classData: classData, isDark: isDark),
+                  if (classData.classContent != null &&
+                      classData.classContent!.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    _ClassContent(content: classData.classContent!),
+                  ],
                 ],
               ),
             ),
@@ -212,6 +217,51 @@ class _ClassDetails extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// Conteúdo programático da aula (do plano de ensino)
+class _ClassContent extends StatelessWidget {
+  final String content;
+
+  const _ClassContent({required this.content});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.primary.withValues(alpha: 0.1),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.menu_book_outlined,
+            size: 14,
+            color: Theme.of(context).colorScheme.primary,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              content,
+              style: TextStyle(
+                fontSize: 12,
+                color: Theme.of(context).textTheme.bodyMedium?.color,
+                fontWeight: FontWeight.w500,
+              ),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

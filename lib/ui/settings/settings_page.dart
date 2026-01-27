@@ -191,6 +191,14 @@ class _SettingsPageState extends State<SettingsPage> {
                           ),
                         ),
                         const Divider(height: 1),
+                        ListTile(
+                          leading: const Icon(Icons.auto_awesome),
+                          title: const Text('Gemini API Key'),
+                          subtitle:
+                              const Text('Configurar Inteligência Artificial'),
+                          onTap: _showApiKeyDialog,
+                        ),
+                        const Divider(height: 1),
                         SwitchListTile(
                           title: const Text('Sincronizar ao abrir o app'),
                           subtitle: const Text(
@@ -446,5 +454,70 @@ class _SettingsPageState extends State<SettingsPage> {
         ),
       );
     }
+  }
+
+  Future<void> _showApiKeyDialog() async {
+    final controller = TextEditingController();
+    final currentKey = await _settingsRepository.getGeminiKey();
+    controller.text = currentKey ?? '';
+
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Gemini API Key'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+                'Insira sua chave do Google AI Studio para recursos de IA.'),
+            const SizedBox(height: 16),
+            TextField(
+              controller: controller,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: 'API Key',
+                hintText: 'Cole sua chave aqui',
+              ),
+              obscureText: true,
+            ),
+            const SizedBox(height: 12),
+            Align(
+              alignment: Alignment.centerLeft,
+              child: InkWell(
+                onTap: () =>
+                    _launchURL('https://aistudio.google.com/app/apikey'),
+                child: const Text(
+                  'Obter chave gratuitamente',
+                  style: TextStyle(
+                    color: Colors.blue,
+                    decoration: TextDecoration.underline,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () async {
+              await _settingsRepository.saveGeminiKey(controller.text.trim());
+              if (mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Chave salva com sucesso!')),
+                );
+              }
+            },
+            child: const Text('Salvar'),
+          ),
+        ],
+      ),
+    );
   }
 }

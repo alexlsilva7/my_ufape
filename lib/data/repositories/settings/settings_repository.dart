@@ -41,4 +41,7 @@ abstract interface class SettingsRepository extends ChangeNotifier {
 
   String get sigaUrl;
   AsyncResult<Unit> setSigaUrl(String url);
+
+  Future<String?> getGeminiKey();
+  AsyncResult<Unit> saveGeminiKey(String key);
 }
