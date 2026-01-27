@@ -1,17 +1,15 @@
 import 'package:my_ufape/ui/home/widgets/connectivity_status_widget.dart';
+import 'package:my_ufape/ui/home/widgets/upcoming_classes_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:my_ufape/core/debug/logarte.dart';
 import 'package:my_ufape/core/ui/gen/assets.gen.dart';
 import 'package:my_ufape/data/repositories/subject_note/subject_note_repository.dart';
-import 'package:my_ufape/data/repositories/scheduled_subject/scheduled_subject_repository.dart';
-import 'package:my_ufape/ui/timetable/widgets/subject_card.dart';
 import 'package:routefly/routefly.dart';
 import 'package:my_ufape/app_widget.dart';
 import 'package:my_ufape/config/dependencies.dart';
 import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
 import 'package:my_ufape/data/services/shorebird/shorebird_service.dart';
-import 'package:my_ufape/domain/entities/time_table.dart';
 import 'package:terminate_restart/terminate_restart.dart';
 import 'package:my_ufape/ui/home/home_view_model.dart';
 import 'package:my_ufape/ui/home/widgets/user_info_dialog.dart';
@@ -30,12 +28,8 @@ class _HomePageState extends State<HomePage> {
   final SigaBackgroundService _sigaService =
       injector.get<SigaBackgroundService>();
   final ShorebirdService _shorebirdService = injector.get<ShorebirdService>();
-  final ScheduledSubjectRepository _scheduledRepo = injector.get();
   bool _isLoggedIn = false;
   late final VoidCallback _loginListener;
-
-  List<Map<String, dynamic>> _nextClasses = [];
-  bool _isLoadingNext = true;
 
   String? version;
 
@@ -67,8 +61,6 @@ class _HomePageState extends State<HomePage> {
     _sigaService.loginNotifier.addListener(_loginListener);
     _sigaService.captchaRequiredNotifier.addListener(_handleCaptchaRequirement);
     _sigaService.initialize();
-    // Carregar próximas aulas ao iniciar
-    _loadNextClasses();
 
     // Shorebird update listener
     _shorebirdService.isUpdateReadyToInstall.addListener(_showUpdateBanner);
@@ -215,202 +207,6 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
     );
-  }
-
-  Future<void> _loadNextClasses() async {
-    setState(() {
-      _isLoadingNext = true;
-    });
-
-    try {
-      final result = await _scheduledRepo.getAllScheduledSubjects();
-      await Future.delayed(const Duration(milliseconds: 500));
-      result.fold(
-        (subjects) {
-          if (!mounted) return;
-
-          final now = DateTime.now();
-
-          // Map DayOfWeek to index (segunda=1 .. domingo=7)
-          int dayIndex(DayOfWeek d) {
-            switch (d) {
-              case DayOfWeek.segunda:
-                return 1;
-              case DayOfWeek.terca:
-                return 2;
-              case DayOfWeek.quarta:
-                return 3;
-              case DayOfWeek.quinta:
-                return 4;
-              case DayOfWeek.sexta:
-                return 5;
-              case DayOfWeek.sabado:
-                return 6;
-              case DayOfWeek.domingo:
-                return 7;
-              default:
-                return 0;
-            }
-          }
-
-          String dayName(DayOfWeek d) {
-            switch (d) {
-              case DayOfWeek.segunda:
-                return 'Segunda-feira';
-              case DayOfWeek.terca:
-                return 'Terça-feira';
-              case DayOfWeek.quarta:
-                return 'Quarta-feira';
-              case DayOfWeek.quinta:
-                return 'Quinta-feira';
-              case DayOfWeek.sexta:
-                return 'Sexta-feira';
-              case DayOfWeek.sabado:
-                return 'Sábado';
-              case DayOfWeek.domingo:
-                return 'Domingo';
-              default:
-                return '';
-            }
-          }
-
-          final todayIndex = now.weekday; // Monday=1 .. Sunday=7
-
-          int parseMinutes(String hhmm) {
-            try {
-              final parts = hhmm.split(':');
-              final h = int.tryParse(parts[0]) ?? 0;
-              final m = int.tryParse(parts.length > 1 ? parts[1] : '0') ?? 0;
-              return h * 60 + m;
-            } catch (_) {
-              return 0;
-            }
-          }
-
-          final nowMinutes = now.hour * 60 + now.minute;
-
-          // Agrupar slots por disciplina + dia e mesclar horários contíguos
-          final grouped = <String, List<TimeSlot>>{};
-          final subjectByKey = <String, ScheduledSubject>{};
-
-          for (final s in subjects) {
-            for (final slot in s.timeSlots) {
-              final key = '${s.code}_${slot.day}';
-              subjectByKey[key] = s;
-              grouped.putIfAbsent(key, () => []).add(slot);
-            }
-          }
-
-          final intervals = <Map<String, dynamic>>[];
-
-          for (final entry in grouped.entries) {
-            final key = entry.key;
-            final slots = entry.value;
-            if (slots.isEmpty) continue;
-
-            // ordenar por startTime
-            slots.sort((a, b) => a.startTime.compareTo(b.startTime));
-
-            String currentStart = slots.first.startTime;
-            String currentEnd = slots.first.endTime;
-            final day = slots.first.day;
-            final subject = subjectByKey[key]!;
-
-            for (var i = 1; i < slots.length; i++) {
-              final s = slots[i];
-              // se o próximo começa exatamente quando o atual termina, mesclar
-              if (s.startTime == currentEnd) {
-                currentEnd = s.endTime;
-              } else {
-                // finalizar intervalo atual
-                final mergedSlot = TimeSlot.create(
-                    day: day, startTime: currentStart, endTime: currentEnd);
-                intervals.add({'subject': subject, 'slot': mergedSlot});
-                // iniciar novo intervalo
-                currentStart = s.startTime;
-                currentEnd = s.endTime;
-              }
-            }
-
-            // adicionar último intervalo
-            final lastMerged = TimeSlot.create(
-                day: day, startTime: currentStart, endTime: currentEnd);
-            intervals.add({'subject': subject, 'slot': lastMerged});
-          }
-
-          // Para cada intervalo, calcular score de proximidade (em minutos)
-          final upcoming = <Map<String, dynamic>>[];
-          for (final it in intervals) {
-            final slot = it['slot'] as TimeSlot;
-            final sDayIndex = dayIndex(slot.day);
-            if (sDayIndex == 0) continue;
-
-            final offsetDays = (sDayIndex - todayIndex + 7) % 7;
-            final startMinutes = parseMinutes(slot.startTime);
-            final endMinutes = parseMinutes(slot.endTime);
-
-            bool isOngoing = false;
-            int effectiveOffset;
-
-            // Se é hoje e está em andamento (já começou mas não terminou)
-            if (offsetDays == 0 &&
-                startMinutes <= nowMinutes &&
-                endMinutes > nowMinutes) {
-              isOngoing = true;
-              effectiveOffset = 0;
-            } else if (offsetDays == 0 && endMinutes <= nowMinutes) {
-              // Se é hoje mas já passou, empurra para próxima semana
-              effectiveOffset = 7;
-            } else {
-              effectiveOffset = offsetDays;
-            }
-
-            final score = effectiveOffset * 24 * 60 + startMinutes;
-            upcoming.add({
-              'subject': it['subject'],
-              'slot': slot,
-              'score': score,
-              'isOngoing': isOngoing,
-              'dayName': dayName(slot.day),
-              'daysUntil': effectiveOffset,
-            });
-          }
-
-          // ordenar por score (menor = próximo)
-          upcoming
-              .sort((a, b) => (a['score'] as int).compareTo(b['score'] as int));
-
-          setState(() {
-            _nextClasses = upcoming
-                .take(3)
-                .map((e) => {
-                      'subject': e['subject'],
-                      'slot': e['slot'],
-                      'isOngoing': e['isOngoing'],
-                      'dayName': e['dayName'],
-                      'daysUntil': e['daysUntil'],
-                    })
-                .toList(growable: false);
-            _isLoadingNext = false;
-          });
-        },
-        (err) {
-          if (mounted) {
-            setState(() {
-              _nextClasses = [];
-              _isLoadingNext = false;
-            });
-          }
-        },
-      );
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _nextClasses = [];
-          _isLoadingNext = false;
-        });
-      }
-    }
   }
 
   @override
@@ -699,276 +495,13 @@ class _HomePageState extends State<HomePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                          child: _buildSectionTitle(
-                              'Próximas Aulas', Icons.schedule)),
-                      IconButton(
-                        icon: Icon(
-                          Icons.refresh,
-                          size: 20,
-                          color: Theme.of(context).primaryColor,
-                        ),
-                        onPressed: _loadNextClasses,
-                        tooltip: 'Atualizar próximas aulas',
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  _buildNextClassesSection(isDark),
+                  const UpcomingClassesWidget(),
                 ],
               ),
             ),
           ),
         ],
       ),
-    );
-  }
-
-  Widget _buildSectionTitle(String title, IconData icon) {
-    return Row(
-      children: [
-        Icon(icon, size: 22, color: Theme.of(context).primaryColor),
-        const SizedBox(width: 6),
-        Text(
-          title,
-          style: const TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildNextClassesSection(bool isDark) {
-    if (_isLoadingNext) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 18.0),
-          child: Column(
-            children: const [
-              CircularProgressIndicator(),
-              SizedBox(height: 10),
-              Text('Carregando próximas aulas...'),
-            ],
-          ),
-        ),
-      );
-    }
-
-    if (_nextClasses.isEmpty) {
-      return Column(
-        children: [
-          Container(
-            margin: const EdgeInsets.only(bottom: 10),
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: isDark ? Colors.black : Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: Theme.of(context)
-                    .colorScheme
-                    .outline
-                    .withValues(alpha: 0.08),
-                width: 1,
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(Icons.schedule, color: Theme.of(context).primaryColor),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Nenhuma próxima aula encontrada.',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      );
-    }
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: _nextClasses.map((item) {
-        final subject = item['subject'] as ScheduledSubject;
-        final slot = item['slot'] as TimeSlot;
-        final isOngoing = item['isOngoing'] as bool;
-        final dayName = item['dayName'] as String;
-        final daysUntil = item['daysUntil'] as int;
-
-        final color = isOngoing ? Colors.orange.shade700 : Colors.blue.shade600;
-
-        String dayLabel;
-        if (daysUntil == 0) {
-          dayLabel = isOngoing ? 'AGORA' : 'Hoje';
-        } else if (daysUntil == 1) {
-          dayLabel = 'Amanhã';
-        } else {
-          dayLabel = dayName;
-        }
-
-        return GestureDetector(
-          onTap: () {
-            SubjectCard.showDetailsForScheduleSubject(context,
-                subject: subject);
-          },
-          child: Container(
-            margin: const EdgeInsets.only(bottom: 10),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: isDark ? Colors.black : Colors.white,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(
-                color: color.withValues(alpha: 0.25),
-                width: 1.2,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: isDark ? 0.3 : 0.03),
-                  blurRadius: 8,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: Row(
-              children: [
-                Container(
-                  width: 4,
-                  height: 78,
-                  decoration: BoxDecoration(
-                    color: color,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          if (isOngoing) ...[
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.orange.shade700,
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: const [
-                                  Icon(Icons.circle,
-                                      size: 8, color: Colors.white),
-                                  SizedBox(width: 6),
-                                  Text(
-                                    'EM ANDAMENTO',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 9,
-                                      fontWeight: FontWeight.bold,
-                                      letterSpacing: 0.5,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ] else ...[
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: color.withValues(alpha: 0.1),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                    color: color.withValues(alpha: 0.3),
-                                    width: 1),
-                              ),
-                              child: Text(
-                                dayLabel.toUpperCase(),
-                                style: TextStyle(
-                                  color: color,
-                                  fontSize: 9,
-                                  fontWeight: FontWeight.bold,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        subject.name,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      const SizedBox(height: 6),
-                      Row(
-                        children: [
-                          const Icon(Icons.access_time, size: 14),
-                          const SizedBox(width: 6),
-                          Text(
-                            '${slot.startTime} - ${slot.endTime}',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: isDark
-                                  ? Colors.grey.shade400
-                                  : Colors.grey.shade600,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          const Icon(Icons.person, size: 14),
-                          const SizedBox(width: 6),
-                          Flexible(
-                            child: Text(
-                              subject.className.isNotEmpty
-                                  ? subject.className
-                                  : subject.status,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: isDark
-                                    ? Colors.grey.shade400
-                                    : Colors.grey.shade600,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                          const Icon(Icons.room, size: 14),
-                          const SizedBox(width: 6),
-                          Flexible(
-                            child: Text(
-                              subject.room,
-                              style: TextStyle(
-                                fontSize: 13,
-                                color: isDark
-                                    ? Colors.grey.shade400
-                                    : Colors.grey.shade600,
-                              ),
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        );
-      }).toList(),
     );
   }
 

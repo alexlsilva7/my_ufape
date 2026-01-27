@@ -37,6 +37,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:my_ufape/data/services/notification/notification_service.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
 import 'package:my_ufape/data/services/shorebird/shorebird_service.dart';
+import 'package:my_ufape/data/services/upcoming_classes/upcoming_classes_service.dart';
 import 'package:my_ufape/ui/initial_sync/initial_sync_view_model.dart';
 
 final injector = AutoInjector();
@@ -101,6 +102,12 @@ Future<void> setupDependencies() async {
   injector.addLazySingleton<ScheduledSubjectRepository>(
     () => ScheduledSubjectRepositoryImpl(
       injector.get<ScheduledSubjectService>(),
+    ),
+  );
+
+  injector.addLazySingleton<UpcomingClassesService>(
+    () => UpcomingClassesService(
+      injector.get<ScheduledSubjectRepository>(),
     ),
   );
 
