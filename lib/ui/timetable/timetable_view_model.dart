@@ -3,17 +3,20 @@ import 'package:my_ufape/core/debug/logarte.dart';
 import 'package:my_ufape/data/repositories/scheduled_subject/scheduled_subject_repository.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
 import 'package:my_ufape/domain/entities/time_table.dart';
+import 'package:my_ufape/data/services/home_widget/home_widget_service.dart';
 
 class TimetableViewModel extends ChangeNotifier {
   final ScheduledSubjectRepository _repository;
   final SigaBackgroundService _sigaService;
+  final HomeWidgetService _homeWidgetService;
 
   List<ScheduledSubject> subjects = [];
   bool isLoading = true;
   bool isSyncing = false;
   String? errorMessage;
 
-  TimetableViewModel(this._repository, this._sigaService);
+  TimetableViewModel(
+      this._repository, this._sigaService, this._homeWidgetService);
 
   static const dayOrder = [
     DayOfWeek.segunda,
@@ -41,6 +44,8 @@ class TimetableViewModel extends ChangeNotifier {
             this.subjects = subjects;
             isLoading = false;
             notifyListeners();
+            // Atualizar o widget sempre que carregar dados locais com sucesso
+            _updateHomeWidget();
           }
         },
         (error) {
@@ -73,6 +78,9 @@ class TimetableViewModel extends ChangeNotifier {
       isLoading = false;
       isSyncing = false;
       notifyListeners();
+
+      // Atualizar o widget após sincronização bem-sucedida
+      _updateHomeWidget();
     } catch (e) {
       logarte.log('Erro ao sincronizar com SIGA: $e',
           source: 'TimetableViewModel');
@@ -81,6 +89,16 @@ class TimetableViewModel extends ChangeNotifier {
       isLoading = false;
       isSyncing = false;
       notifyListeners();
+    }
+  }
+
+  // Método auxiliar para atualizar o widget
+  Future<void> _updateHomeWidget() async {
+    try {
+      logarte.log('Atualizando widget', source: 'TimetableViewModel');
+      await _homeWidgetService.updateWidget();
+    } catch (e) {
+      logarte.log('Erro ao atualizar widget: $e', source: 'TimetableViewModel');
     }
   }
 

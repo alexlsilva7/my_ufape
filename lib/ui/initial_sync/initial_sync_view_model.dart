@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:my_ufape/app_widget.dart';
 import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
 import 'package:my_ufape/data/repositories/user/user_repository.dart';
+import 'package:my_ufape/data/services/home_widget/home_widget_service.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
 import 'package:routefly/routefly.dart';
 
@@ -20,9 +21,14 @@ class InitialSyncViewModel extends ChangeNotifier {
   final SigaBackgroundService _sigaService;
   final UserRepository _userRepository;
   final SettingsRepository _settingsRepository;
+  final HomeWidgetService _homeWidgetService;
 
   InitialSyncViewModel(
-      this._sigaService, this._userRepository, this._settingsRepository);
+    this._sigaService,
+    this._userRepository,
+    this._settingsRepository,
+    this._homeWidgetService,
+  );
 
   final Map<SyncStep, StepStatus> _status = {
     for (var step in SyncStep.values) step: StepStatus.idle
@@ -138,6 +144,11 @@ class InitialSyncViewModel extends ChangeNotifier {
 
   void _checkCompletionAndNavigate() async {
     if (isSyncComplete) {
+      // Atualiza o widget com os dados sincronizados
+      try {
+        await _homeWidgetService.updateWidget();
+      } catch (_) {}
+
       (await _userRepository.getUser()).onSuccess((user) async {
         user.lastBackgroundSync = DateTime.now();
         await _userRepository.upsertUser(user);

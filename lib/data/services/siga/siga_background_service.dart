@@ -19,6 +19,7 @@ import 'package:my_ufape/data/services/siga/siga_scripts.dart';
 import 'package:my_ufape/domain/entities/user.dart';
 import 'package:my_ufape/data/repositories/user/user_repository.dart';
 import 'package:my_ufape/data/services/notification/notification_service.dart';
+import 'package:my_ufape/data/services/home_widget/home_widget_service.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:internet_connection_checker/internet_connection_checker.dart';
 
@@ -1720,6 +1721,18 @@ class SigaBackgroundService extends ChangeNotifier {
       await navigateAndExtractProfile();
 
       _updateSyncStatus('Sincronização em background concluída.');
+
+      // Atualiza o Home Screen Widget com as novas próximas aulas
+      try {
+        final homeWidgetService = injector.get<HomeWidgetService>();
+        await homeWidgetService.updateWidget();
+        logarte.log('Home Widget atualizado após sincronização.',
+            source: 'SigaBackgroundService');
+      } catch (e) {
+        logarte.log('Falha ao atualizar Home Widget: $e',
+            source: 'SigaBackgroundService');
+      }
+
       logarte.log(
           'Sincronização completa em background finalizada com sucesso.',
           source: 'SigaBackgroundService');

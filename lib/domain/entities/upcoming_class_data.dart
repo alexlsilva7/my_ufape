@@ -48,6 +48,7 @@ class UpcomingClassData {
         'startTime': slot.startTime,
         'endTime': slot.endTime,
         'isOngoing': isOngoing,
+        'dayName': dayName,
         'dayLabel': dayLabel,
         'daysUntil': daysUntil,
       };

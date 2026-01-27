@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_container"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="12dp"
+    android:background="@drawable/widget_background">
+
+    <!-- Cabeçalho -->
+    <TextView
+        android:id="@+id/widget_title"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Próximas Aulas"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        android:textColor="#333333"
+        android:paddingBottom="8dp" />
+
+    <!-- Aula 1 -->
+    <LinearLayout
+        android:id="@+id/class_1_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp">
+
+        <FrameLayout
+            android:id="@+id/class_1_indicator"
+            android:layout_width="4dp"
+            android:layout_height="match_parent"
+            android:background="#2196F3" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:paddingLeft="8dp"
+            android:paddingStart="8dp">
+
+            <TextView
+                android:id="@+id/class_1_badge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="9sp"
+                android:textStyle="bold"
+                android:textColor="#2196F3"
+                android:background="@drawable/badge_background"
+                android:paddingLeft="8dp"
+                android:paddingRight="8dp"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp" />
+
+            <TextView
+                android:id="@+id/class_1_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:textColor="#333333"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:paddingTop="2dp" />
+
+            <TextView
+                android:id="@+id/class_1_time"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="11sp"
+                android:textColor="#666666" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Aula 2 -->
+    <LinearLayout
+        android:id="@+id/class_2_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp">
+
+        <FrameLayout
+            android:id="@+id/class_2_indicator"
+            android:layout_width="4dp"
+            android:layout_height="match_parent"
+            android:background="#2196F3" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:paddingLeft="8dp"
+            android:paddingStart="8dp">
+
+            <TextView
+                android:id="@+id/class_2_badge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="9sp"
+                android:textStyle="bold"
+                android:textColor="#2196F3"
+                android:background="@drawable/badge_background"
+                android:paddingLeft="8dp"
+                android:paddingRight="8dp"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp" />
+
+            <TextView
+                android:id="@+id/class_2_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:textColor="#333333"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:paddingTop="2dp" />
+
+            <TextView
+                android:id="@+id/class_2_time"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="11sp"
+                android:textColor="#666666" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Aula 3 -->
+    <LinearLayout
+        android:id="@+id/class_3_container"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:visibility="gone"
+        android:paddingTop="6dp"
+        android:paddingBottom="6dp">
+
+        <FrameLayout
+            android:id="@+id/class_3_indicator"
+            android:layout_width="4dp"
+            android:layout_height="match_parent"
+            android:background="#2196F3" />
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical"
+            android:paddingLeft="8dp"
+            android:paddingStart="8dp">
+
+            <TextView
+                android:id="@+id/class_3_badge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textSize="9sp"
+                android:textStyle="bold"
+                android:textColor="#2196F3"
+                android:background="@drawable/badge_background"
+                android:paddingLeft="8dp"
+                android:paddingRight="8dp"
+                android:paddingTop="2dp"
+                android:paddingBottom="2dp" />
+
+            <TextView
+                android:id="@+id/class_3_name"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="13sp"
+                android:textStyle="bold"
+                android:textColor="#333333"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:paddingTop="2dp" />
+
+            <TextView
+                android:id="@+id/class_3_time"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textSize="11sp"
+                android:textColor="#666666" />
+        </LinearLayout>
+    </LinearLayout>
+
+    <!-- Mensagem vazia -->
+    <TextView
+        android:id="@+id/empty_message"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Nenhuma aula próxima"
+        android:textSize="13sp"
+        android:textColor="#999999"
+        android:gravity="center"
+        android:visibility="gone"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp" />
+
+</LinearLayout>

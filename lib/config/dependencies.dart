@@ -38,6 +38,7 @@ import 'package:my_ufape/data/services/notification/notification_service.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
 import 'package:my_ufape/data/services/shorebird/shorebird_service.dart';
 import 'package:my_ufape/data/services/upcoming_classes/upcoming_classes_service.dart';
+import 'package:my_ufape/data/services/home_widget/home_widget_service.dart';
 import 'package:my_ufape/ui/initial_sync/initial_sync_view_model.dart';
 
 final injector = AutoInjector();
@@ -111,6 +112,12 @@ Future<void> setupDependencies() async {
     ),
   );
 
+  injector.addLazySingleton<HomeWidgetService>(
+    () => HomeWidgetService(
+      injector.get<UpcomingClassesService>(),
+    ),
+  );
+
   injector.addLazySingleton<UserService>(
     () => UserService(
       injector.get<Database>(),
@@ -155,6 +162,7 @@ Future<void> setupDependencies() async {
       injector.get<SigaBackgroundService>(),
       injector.get<UserRepository>(),
       injector.get<SettingsRepository>(),
+      injector.get<HomeWidgetService>(),
     ),
   );
 
@@ -162,6 +170,7 @@ Future<void> setupDependencies() async {
     () => TimetableViewModel(
       injector.get<ScheduledSubjectRepository>(),
       injector.get<SigaBackgroundService>(),
+      injector.get<HomeWidgetService>(),
     ),
   );
 

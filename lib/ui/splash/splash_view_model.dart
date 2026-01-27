@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:my_ufape/app_widget.dart';
 import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
+import 'package:my_ufape/data/services/home_widget/home_widget_service.dart';
 import 'package:routefly/routefly.dart';
 
 class SplashViewModel extends ChangeNotifier {
@@ -33,6 +34,16 @@ class SplashViewModel extends ChangeNotifier {
       }
 
       if (proceed) {
+        // Verificar se há um deep link pendente do Widget
+        if (HomeWidgetService.pendingDeepLink != null) {
+          final handled = await HomeWidgetService.handleWidgetUri(
+              HomeWidgetService.pendingDeepLink);
+          if (handled) {
+            HomeWidgetService.pendingDeepLink = null; // Limpar após uso
+            return; // Não continuar para rota padrão
+          }
+        }
+
         final isSyncComplete =
             await settingsRepository.isInitialSyncCompleted();
         if (isSyncComplete) {

@@ -211,15 +211,6 @@ class _LoginPageState extends State<LoginPage> {
                         height: 150,
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'My UFAPE',
-                      textAlign: TextAlign.center,
-                      style:
-                          Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                fontWeight: FontWeight.bold,
-                              ),
-                    ),
                     const SizedBox(height: 32),
                     Text(
                       'Acesse sua conta',
