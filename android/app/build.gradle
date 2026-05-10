@@ -33,7 +33,7 @@ android {
     }
 
     buildTypes {
-        release {
+        release { 
             // TODO: Add your own signing config for the release build.
             // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig = signingConfigs.debug
@@ -47,8 +47,4 @@ dependencies {
 
 flutter {
     source = "../.."
-}
-
-dependencies {
-  coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:2.0.3'
 }

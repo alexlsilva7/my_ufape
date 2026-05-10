@@ -11,7 +11,29 @@ class SigaPage extends StatefulWidget {
 }
 
 class _SigaPageState extends State<SigaPage> {
-  SigaPageWidget? sigaPageWidget = SigaPageWidget();
+  late SigaBackgroundService _sigaService;
+
+  @override
+  void initState() {
+    super.initState();
+    _sigaService = injector.get<SigaBackgroundService>();
+
+    // Se estiver sincronizando, cancela imediatamente para permitir uso manual
+    // Usa addPostFrameCallback para evitar erro de setState durante build
+    if (_sigaService.isSyncing) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _sigaService.cancelSync();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Sincronização interrompida para acesso manual'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -35,6 +57,6 @@ class _SigaPageState extends State<SigaPage> {
             ),
           ],
         ),
-        body: sigaPageWidget ?? Container());
+        body: SigaPageWidget());
   }
 }

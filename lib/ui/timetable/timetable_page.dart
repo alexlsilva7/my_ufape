@@ -3,6 +3,8 @@ import 'package:my_ufape/config/dependencies.dart';
 import 'package:my_ufape/domain/entities/time_table.dart';
 import 'package:my_ufape/ui/timetable/timetable_view_model.dart';
 import 'package:my_ufape/ui/timetable/widgets/day_column.dart';
+import 'package:routefly/routefly.dart';
+import 'package:my_ufape/app_widget.dart';
 
 class TimetablePage extends StatefulWidget {
   const TimetablePage({super.key});
@@ -116,6 +118,15 @@ class _TimetablePageState extends State<TimetablePage> {
                     dayKeys: _dayKeys,
                   ),
                 ),
+      floatingActionButton: (!viewModel.isLoading && !viewModel.isSyncing && viewModel.isGeminiConfigured)
+          ? FloatingActionButton.extended(
+              onPressed: () {
+                Routefly.push(routePaths.timetableBuilder);
+              },
+              icon: const Icon(Icons.auto_fix_high),
+              label: const Text('Montador IA'),
+            )
+          : null,
     );
   }
 }

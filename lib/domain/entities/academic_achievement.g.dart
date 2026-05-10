@@ -57,7 +57,7 @@ const AcademicAchievementSchema = CollectionSchema(
   getId: _academicAchievementGetId,
   getLinks: _academicAchievementGetLinks,
   attach: _academicAchievementAttach,
-  version: '3.3.0',
+  version: '3.3.0-dev.3',
 );
 
 int _academicAchievementEstimateSize(

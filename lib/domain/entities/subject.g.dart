@@ -114,7 +114,7 @@ const SubjectSchema = CollectionSchema(
   getId: _subjectGetId,
   getLinks: _subjectGetLinks,
   attach: _subjectAttach,
-  version: '3.3.0',
+  version: '3.3.0-dev.3',
 );
 
 int _subjectEstimateSize(

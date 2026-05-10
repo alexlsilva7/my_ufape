@@ -37,7 +37,15 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:my_ufape/data/services/notification/notification_service.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
 import 'package:my_ufape/data/services/shorebird/shorebird_service.dart';
+import 'package:my_ufape/data/services/upcoming_classes/upcoming_classes_service.dart';
+import 'package:my_ufape/data/services/home_widget/home_widget_service.dart';
 import 'package:my_ufape/ui/initial_sync/initial_sync_view_model.dart';
+import 'package:my_ufape/data/services/gemini/teaching_plan_extraction_service.dart';
+import 'package:my_ufape/data/repositories/teaching_plan/teaching_plan_repository.dart';
+import 'package:my_ufape/data/repositories/teaching_plan/teaching_plan_repository_impl.dart';
+import 'package:my_ufape/ui/settings/export/export_view_model.dart';
+import 'package:my_ufape/data/services/gemini/schedule_extraction_service.dart';
+import 'package:my_ufape/ui/timetable_builder/timetable_builder_view_model.dart';
 
 final injector = AutoInjector();
 
@@ -104,6 +112,19 @@ Future<void> setupDependencies() async {
     ),
   );
 
+  injector.addLazySingleton<UpcomingClassesService>(
+    () => UpcomingClassesService(
+      injector.get<ScheduledSubjectRepository>(),
+      injector.get<TeachingPlanRepository>(),
+    ),
+  );
+
+  injector.addLazySingleton<HomeWidgetService>(
+    () => HomeWidgetService(
+      injector.get<UpcomingClassesService>(),
+    ),
+  );
+
   injector.addLazySingleton<UserService>(
     () => UserService(
       injector.get<Database>(),
@@ -145,16 +166,19 @@ Future<void> setupDependencies() async {
 
   injector.addLazySingleton(
     () => InitialSyncViewModel(
-      injector.get<SigaBackgroundService>(key: 'siga_background'),
+      injector.get<SigaBackgroundService>(),
       injector.get<UserRepository>(),
       injector.get<SettingsRepository>(),
+      injector.get<HomeWidgetService>(),
     ),
   );
 
   injector.addLazySingleton(
     () => TimetableViewModel(
       injector.get<ScheduledSubjectRepository>(),
-      injector.get<SigaBackgroundService>(key: 'siga_background'),
+      injector.get<SigaBackgroundService>(),
+      injector.get<HomeWidgetService>(),
+      injector.get<SettingsRepository>(),
     ),
   );
 
@@ -170,30 +194,54 @@ Future<void> setupDependencies() async {
   injector.addLazySingleton(
     () => AcademicAchievementViewModel(
       injector.get<AcademicAchievementRepository>(),
-      injector.get<SigaBackgroundService>(key: 'siga_background'),
+      injector.get<SigaBackgroundService>(),
     ),
   );
 
   injector.addLazySingleton(ChartsViewModel.new);
   injector.addLazySingleton(() => SchoolHistoryViewModel(
         injector.get<SchoolHistoryRepository>(),
-        injector.get<SigaBackgroundService>(key: 'siga_background'),
+        injector.get<SigaBackgroundService>(),
       ));
 
   injector.addSingleton(NotificationService.new);
 
-  // Registrar serviço SIGA: uma instância para background (sincronização)
-  // e outra para uso pela UI (WebView). Usamos keys para diferenciar.
-  injector.addInstance<SigaBackgroundService>(
-    SigaBackgroundService(),
-    key: 'siga_background',
+  injector.addLazySingleton<TeachingPlanExtractionService>(
+      TeachingPlanExtractionService.new);
+
+  injector.addLazySingleton<TeachingPlanRepository>(
+    () => TeachingPlanRepositoryImpl(
+      injector.get<Database>(),
+    ),
   );
 
-  // injector.addInstance<SigaBackgroundService>(
-  //   SigaBackgroundService(),
-  //   key: 'siga_ui',
-  // );
+  // Serviço SIGA: instância única (Singleton)
+  injector.addInstance<SigaBackgroundService>(
+    SigaBackgroundService(),
+  );
+
+  injector.addLazySingleton(
+    () => ExportViewModel(
+      injector.get<SubjectRepository>(),
+      injector.get<SubjectNoteRepository>(),
+      injector.get<ScheduledSubjectRepository>(),
+      injector.get<AcademicAchievementRepository>(),
+    ),
+  );
+
   injector.addSingleton(ShorebirdService.new);
+
+  injector.addLazySingleton(ScheduleExtractionService.new);
+  injector.addLazySingleton(
+    () => TimetableBuilderViewModel(
+      injector.get<ScheduleExtractionService>(),
+      injector.get<SettingsRepository>(),
+      injector.get<SubjectRepository>(),
+      injector.get<ScheduledSubjectRepository>(),
+      injector.get<SchoolHistoryRepository>(),
+      injector.get<SubjectNoteRepository>(),
+    ),
+  );
 
   injector.commit();
 
@@ -201,15 +249,9 @@ Future<void> setupDependencies() async {
   await injector.get<Database>().connection;
   await injector.get<Database>().seed();
 
-  // Inicializa o serviço SIGA em background (cria controller e começa verificação)
+  // Inicializa o serviço SIGA (cria controller e começa verificação)
   try {
-    // Inicializa a instância de background para criar o controller e iniciar
-    // verificação periódica de sessão.
-    await injector
-        .get<SigaBackgroundService>(key: 'siga_background')
-        .initialize();
-
-    //await injector.get<SigaBackgroundService>(key: 'siga_ui').initialize();
+    await injector.get<SigaBackgroundService>().initialize();
   } catch (_) {
     logarte.log('Falha ao inicializar SigaBackgroundService',
         source: 'setupDependencies');

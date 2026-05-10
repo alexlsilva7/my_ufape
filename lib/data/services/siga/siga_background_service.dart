@@ -19,6 +19,9 @@ import 'package:my_ufape/data/services/siga/siga_scripts.dart';
 import 'package:my_ufape/domain/entities/user.dart';
 import 'package:my_ufape/data/repositories/user/user_repository.dart';
 import 'package:my_ufape/data/services/notification/notification_service.dart';
+import 'package:my_ufape/data/services/home_widget/home_widget_service.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:internet_connection_checker/internet_connection_checker.dart';
 
 /// Exceção lançada quando uma sincronização é tentada enquanto outra está em andamento
 class SyncInProgressException implements Exception {
@@ -65,6 +68,8 @@ class SigaBackgroundService extends ChangeNotifier {
   bool _isLoggedIn = false;
   bool get isLoggedIn => _isLoggedIn;
 
+  bool _isDisposed = false;
+
   bool _isSyncing = false;
   bool get isSyncing => _isSyncing;
   set isSyncing(bool value) {
@@ -82,6 +87,10 @@ class SigaBackgroundService extends ChangeNotifier {
   String? _currentSyncOperation;
   String? get currentSyncOperation => _currentSyncOperation;
 
+  /// Flag para sinalizar cancelamento forçado
+  bool _cancelRequested = false;
+  bool get cancelRequested => _cancelRequested;
+
   /// Tenta adquirir o lock de sincronização
   /// Retorna true se conseguiu, false se já está sincronizando
   bool _acquireSyncLock(String operationName) {
@@ -92,12 +101,30 @@ class SigaBackgroundService extends ChangeNotifier {
       return false;
     }
 
+    _cancelRequested = false; // Reseta flag de cancelamento
     _isSyncing = true;
     _currentSyncOperation = operationName;
     _syncStatusMessage = 'Iniciando $operationName...';
     notifyListeners();
     logarte.log('Sync lock acquired for: $operationName');
     return true;
+  }
+
+  /// Cancela a sincronização em andamento para liberar o WebView para o usuário
+  void cancelSync() {
+    if (_isSyncing) {
+      _cancelRequested = true;
+      _isSyncing = false;
+      _currentSyncOperation = null;
+      _syncStatusMessage = '';
+      notifyListeners();
+
+      // Limpa a página para interromper scripts
+      _controller?.loadHtmlString('<html><body></body></html>');
+
+      logarte.log('Sincronização cancelada pelo usuário.',
+          source: 'SigaBackgroundService');
+    }
   }
 
   /// Libera o lock de sincronização
@@ -119,18 +146,29 @@ class SigaBackgroundService extends ChangeNotifier {
 
   final ValueNotifier<bool> loginNotifier = ValueNotifier(false);
 
+  StreamSubscription? _connectivitySubscription;
+
   // Reconexão automática: tentativas exponenciais quando detectamos logout inesperado
   int _reconnectAttempts = 0;
   Timer? _reconnectTimer;
   final int _maxReconnectAttempts = 5;
   final Duration _reconnectBaseDelay = const Duration(seconds: 5);
 
+  /// Verifica se cancelamento foi solicitado durante a sincronização
+  void _checkCancellation() {
+    if (_cancelRequested) {
+      throw Exception('Sincronização cancelada pelo usuário');
+    }
+  }
+
   /// Realiza a sincronização automática se as condições forem atendidas.
+  /// Chamada pela HomePage ao abrir o app.
   Future<void> performAutomaticSyncIfNeeded(
-      {Duration syncInterval = const Duration(hours: 1)}) async {
+      {Duration syncInterval = const Duration(hours: 4),
+      bool ignoreSettings = false}) async {
     // 1. Verifica se a funcionalidade está habilitada pelo usuário
-    if (!_settings.isAutoSyncEnabled) {
-      logarte.log('Auto-sync is disabled by the user.');
+    if (!ignoreSettings && !_settings.isSyncOnOpenEnabled) {
+      logarte.log('Sync on open is disabled by the user.');
       return;
     }
 
@@ -140,7 +178,7 @@ class SigaBackgroundService extends ChangeNotifier {
       return;
     }
 
-    // 3. Define o intervalo mínimo para a sincronização (ex: 1 hora)
+    // 3. Define o intervalo mínimo para a sincronização (ex: 4 horas)
     final lastSync =
         DateTime.fromMillisecondsSinceEpoch(_settings.lastSyncTimestamp);
     final now = DateTime.now();
@@ -152,11 +190,12 @@ class SigaBackgroundService extends ChangeNotifier {
       return;
     }
 
-    logarte.log('Starting automatic background sync...');
+    logarte.log('Starting automatic foreground sync...');
     isSyncing = true;
 
     try {
       await _runSync();
+      await _settings.updateLastSyncTimestamp();
     } catch (e) {
       logarte.log('Automatic sync failed: $e');
     }
@@ -279,6 +318,33 @@ class SigaBackgroundService extends ChangeNotifier {
     }, (error) {
       // sem credenciais armazenadas
     });
+
+    // Monitora mudança de conectividade para reconectar
+    _connectivitySubscription =
+        Connectivity().onConnectivityChanged.listen((results) async {
+      // Verifica se realmente tem conexão (ping)
+      final hasConnection = await InternetConnectionChecker().hasConnection;
+
+      if (hasConnection && !_isLoggedIn && !_authFailureNotifier.value) {
+        logarte.log('Conexão detectada. Tentando reconectar...',
+            source: 'SigaBackgroundService');
+        // Ao voltar a internet, recarrega a página.
+        // O onPageFinished cuidará de injetar as credenciais se _pendingUsername estiver setado
+        // ou se chamarmos reconnect()
+
+        if (_controller != null) {
+          // Se tivermos credenciais salvas mas não pendentes, vamos setar pendentes de novo e reload
+          if (_pendingUsername == null) {
+            final storedCreds = await _settings.getUserCredentials();
+            storedCreds.fold((c) {
+              _pendingUsername = c.username;
+              _pendingPassword = c.password;
+            }, (err) {});
+          }
+          await _controller!.loadRequest(Uri.parse(baseUrl));
+        }
+      }
+    });
   }
 
   /// Realiza um login ativo, aguardando o resultado.
@@ -323,11 +389,21 @@ class SigaBackgroundService extends ChangeNotifier {
     } catch (_) {}
   }
 
-  /// Limpa recursos do serviço
-  Future<void> disposeService() async {
+  /// Para timers e limpa controller sem dar dispose nos notifiers
+  void _stopInternalResources() {
     _statusTimer?.cancel();
     _statusTimer = null;
+    _connectivitySubscription?.cancel();
+    _connectivitySubscription = null;
     _controller = null;
+    _cancelReconnectTimer();
+  }
+
+  /// Limpa recursos do serviço e INUTILIZA a instância (dispose notifiers)
+  /// Use apenas se a instância não for mais ser usada.
+  Future<void> disposeService() async {
+    _isDisposed = true;
+    _stopInternalResources();
     try {
       loginNotifier.dispose();
       _authFailureNotifier.dispose();
@@ -376,7 +452,7 @@ class SigaBackgroundService extends ChangeNotifier {
   }
 
   Future<void> _checkLoginStatus() async {
-    if (_controller == null) return;
+    if (_isDisposed || _controller == null) return;
     try {
       // 1. Verifica se está logado
       final script = SigaScripts.checkLoginScript();
@@ -472,8 +548,9 @@ class SigaBackgroundService extends ChangeNotifier {
           }
           _reconnectAttempts = 0;
           _cancelReconnectTimer();
+          // Sincronização automática agora é feita pela HomePage ao abrir
         } else if (previous == true && !_isLoggedIn) {
-          // Logout inesperado: programar reconexão
+          // Logout inesperado: programar reconexão simples
           _scheduleReconnect();
         }
       }
@@ -513,6 +590,7 @@ class SigaBackgroundService extends ChangeNotifier {
   }
 
   void _scheduleReconnect() {
+    if (_authFailureNotifier.value) return;
     if (_reconnectAttempts >= _maxReconnectAttempts) return;
     _cancelReconnectTimer();
     final int multiplier = 1 << _reconnectAttempts; // 1,2,4,8...
@@ -1084,15 +1162,33 @@ class SigaBackgroundService extends ChangeNotifier {
 
   /// Reseta o serviço para o estado inicial, limpando dados e sessão.
   Future<void> resetService() async {
-    await disposeService();
+    // Não chama disposeService() pois isso mata os notifiers do Singleton
+    _stopInternalResources();
+
+    // Garante que não está marcado como disposed caso reutilize
+    _isDisposed = false;
+
     _isLoggedIn = false;
-    loginNotifier.value = false;
+    // Reseta valores dos notifiers com segurança
+    try {
+      loginNotifier.value = false;
+      _authFailureNotifier.value = false;
+      captchaRequiredNotifier.value = false;
+    } catch (_) {
+      // Ignora se já estiver disposed (não deveria acontecer aqui com a correção)
+    }
+
     _pendingUsername = null;
     _pendingPassword = null;
+
+    if (_loginCompleter != null && !_loginCompleter!.isCompleted) {
+      _loginCompleter!.complete(false);
+    }
     _loginCompleter = null;
+
     _reconnectAttempts = 0;
-    _cancelReconnectTimer();
-    await disposeService();
+
+    // Reinicializa (recria controller e timers)
     await initialize();
   }
 
@@ -1550,7 +1646,7 @@ class SigaBackgroundService extends ChangeNotifier {
   /// Executa uma sincronização completa em segundo plano.
   /// Tenta fazer login com credenciais salvas e extrai todos os dados.
   Future<void> runFullBackgroundSync() async {
-    if (!_settings.isAutoSyncEnabled ||
+    if (!_settings.isSyncOnOpenEnabled ||
         !(await _settings.isInitialSyncCompleted())) {
       logarte.log(
           'Background Sync: Sincronização automática desativada ou inicial não concluída. Abortando.',
@@ -1626,6 +1722,18 @@ class SigaBackgroundService extends ChangeNotifier {
       await navigateAndExtractProfile();
 
       _updateSyncStatus('Sincronização em background concluída.');
+
+      // Atualiza o Home Screen Widget com as novas próximas aulas
+      try {
+        final homeWidgetService = injector.get<HomeWidgetService>();
+        await homeWidgetService.updateWidget();
+        logarte.log('Home Widget atualizado após sincronização.',
+            source: 'SigaBackgroundService');
+      } catch (e) {
+        logarte.log('Falha ao atualizar Home Widget: $e',
+            source: 'SigaBackgroundService');
+      }
+
       logarte.log(
           'Sincronização completa em background finalizada com sucesso.',
           source: 'SigaBackgroundService');

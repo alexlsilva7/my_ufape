@@ -14,18 +14,16 @@ class SigaPageWidget extends StatefulWidget {
 
 class _SigaPageWidgetState extends State<SigaPageWidget> {
   WebViewController? get _controller => _sigaService.controller;
-  final _sigaService = injector.get<SigaBackgroundService>(
-    key: 'siga_background',
-  );
+  final _sigaService = injector.get<SigaBackgroundService>();
   bool _isLoggedIn = false;
 
   /// Indica se a tela foi aberta para resolver CAPTCHA
   bool _openedForCaptcha = false;
 
   String _message = '';
-  bool _isProcessingGrades = false;
-  bool _isProcessingProfile = false;
-  bool _isProcessingTimetable = false;
+  final bool _isProcessingGrades = false;
+  final bool _isProcessingProfile = false;
+  final bool _isProcessingTimetable = false;
   bool _isSyncInProgress = false;
 
   // Listener chamado quando o serviço notifica mudança de login
@@ -132,16 +130,6 @@ class _SigaPageWidgetState extends State<SigaPageWidget> {
   Widget build(BuildContext context) {
     return Stack(
       children: [
-        AnimatedSwitcher(
-          duration: const Duration(milliseconds: 300),
-          child: _message.isNotEmpty
-              ? Text(_message, key: ValueKey(_message))
-              : const SizedBox.shrink(key: ValueKey('empty')),
-        ),
-        _controller != null
-            ? Expanded(
-                child: WebViewWidget(controller: _sigaService.controller!))
-            : const Spacer(),
         Column(
           spacing: 8,
           children: [

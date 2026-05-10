@@ -16,7 +16,7 @@ class GradesPage extends StatefulWidget {
 class _GradesPageState extends State<GradesPage> {
   final SubjectNoteRepository subjectNoteRepository = injector.get();
   final SigaBackgroundService _sigaService =
-      injector.get<SigaBackgroundService>(key: 'siga_background');
+      injector.get<SigaBackgroundService>();
 
   List<SubjectNote> allDisciplinas = [];
   bool _isLoading = true;

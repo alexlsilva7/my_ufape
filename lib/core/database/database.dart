@@ -11,6 +11,7 @@ import 'package:my_ufape/domain/entities/subject.dart';
 import 'package:my_ufape/domain/entities/subject_note.dart';
 import 'package:my_ufape/domain/entities/block_of_profile.dart';
 import 'package:my_ufape/domain/entities/time_table.dart';
+import 'package:my_ufape/domain/entities/teaching_plan.dart';
 
 class Database {
   Isar? _databaseInstance;
@@ -42,6 +43,7 @@ class Database {
           SchoolHistorySchema,
           SchoolHistorySubjectSchema,
           AcademicAchievementSchema,
+          TeachingPlanSchema,
         ],
         directory: dir.path,
         inspector: kDebugMode,

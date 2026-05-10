@@ -33,12 +33,10 @@ class MainStatsCards extends StatelessWidget {
                 value:
                     '${analytics['approvalRate']?.toStringAsFixed(1) ?? '-'}%',
                 icon: Icons.trending_up,
-                color: analytics['approvalRate'] >= 70
-                    ? Colors.green.shade600
-                    : analytics['approvalRate'] >= 60
-                        ? Colors.orange.shade600
-                        : Colors.red.shade600,
-                subtitle: _getApprovalLabel(analytics['approvalRate']),
+                color: _getApprovalColor(
+                    analytics['approvalRate'] as double? ?? 0.0),
+                subtitle: _getApprovalLabel(
+                    analytics['approvalRate'] as double? ?? 0.0),
                 onInfoTap: () => showInfoDialog(
                   context,
                   taxaDeAprovacaoMarkdown,
@@ -53,7 +51,7 @@ class MainStatsCards extends StatelessWidget {
             Expanded(
               child: StatCard(
                 title: 'Períodos',
-                value: analytics['totalPeriodos'].toString(),
+                value: (analytics['totalPeriodos'] ?? 0).toString(),
                 icon: Icons.calendar_month,
                 color: Colors.blue.shade600,
               ),
@@ -62,7 +60,7 @@ class MainStatsCards extends StatelessWidget {
             Expanded(
               child: StatCard(
                 title: 'Disciplinas',
-                value: analytics['totalDisciplinas'].toString(),
+                value: (analytics['totalDisciplinas'] ?? 0).toString(),
                 icon: Icons.school_outlined,
                 color: Colors.purple.shade600,
               ),
@@ -71,7 +69,7 @@ class MainStatsCards extends StatelessWidget {
             Expanded(
               child: StatCard(
                 title: 'Aprovadas',
-                value: analytics['totalAprovadas'].toString(),
+                value: (analytics['totalAprovadas'] ?? 0).toString(),
                 icon: Icons.check_circle_outline,
                 color: Colors.green.shade600,
               ),
@@ -82,7 +80,8 @@ class MainStatsCards extends StatelessWidget {
     );
   }
 
-  String _getGradeLabel(double grade) {
+  String _getGradeLabel(double? grade) {
+    if (grade == null) return '-';
     if (grade >= 9.0) return 'Excelente';
     if (grade >= 8.0) return 'Ótimo';
     if (grade >= 7.0) return 'Bom';
@@ -90,7 +89,14 @@ class MainStatsCards extends StatelessWidget {
     return 'Precisa melhorar';
   }
 
-  String _getApprovalLabel(double rate) {
+  Color _getApprovalColor(double rate) {
+    if (rate >= 70) return Colors.green.shade600;
+    if (rate >= 60) return Colors.orange.shade600;
+    return Colors.red.shade600;
+  }
+
+  String _getApprovalLabel(double? rate) {
+    if (rate == null) return '-';
     if (rate >= 90) return 'Excepcional';
     if (rate >= 80) return 'Muito bom';
     if (rate >= 70) return 'Bom';

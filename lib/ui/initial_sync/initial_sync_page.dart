@@ -43,77 +43,117 @@ class _InitialSyncPageState extends State<InitialSyncPage> {
     final theme = Theme.of(context);
 
     return Scaffold(
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: ListenableBuilder(
-            listenable: _viewModel,
-            builder: (context, child) {
-              final isFinished = _viewModel.isSyncComplete &&
-                  !_viewModel.isSyncing &&
-                  _viewModel.errorMessage == null;
+      body: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: ListenableBuilder(
+              listenable: _viewModel,
+              builder: (context, child) {
+                final isFinished = _viewModel.isSyncComplete &&
+                    !_viewModel.isSyncing &&
+                    _viewModel.errorMessage == null;
 
-              return Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ColorFiltered(
-                    colorFilter: ColorFilter.mode(
-                        theme.colorScheme.primary, BlendMode.srcIn),
-                    child: Assets.images.myUfapeLogo.image(height: 100),
-                  ),
-                  const SizedBox(height: 24),
-                  GestureDetector(
-                    child: Text(
-                      isFinished
-                          ? 'Sincronização Concluída!'
-                          : 'Sincronização Inicial',
-                      style: theme.textTheme.headlineSmall
-                          ?.copyWith(fontWeight: FontWeight.bold),
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ColorFiltered(
+                      colorFilter: ColorFilter.mode(
+                          theme.colorScheme.primary, BlendMode.srcIn),
+                      child: Assets.images.myUfapeLogo.image(height: 100),
                     ),
-                    onLongPress: () async {
-                      await injector
-                          .get<SettingsRepository>()
-                          .toggleDebugOverlay();
-                    },
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    isFinished
-                        ? 'Redirecionando para a tela inicial...'
-                        : 'Estamos preparando tudo para você. Isso pode levar alguns instantes.',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.bodyMedium,
-                  ),
-                  const SizedBox(height: 24),
-                  _buildStepTile('Grade de Horário', SyncStep.timetable,
-                      _viewModel.status[SyncStep.timetable]!),
-                  _buildStepTile('Notas', SyncStep.grades,
-                      _viewModel.status[SyncStep.grades]!),
-                  _buildStepTile('Disciplinas', SyncStep.profile,
-                      _viewModel.status[SyncStep.profile]!),
-                  _buildStepTile('Usuário', SyncStep.user,
-                      _viewModel.status[SyncStep.user]!),
-                  _buildStepTile(
-                      'Histórico Acadêmico',
-                      SyncStep.academicHistory,
-                      _viewModel.status[SyncStep.academicHistory]!),
-                  _buildStepTile(
-                      'Aproveitamento Acadêmico',
-                      SyncStep.academicAchievement,
-                      _viewModel.status[SyncStep.academicAchievement]!),
-                  const SizedBox(height: 24),
-                  if (_viewModel.errorMessage != null && !_viewModel.isSyncing)
+                    const SizedBox(height: 24),
+                    GestureDetector(
+                      child: Text(
+                        isFinished
+                            ? 'Sincronização Concluída!'
+                            : 'Sincronização Inicial',
+                        style: theme.textTheme.headlineSmall
+                            ?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      onLongPress: () async {
+                        await injector
+                            .get<SettingsRepository>()
+                            .toggleDebugOverlay();
+                      },
+                    ),
+                    const SizedBox(height: 8),
                     Text(
-                      _viewModel.errorMessage!,
-                      style: TextStyle(color: theme.colorScheme.error),
+                      isFinished
+                          ? 'Redirecionando para a tela inicial...'
+                          : 'Estamos preparando tudo para você. Isso pode levar alguns instantes.',
                       textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyMedium,
                     ),
-                  const SizedBox(height: 16),
-                ],
-              );
-            },
+                    const SizedBox(height: 24),
+                    _buildStepTile('Grade de Horário', SyncStep.timetable,
+                        _viewModel.status[SyncStep.timetable]!),
+                    _buildStepTile('Notas', SyncStep.grades,
+                        _viewModel.status[SyncStep.grades]!),
+                    _buildStepTile('Disciplinas', SyncStep.profile,
+                        _viewModel.status[SyncStep.profile]!),
+                    _buildStepTile('Usuário', SyncStep.user,
+                        _viewModel.status[SyncStep.user]!),
+                    _buildStepTile(
+                        'Histórico Acadêmico',
+                        SyncStep.academicHistory,
+                        _viewModel.status[SyncStep.academicHistory]!),
+                    _buildStepTile(
+                        'Aproveitamento Acadêmico',
+                        SyncStep.academicAchievement,
+                        _viewModel.status[SyncStep.academicAchievement]!),
+                    const SizedBox(height: 24),
+                    if (_viewModel.errorMessage != null &&
+                        !_viewModel.isSyncing)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 16.0),
+                        child: Text(
+                          _viewModel.errorMessage!,
+                          style: TextStyle(color: theme.colorScheme.error),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    // Botão de Cancelar e Sair
+                    TextButton.icon(
+                      onPressed: () => _confirmExit(context),
+                      icon: const Icon(Icons.logout),
+                      label: const Text('Cancelar e Sair'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: theme.colorScheme.error,
+                      ),
+                    ),
+                  ],
+                );
+              },
+            ),
           ),
         ),
+      ),
+    );
+  }
+
+  /// Exibe diálogo de confirmação antes de cancelar a sincronização.
+  void _confirmExit(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Cancelar sincronização?'),
+        content: const Text(
+            'Isso irá apagar os dados baixados até agora e voltará para a tela de login.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(),
+            child: const Text('Não, continuar'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              _viewModel.cancelAndLogout();
+            },
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+            child: const Text('Sim, sair'),
+          ),
+        ],
       ),
     );
   }
