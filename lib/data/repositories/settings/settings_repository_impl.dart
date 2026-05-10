@@ -1,3 +1,5 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:my_ufape/config/dependencies.dart';
@@ -324,6 +326,40 @@ class SettingsRepositoryImpl extends ChangeNotifier
       return Success(unit);
     } catch (e, s) {
       return Failure(AppException('Falha ao salvar Gemini Key: $e', s));
+    }
+  }
+
+  @override
+  String get geminiModel => _localStoragePreferencesService.geminiModel;
+
+  @override
+  Future<void> setGeminiModel(String modelName) async {
+    await _localStoragePreferencesService.setGeminiModel(modelName);
+    notifyListeners();
+  }
+
+  @override
+  Future<List<String>> fetchAvailableGeminiModels() async {
+    final apiKey = await getGeminiKey();
+    if (apiKey == null) throw Exception("API Key não configurada");
+
+    final url = Uri.parse('https://generativelanguage.googleapis.com/v1beta/models?key=$apiKey');
+    
+    try {
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List models = data['models'];
+        
+        return models
+            .where((m) => (m['supportedGenerationMethods'] as List).contains('generateContent'))
+            .map((m) => (m['name'] as String).replaceFirst('models/', ''))
+            .toList();
+      } else {
+        throw Exception("Erro ao buscar modelos: ${response.statusCode}");
+      }
+    } catch (e) {
+      throw Exception("Falha na requisição: $e");
     }
   }
 }

@@ -47,4 +47,8 @@ abstract interface class SettingsRepository extends ChangeNotifier {
 
   Future<String?> getGeminiKey();
   AsyncResult<Unit> saveGeminiKey(String key);
+
+  String get geminiModel;
+  Future<void> setGeminiModel(String modelName);
+  Future<List<String>> fetchAvailableGeminiModels();
 }

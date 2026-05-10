@@ -115,4 +115,14 @@ class LocalStoragePreferencesService {
   Future<void> setSigaUrl(String url) async {
     await prefs.setString(_sigaUrlKey, url);
   }
+
+  static const String _geminiModelKey = 'gemini_model_name';
+  static const String defaultGeminiModel = 'gemini-3-flash-preview';
+
+  String get geminiModel =>
+      prefs.getString(_geminiModelKey) ?? defaultGeminiModel;
+
+  Future<void> setGeminiModel(String modelName) async {
+    await prefs.setString(_geminiModelKey, modelName);
+  }
 }

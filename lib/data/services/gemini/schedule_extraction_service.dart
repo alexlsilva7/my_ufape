@@ -2,8 +2,12 @@ import 'dart:convert';
 import 'dart:typed_data';
 import 'package:google_generative_ai/google_generative_ai.dart';
 import 'package:my_ufape/core/debug/logarte.dart';
+import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
 
 class ScheduleExtractionService {
+  final SettingsRepository _settingsRepository;
+
+  ScheduleExtractionService(this._settingsRepository);
   Future<List<Map<String, dynamic>>> extractSchedule({
     required String apiKey,
     required Uint8List pdfBytes,
@@ -67,8 +71,9 @@ class ScheduleExtractionService {
     );
 
     // 2. Modelo
+    final modelName = _settingsRepository.geminiModel;
     final model = GenerativeModel(
-      model: 'gemini-3.1-flash-lite',
+      model: modelName,
       apiKey: apiKey,
       generationConfig: GenerationConfig(
         responseMimeType: 'application/json',

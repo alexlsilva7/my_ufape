@@ -201,6 +201,13 @@ class _SettingsPageState extends State<SettingsPage> {
                           onTap: _showApiKeyDialog,
                         ),
                         const Divider(height: 1),
+                        ListTile(
+                          leading: const Icon(Icons.model_training),
+                          title: const Text('Modelo Gemini'),
+                          subtitle: Text(_settingsRepository.geminiModel),
+                          onTap: () => _showModelSelectorDialog(context),
+                        ),
+                        const Divider(height: 1),
                         SwitchListTile(
                           title: const Text('Sincronizar ao abrir o app'),
                           subtitle: const Text(
@@ -567,6 +574,61 @@ class _SettingsPageState extends State<SettingsPage> {
             child: const Text('Salvar'),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showModelSelectorDialog(BuildContext context) async {
+    showDialog(
+      context: context,
+      builder: (context) => FutureBuilder<List<String>>(
+        future: _settingsRepository.fetchAvailableGeminiModels(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const AlertDialog(
+              content: SizedBox(
+                height: 100,
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            );
+          }
+          
+          if (snapshot.hasError) {
+            return AlertDialog(
+              title: const Text("Erro"),
+              content: Text(snapshot.error.toString()),
+              actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text("OK"))],
+            );
+          }
+
+          final models = snapshot.data ?? [];
+          return AlertDialog(
+            title: const Text("Selecione o Modelo"),
+            content: SizedBox(
+              width: double.maxFinite,
+              child: ListView.builder(
+                shrinkWrap: true,
+                itemCount: models.length,
+                itemBuilder: (context, index) {
+                  final model = models[index];
+                  return RadioListTile<String>(
+                    title: Text(model),
+                    value: model,
+                    groupValue: _settingsRepository.geminiModel,
+                    onChanged: (value) async {
+                      if (value != null) {
+                        await _settingsRepository.setGeminiModel(value);
+                        if (mounted) {
+                          Navigator.pop(context);
+                        }
+                      }
+                    },
+                  );
+                },
+              ),
+            ),
+          );
+        },
       ),
     );
   }
