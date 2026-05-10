@@ -31,6 +31,9 @@ abstract interface class SettingsRepository extends ChangeNotifier {
 
   AsyncResult<Unit> deleteUserCredentials();
 
+  AsyncResult<Unit> deletePasswordOnly();
+  Future<String?> getSavedUsername();
+
   AsyncResult<Unit> toggleDebugOverlay();
 
   Future<bool> isInitialSyncCompleted();

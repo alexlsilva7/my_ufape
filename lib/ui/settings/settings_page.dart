@@ -14,6 +14,8 @@ import 'package:share_plus/share_plus.dart';
 import 'package:terminate_restart/terminate_restart.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
+import 'package:routefly/routefly.dart';
+import 'package:my_ufape/app_widget.dart';
 
 class SettingsPage extends StatefulWidget {
   const SettingsPage({super.key});
@@ -308,6 +310,13 @@ class _SettingsPageState extends State<SettingsPage> {
                         ],
                         const Divider(height: 1),
                         ListTile(
+                          leading: const Icon(Icons.password, color: Colors.orange),
+                          title: const Text('Alterar Senha'),
+                          subtitle: const Text('Apaga sua senha e retorna ao login'),
+                          onTap: () => _showLogoutDialog(),
+                        ),
+                        const Divider(height: 1),
+                        ListTile(
                           leading: const Icon(Icons.restore, color: Colors.red),
                           title: const Text(
                             'Restaurar Aplicativo',
@@ -426,6 +435,38 @@ class _SettingsPageState extends State<SettingsPage> {
               onPressed: () async {
                 Navigator.of(context).pop();
                 await _performReset();
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showLogoutDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Alterar Senha'),
+          content: const Text(
+              'Você será desconectado e enviado para a tela de login. '
+              'Seus dados baixados continuarão disponíveis offline.'),
+          actions: [
+            TextButton(
+              child: const Text('Cancelar'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+            TextButton(
+              child: const Text(
+                'Sair',
+                style: TextStyle(color: Colors.orange),
+              ),
+              onPressed: () async {
+                Navigator.of(context).pop();
+                await _settingsRepository.deleteUserCredentials();
+                _sigaService.resetAuthFailure();
+                Routefly.navigate(routePaths.login);
               },
             ),
           ],

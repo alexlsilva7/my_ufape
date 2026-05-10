@@ -215,6 +215,26 @@ class SettingsRepositoryImpl extends ChangeNotifier
   }
 
   @override
+  AsyncResult<Unit> deletePasswordOnly() async {
+    try {
+      await _secureStorage.delete(key: 'password');
+      notifyListeners();
+      return Success(unit);
+    } catch (e, s) {
+      return Failure(AppException('Falha ao excluir senha: $e', s));
+    }
+  }
+
+  @override
+  Future<String?> getSavedUsername() async {
+    try {
+      return await _secureStorage.read(key: 'username');
+    } catch (_) {
+      return null;
+    }
+  }
+
+  @override
   AsyncResult<Login> getUserCredentials() async {
     try {
       final username = await _secureStorage.read(key: 'username');

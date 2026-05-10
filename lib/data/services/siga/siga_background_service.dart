@@ -590,6 +590,7 @@ class SigaBackgroundService extends ChangeNotifier {
   }
 
   void _scheduleReconnect() {
+    if (_authFailureNotifier.value) return;
     if (_reconnectAttempts >= _maxReconnectAttempts) return;
     _cancelReconnectTimer();
     final int multiplier = 1 << _reconnectAttempts; // 1,2,4,8...

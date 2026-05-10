@@ -28,6 +28,8 @@ class _LoginPageState extends State<LoginPage> {
   bool _isPasswordVisible = false;
   bool _isLoading = false;
 
+  final FocusNode _passwordFocusNode = FocusNode();
+
   // Storage seguro para salvar credenciais
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
   final SettingsRepository _settings = injector.get();
@@ -44,6 +46,18 @@ class _LoginPageState extends State<LoginPage> {
     _sigaService = injector.get<SigaBackgroundService>();
     _sigaService.captchaRequiredNotifier.addListener(_onCaptchaChange);
     _sigaService.loginNotifier.addListener(_onLoginSuccess);
+
+    _prefillUsername();
+  }
+
+  Future<void> _prefillUsername() async {
+    final savedUsername = await _settings.getSavedUsername();
+    if (savedUsername != null && savedUsername.isNotEmpty) {
+      _usernameController.text = savedUsername;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _passwordFocusNode.requestFocus();
+      });
+    }
   }
 
   /// Flag para indicar que estamos aguardando resolução de CAPTCHA
@@ -152,6 +166,7 @@ class _LoginPageState extends State<LoginPage> {
     _sigaService.loginNotifier.removeListener(_onLoginSuccess);
     _usernameController.dispose();
     _passwordController.dispose();
+    _passwordFocusNode.dispose();
     super.dispose();
   }
 
@@ -286,6 +301,7 @@ class _LoginPageState extends State<LoginPage> {
                     // Campo de Senha
                     TextFormField(
                       controller: _passwordController,
+                      focusNode: _passwordFocusNode,
                       enabled: !_isLoading,
                       obscureText: !_isPasswordVisible,
                       decoration: InputDecoration(

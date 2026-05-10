@@ -28,6 +28,7 @@ class _HomePageState extends State<HomePage> {
   final SigaBackgroundService _sigaService =
       injector.get<SigaBackgroundService>();
   final ShorebirdService _shorebirdService = injector.get<ShorebirdService>();
+  final SettingsRepository _settingsRepository = injector.get<SettingsRepository>();
   bool _isLoggedIn = false;
   late final VoidCallback _loginListener;
 
@@ -59,6 +60,7 @@ class _HomePageState extends State<HomePage> {
       }
     };
     _sigaService.loginNotifier.addListener(_loginListener);
+    _sigaService.authFailureNotifier.addListener(_handleAuthFailure);
     _sigaService.captchaRequiredNotifier.addListener(_handleCaptchaRequirement);
     _sigaService.initialize();
 
@@ -81,6 +83,7 @@ class _HomePageState extends State<HomePage> {
     try {
       _viewModel.removeListener(() {});
       _sigaService.loginNotifier.removeListener(_loginListener);
+      _sigaService.authFailureNotifier.removeListener(_handleAuthFailure);
       _sigaService.captchaRequiredNotifier
           .removeListener(_handleCaptchaRequirement);
       _shorebirdService.isUpdateReadyToInstall
@@ -102,6 +105,35 @@ class _HomePageState extends State<HomePage> {
       );
       // Navega para a tela do SIGA onde a WebView interativa vive
       Routefly.push(routePaths.siga);
+    }
+  }
+
+  void _handleAuthFailure() {
+    if (_sigaService.authFailureNotifier.value && mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (ctx) => AlertDialog(
+          icon: const Icon(Icons.lock_outline, color: Colors.orange, size: 40),
+          title: const Text('Sessão Expirada'),
+          content: const Text(
+            'Sua senha foi alterada no SIGA ou suas credenciais expiraram. '
+            'Por favor, faça login novamente.',
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () async {
+                Navigator.of(ctx).pop();
+                // Deleta apenas a senha, mantém o username
+                await _settingsRepository.deletePasswordOnly();
+                _sigaService.resetAuthFailure();
+                Routefly.navigate(routePaths.login);
+              },
+              child: const Text('Fazer Login'),
+            ),
+          ],
+        ),
+      );
     }
   }
 
