@@ -83,6 +83,11 @@ List<RouteEntity> get routes => [
         uri: Uri.parse('/timetable'),
         routeBuilder: b15Builder,
       ),
+      RouteEntity(
+        key: '/timetable_builder',
+        uri: Uri.parse('/timetable_builder'),
+        routeBuilder: b16Builder,
+      ),
     ];
 
 const routePaths = (
@@ -107,4 +112,5 @@ const routePaths = (
     subjectDetails: '/subjects/subject_details',
   ),
   timetable: '/timetable',
+  timetableBuilder: '/timetable_builder',
 );

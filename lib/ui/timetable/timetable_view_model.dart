@@ -4,19 +4,22 @@ import 'package:my_ufape/data/repositories/scheduled_subject/scheduled_subject_r
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
 import 'package:my_ufape/domain/entities/time_table.dart';
 import 'package:my_ufape/data/services/home_widget/home_widget_service.dart';
+import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
 
 class TimetableViewModel extends ChangeNotifier {
   final ScheduledSubjectRepository _repository;
   final SigaBackgroundService _sigaService;
   final HomeWidgetService _homeWidgetService;
+  final SettingsRepository _settingsRepository;
 
   List<ScheduledSubject> subjects = [];
   bool isLoading = true;
   bool isSyncing = false;
+  bool isGeminiConfigured = false;
   String? errorMessage;
 
   TimetableViewModel(
-      this._repository, this._sigaService, this._homeWidgetService);
+      this._repository, this._sigaService, this._homeWidgetService, this._settingsRepository);
 
   static const dayOrder = [
     DayOfWeek.segunda,
@@ -33,6 +36,9 @@ class TimetableViewModel extends ChangeNotifier {
     notifyListeners();
 
     try {
+      final key = await _settingsRepository.getGeminiKey();
+      isGeminiConfigured = key != null && key.isNotEmpty;
+
       final result = await _repository.getAllScheduledSubjects();
 
       result.fold(

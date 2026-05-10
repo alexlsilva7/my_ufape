@@ -33,7 +33,7 @@ class TeachingPlanExtractionService {
 
     // 2. Configuração do Modelo
     final model = GenerativeModel(
-      model: 'gemini-flash-lite-latest',
+      model: 'gemini-3.1-flash-lite',
       apiKey: apiKey,
       generationConfig: GenerationConfig(
         responseMimeType: 'application/json',

@@ -44,6 +44,8 @@ import 'package:my_ufape/data/services/gemini/teaching_plan_extraction_service.d
 import 'package:my_ufape/data/repositories/teaching_plan/teaching_plan_repository.dart';
 import 'package:my_ufape/data/repositories/teaching_plan/teaching_plan_repository_impl.dart';
 import 'package:my_ufape/ui/settings/export/export_view_model.dart';
+import 'package:my_ufape/data/services/gemini/schedule_extraction_service.dart';
+import 'package:my_ufape/ui/timetable_builder/timetable_builder_view_model.dart';
 
 final injector = AutoInjector();
 
@@ -176,6 +178,7 @@ Future<void> setupDependencies() async {
       injector.get<ScheduledSubjectRepository>(),
       injector.get<SigaBackgroundService>(),
       injector.get<HomeWidgetService>(),
+      injector.get<SettingsRepository>(),
     ),
   );
 
@@ -227,6 +230,18 @@ Future<void> setupDependencies() async {
   );
 
   injector.addSingleton(ShorebirdService.new);
+
+  injector.addLazySingleton(ScheduleExtractionService.new);
+  injector.addLazySingleton(
+    () => TimetableBuilderViewModel(
+      injector.get<ScheduleExtractionService>(),
+      injector.get<SettingsRepository>(),
+      injector.get<SubjectRepository>(),
+      injector.get<ScheduledSubjectRepository>(),
+      injector.get<SchoolHistoryRepository>(),
+      injector.get<SubjectNoteRepository>(),
+    ),
+  );
 
   injector.commit();
 
