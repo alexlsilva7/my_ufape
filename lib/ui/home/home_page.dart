@@ -377,7 +377,7 @@ class _HomePageState extends State<HomePage> {
                                 icon: const Icon(Icons.settings_outlined,
                                     color: Colors.white),
                                 onPressed: () {
-                                  Routefly.push(routePaths.settings);
+                                  Routefly.push(routePaths.settings.path);
                                 },
                               ),
                             ),

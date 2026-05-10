@@ -43,6 +43,7 @@ import 'package:my_ufape/ui/initial_sync/initial_sync_view_model.dart';
 import 'package:my_ufape/data/services/gemini/teaching_plan_extraction_service.dart';
 import 'package:my_ufape/data/repositories/teaching_plan/teaching_plan_repository.dart';
 import 'package:my_ufape/data/repositories/teaching_plan/teaching_plan_repository_impl.dart';
+import 'package:my_ufape/ui/settings/export/export_view_model.dart';
 
 final injector = AutoInjector();
 
@@ -214,6 +215,15 @@ Future<void> setupDependencies() async {
   // Serviço SIGA: instância única (Singleton)
   injector.addInstance<SigaBackgroundService>(
     SigaBackgroundService(),
+  );
+
+  injector.addLazySingleton(
+    () => ExportViewModel(
+      injector.get<SubjectRepository>(),
+      injector.get<SubjectNoteRepository>(),
+      injector.get<ScheduledSubjectRepository>(),
+      injector.get<AcademicAchievementRepository>(),
+    ),
   );
 
   injector.addSingleton(ShorebirdService.new);

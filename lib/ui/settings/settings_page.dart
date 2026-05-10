@@ -310,6 +310,15 @@ class _SettingsPageState extends State<SettingsPage> {
                         ],
                         const Divider(height: 1),
                         ListTile(
+                          leading: const Icon(Icons.data_object),
+                          title: const Text('Exportar Dados'),
+                          subtitle: const Text('Baixar seus dados acadêmicos em formato JSON'),
+                          onTap: () {
+                            Routefly.push(routePaths.settings.export);
+                          },
+                        ),
+                        const Divider(height: 1),
+                        ListTile(
                           leading: const Icon(Icons.password, color: Colors.orange),
                           title: const Text('Alterar Senha'),
                           subtitle: const Text('Apaga sua senha e retorna ao login'),
