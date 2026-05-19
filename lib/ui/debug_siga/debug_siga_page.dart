@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:my_ufape/app_widget.dart';
 import 'package:my_ufape/config/dependencies.dart';
 import 'package:my_ufape/core/debug/logarte.dart';
+import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
 import 'package:routefly/routefly.dart';
 import 'package:webview_flutter/webview_flutter.dart';
@@ -16,6 +17,7 @@ class DebugSigaPage extends StatefulWidget {
 
 class _DebugSigaPageState extends State<DebugSigaPage> {
   final _sigaService = injector.get<SigaBackgroundService>();
+  final _settings = injector.get<SettingsRepository>();
   bool isLogarteOpen = false;
   bool _isLandscape = false;
 
@@ -49,7 +51,9 @@ class _DebugSigaPageState extends State<DebugSigaPage> {
         centerTitle: false,
         actions: [
           IconButton(
-            icon: Icon(_isLandscape ? Icons.screen_lock_portrait : Icons.screen_lock_landscape),
+            icon: Icon(_isLandscape
+                ? Icons.screen_lock_portrait
+                : Icons.screen_lock_landscape),
             tooltip: _isLandscape ? 'Retrato' : 'Paisagem',
             onPressed: () {
               setState(() {
@@ -79,7 +83,7 @@ class _DebugSigaPageState extends State<DebugSigaPage> {
       body: Column(
         children: [
           ListenableBuilder(
-            listenable: _sigaService,
+            listenable: Listenable.merge([_sigaService, _settings]),
             builder: (context, child) {
               return Padding(
                 padding: const EdgeInsets.only(bottom: 8.0),
@@ -135,6 +139,7 @@ class _DebugSigaPageState extends State<DebugSigaPage> {
                       ],
                     ),
                     Row(
+                      spacing: 8,
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         // LogsButton
@@ -166,6 +171,25 @@ class _DebugSigaPageState extends State<DebugSigaPage> {
                           label: Text(isLogarteOpen
                               ? 'Fechar Logs Overlay'
                               : 'Abrir Logs Overlay'),
+                        ),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            _settings.toggleApplyLoginVisualEffect();
+                            _sigaService.controller?.reload();
+                          },
+                          style: ElevatedButton.styleFrom(
+                            visualDensity: VisualDensity.compact,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            backgroundColor:
+                                _settings.isApplyLoginVisualEffectEnabled
+                                    ? Colors.green
+                                    : Colors.grey,
+                          ),
+                          icon: const Icon(Icons.style),
+                          label: const Text('Efeito Visual'),
                         ),
                       ],
                     ),

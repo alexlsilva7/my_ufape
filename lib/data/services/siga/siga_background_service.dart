@@ -246,19 +246,20 @@ class SigaBackgroundService extends ChangeNotifier {
             notifyListeners();
 
             if (url.contains('index.jsp')) {
-              // TODO: Reativar customização do layout da página de login
-              // try {
-              //   // Aplica estilos e supressão de erros do console
-              //   await _controller
-              //       ?.runJavaScript(SigaScripts.loginPageStylesScript);
-              // } catch (e) {
-              //   // Ignora erros de script de estilo para não quebrar a funcionalidade
-              //   // Erros comuns do SIGA (jQuery Cycle, etc) são esperados e não afetam o login
-              //   logarte.log(
-              //     'Aviso: Erro ao aplicar estilos na página de login (não crítico): $e',
-              //     source: 'SigaBackgroundService',
-              //   );
-              // }
+              if (_settings.isApplyLoginVisualEffectEnabled) {
+                try {
+                  // Aplica estilos e supressão de erros do console
+                  await _controller
+                      ?.runJavaScript(SigaScripts.loginPageStylesScript);
+                } catch (e) {
+                  // Ignora erros de script de estilo para não quebrar a funcionalidade
+                  // Erros comuns do SIGA (jQuery Cycle, etc) são esperados e não afetam o login
+                  logarte.log(
+                    'Aviso: Erro ao aplicar estilos na página de login (não crítico): $e',
+                    source: 'SigaBackgroundService',
+                  );
+                }
+              }
 
               // Verifica CAPTCHA novamente após alguns segundos para conexões lentas
               Future.delayed(const Duration(seconds: 4), () async {

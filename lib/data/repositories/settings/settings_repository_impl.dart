@@ -43,6 +43,8 @@ class SettingsRepositoryImpl extends ChangeNotifier
     isDebugOverlayEnabled =
         _localStoragePreferencesService.isDebugOverlayEnabled;
     isSyncOnOpenEnabled = _localStoragePreferencesService.isSyncOnOpenEnabled;
+    isApplyLoginVisualEffectEnabled =
+        _localStoragePreferencesService.applyLoginVisualEffect;
     isBiometricAuthEnabled =
         _localStoragePreferencesService.isBiometricAuthEnabled;
     initBiometricAuth();
@@ -173,6 +175,22 @@ class SettingsRepositoryImpl extends ChangeNotifier
       final newState = !isSyncOnOpenEnabled;
       await _localStoragePreferencesService.toggleSyncOnOpen();
       isSyncOnOpenEnabled = newState;
+      notifyListeners();
+      return Success(unit);
+    } catch (e, s) {
+      return Failure(AppException(e.toString(), s));
+    }
+  }
+
+  @override
+  bool isApplyLoginVisualEffectEnabled = true;
+
+  @override
+  AsyncResult<Unit> toggleApplyLoginVisualEffect() async {
+    try {
+      final newState = !isApplyLoginVisualEffectEnabled;
+      await _localStoragePreferencesService.toggleApplyLoginVisualEffect();
+      isApplyLoginVisualEffectEnabled = newState;
       notifyListeners();
       return Success(unit);
     } catch (e, s) {

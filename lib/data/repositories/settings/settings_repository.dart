@@ -15,6 +15,9 @@ abstract interface class SettingsRepository extends ChangeNotifier {
   bool isSyncOnOpenEnabled = true;
   AsyncResult<Unit> toggleSyncOnOpen();
 
+  bool isApplyLoginVisualEffectEnabled = true;
+  AsyncResult<Unit> toggleApplyLoginVisualEffect();
+
   /// Atualiza o timestamp da última sincronização para agora
   Future<void> updateLastSyncTimestamp();
 
