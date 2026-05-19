@@ -65,6 +65,9 @@ class SigaBackgroundService extends ChangeNotifier {
   String? _pendingUsername;
   String? _pendingPassword;
 
+  /// Indica que onPageFinished já aplicou os estilos e a página está pronta
+  bool _pageReady = false;
+
   bool _isLoggedIn = false;
   bool get isLoggedIn => _isLoggedIn;
 
@@ -235,6 +238,7 @@ class SigaBackgroundService extends ChangeNotifier {
         NavigationDelegate(
           onPageStarted: (url) {
             statusMessage = 'Carregando';
+            _pageReady = false; // Página ainda não está pronta
             notifyListeners();
           },
           onPageFinished: (url) async {
@@ -242,18 +246,19 @@ class SigaBackgroundService extends ChangeNotifier {
             notifyListeners();
 
             if (url.contains('index.jsp')) {
-              try {
-                // Aplica estilos e supressão de erros do console
-                await _controller
-                    ?.runJavaScript(SigaScripts.loginPageStylesScript);
-              } catch (e) {
-                // Ignora erros de script de estilo para não quebrar a funcionalidade
-                // Erros comuns do SIGA (jQuery Cycle, etc) são esperados e não afetam o login
-                logarte.log(
-                  'Aviso: Erro ao aplicar estilos na página de login (não crítico): $e',
-                  source: 'SigaBackgroundService',
-                );
-              }
+              // TODO: Reativar customização do layout da página de login
+              // try {
+              //   // Aplica estilos e supressão de erros do console
+              //   await _controller
+              //       ?.runJavaScript(SigaScripts.loginPageStylesScript);
+              // } catch (e) {
+              //   // Ignora erros de script de estilo para não quebrar a funcionalidade
+              //   // Erros comuns do SIGA (jQuery Cycle, etc) são esperados e não afetam o login
+              //   logarte.log(
+              //     'Aviso: Erro ao aplicar estilos na página de login (não crítico): $e',
+              //     source: 'SigaBackgroundService',
+              //   );
+              // }
 
               // Verifica CAPTCHA novamente após alguns segundos para conexões lentas
               Future.delayed(const Duration(seconds: 4), () async {
@@ -263,15 +268,17 @@ class SigaBackgroundService extends ChangeNotifier {
               });
             }
 
+            // Marca a página como pronta (estilos já aplicados)
+            _pageReady = true;
+
             // Tenta injetar o script de login se houver credenciais pendentes.
-            // Isso é acionado tanto pelo login ativo quanto pelo automático.
+            // Adiciona delay para garantir que a página esteja pronta após aplicação de estilos.
             if (url.contains('index.jsp') &&
                 !_isLoggedIn &&
                 _pendingUsername != null &&
                 _pendingPassword != null) {
+              await Future.delayed(const Duration(seconds: 3));
               await _injectLoginScript(_pendingUsername!, _pendingPassword!);
-              _pendingUsername = null;
-              _pendingPassword = null;
             }
 
             // Sempre verifica o status após a página carregar
@@ -296,8 +303,28 @@ class SigaBackgroundService extends ChangeNotifier {
               }
             }
           },
+          onSslAuthError: (SslAuthError error) {
+            // O SIGA usa certificado SSL que pode não ser confiável pelo
+            // Android WebView. Aceitamos para permitir a conexão.
+            logarte.log(
+              'SSL auth error interceptado — procedendo com a conexão',
+              source: 'SigaBackgroundService',
+            );
+            error.proceed();
+          },
         ),
       );
+
+    // Obtém credenciais para o login automático ANTES de carregar a página,
+    // garantindo que _pendingUsername/_pendingPassword estejam prontos
+    // quando onPageFinished disparar.
+    final creds = await _settings.getUserCredentials();
+    creds.fold((login) {
+      _pendingUsername = login.username;
+      _pendingPassword = login.password;
+    }, (error) {
+      // sem credenciais armazenadas
+    });
 
     // Carrega a página inicial do SIGA
     await _controller!.loadRequest(
@@ -305,18 +332,8 @@ class SigaBackgroundService extends ChangeNotifier {
     );
 
     // Inicia timer periódico para verificar status de login
-
-    _statusTimer = Timer.periodic(const Duration(seconds: 2), (_) {
+    _statusTimer = Timer.periodic(const Duration(seconds: 3), (_) {
       _checkLoginStatus();
-    });
-
-    // Obtém credenciais para o login automático em segundo plano.
-    final creds = await _settings.getUserCredentials();
-    creds.fold((login) {
-      _pendingUsername = login.username;
-      _pendingPassword = login.password;
-    }, (error) {
-      // sem credenciais armazenadas
     });
 
     // Monitora mudança de conectividade para reconectar
@@ -436,7 +453,35 @@ class SigaBackgroundService extends ChangeNotifier {
     super.dispose();
   }
 
+  DateTime? _lastInjectionTime;
+  int _loginRetryCount = 0;
+
+  /// Intervalos de retentativa em segundos (backoff progressivo).
+  static const _retryIntervals = [10, 20, 30, 60, 120];
+
+  /// Retorna o intervalo atual baseado no número de tentativas.
+  int get _retryIntervalSeconds {
+    if (_loginRetryCount >= _retryIntervals.length) {
+      return _retryIntervals.last;
+    }
+    return _retryIntervals[_loginRetryCount];
+  }
+
   Future<void> _injectLoginScript(String username, String password) async {
+    // Evita injeções múltiplas com backoff progressivo
+    final interval = _retryIntervalSeconds;
+    if (_lastInjectionTime != null &&
+        DateTime.now().difference(_lastInjectionTime!).inSeconds < interval) {
+      return;
+    }
+    _lastInjectionTime = DateTime.now();
+    _loginRetryCount++;
+
+    logarte.log(
+      'Retentativa #$_loginRetryCount (próxima em ${_retryIntervalSeconds}s)',
+      source: 'SigaBackgroundService',
+    );
+
     final safeUsername =
         username.replaceAll(r'\', r'\\').replaceAll(r"'", r"\'");
     final safePassword =
@@ -462,6 +507,29 @@ class SigaBackgroundService extends ChangeNotifier {
 
       // 2. Se não estiver logado, verifica erros específicos
       if (!currentlyLoggedIn) {
+        // Verifica se caiu na página de erro do SIGA ("Ocorreu um erro inesperado")
+        final sigaErrorResult = await _controller!.runJavaScriptReturningResult(
+          '(function(){ return document.body && document.body.innerText.includes("erro inesperado"); })();',
+        );
+        if (sigaErrorResult == true || sigaErrorResult.toString() == 'true') {
+          logarte.log(
+            'Página de erro do SIGA detectada — recarregando...',
+            source: 'SigaBackgroundService',
+          );
+          // Recarrega a página de login para tentar novamente
+          final baseUrl = _settings.sigaUrl;
+          // Recarrega credenciais pendentes para a próxima tentativa
+          if (_pendingUsername == null) {
+            final creds = await _settings.getUserCredentials();
+            creds.fold((c) {
+              _pendingUsername = c.username;
+              _pendingPassword = c.password;
+            }, (err) {});
+          }
+          await _controller!.loadRequest(Uri.parse(baseUrl));
+          return;
+        }
+
         // Verifica erro de senha
         final errorScript = SigaScripts.checkAuthErrorScript();
         final authError =
@@ -502,9 +570,26 @@ class SigaBackgroundService extends ChangeNotifier {
               (error) {},
             );
           } else {
-            // Aplica estilo limpo para o usuário resolver
+            // Aplica estilo limpo para o usuário resolver o captcha
             await _controller
                 ?.runJavaScript(SigaScripts.cleanLoginPageForCaptchaScript);
+
+            // Preenche as credenciais para o usuário não precisar digitar
+            final creds = await _settings.getUserCredentials();
+            await creds.fold(
+              (loginData) async {
+                final safeUsername = loginData.username
+                    .replaceAll(r'\', r'\\')
+                    .replaceAll(r"'", r"\'");
+                final safePassword = loginData.password
+                    .replaceAll(r'\', r'\\')
+                    .replaceAll(r"'", r"\'");
+                final fillScript = SigaScripts.fillCredentialsScript(
+                    safeUsername, safePassword);
+                await _controller?.runJavaScript(fillScript);
+              },
+              (error) {},
+            );
 
             // Avisa a UI que precisa mostrar o WebView
             if (!captchaRequiredNotifier.value) {
@@ -523,6 +608,15 @@ class SigaBackgroundService extends ChangeNotifier {
           if (captchaRequiredNotifier.value) {
             captchaRequiredNotifier.value = false;
             notifyListeners();
+          }
+
+          // Retentativa: se estamos na página de login, sem captcha, e temos
+          // credenciais, tenta injetar o login.
+          // Só tenta se a página já está pronta (estilos aplicados).
+          if (_pageReady &&
+              _pendingUsername != null &&
+              _pendingPassword != null) {
+            await _injectLoginScript(_pendingUsername!, _pendingPassword!);
           }
         }
         // ------------------------------
@@ -547,7 +641,11 @@ class SigaBackgroundService extends ChangeNotifier {
             _loginCompleter!.complete(true);
           }
           _reconnectAttempts = 0;
+          _loginRetryCount = 0; // Reseta backoff de retentativa
           _cancelReconnectTimer();
+          // Limpa credenciais pendentes após login bem-sucedido
+          _pendingUsername = null;
+          _pendingPassword = null;
           // Sincronização automática agora é feita pela HomePage ao abrir
         } else if (previous == true && !_isLoggedIn) {
           // Logout inesperado: programar reconexão simples

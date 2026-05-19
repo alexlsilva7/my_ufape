@@ -99,26 +99,16 @@ class SettingsRepositoryImpl extends ChangeNotifier
         authMessages: const <AuthMessages>[
           AndroidAuthMessages(
             cancelButton: 'Cancelar',
-            goToSettingsButton: 'Ir para configurações',
-            goToSettingsDescription:
-                'Por favor, configure sua biometria para usar esta funcionalidade.',
-            biometricNotRecognized:
-                'Biometria não reconhecida. Tente novamente.',
-            biometricSuccess: 'Biometria reconhecida com sucesso.',
-            deviceCredentialsSetupDescription:
-                'Por favor, configure suas credenciais do dispositivo para usar esta funcionalidade.',
+            signInHint: 'Por favor, autentique-se para acessar o aplicativo',
+            signInTitle: 'Autenticação',
           ),
           IOSAuthMessages(
             cancelButton: 'Cancelar',
-            goToSettingsButton: 'Ir para configurações',
-            goToSettingsDescription:
-                'Por favor, configure sua biometria para usar esta funcionalidade.',
+            localizedFallbackTitle: 'Autenticação',
           ),
         ],
         localizedReason: 'Por favor, autentique-se para acessar o aplicativo',
-        options: const AuthenticationOptions(
-          biometricOnly: false,
-        ),
+        biometricOnly: false,
       );
     } catch (e) {
       return false;
@@ -343,16 +333,18 @@ class SettingsRepositoryImpl extends ChangeNotifier
     final apiKey = await getGeminiKey();
     if (apiKey == null) throw Exception("API Key não configurada");
 
-    final url = Uri.parse('https://generativelanguage.googleapis.com/v1beta/models?key=$apiKey');
-    
+    final url = Uri.parse(
+        'https://generativelanguage.googleapis.com/v1beta/models?key=$apiKey');
+
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final List models = data['models'];
-        
+
         return models
-            .where((m) => (m['supportedGenerationMethods'] as List).contains('generateContent'))
+            .where((m) => (m['supportedGenerationMethods'] as List)
+                .contains('generateContent'))
             .map((m) => (m['name'] as String).replaceFirst('models/', ''))
             .toList();
       } else {

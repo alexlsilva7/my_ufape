@@ -59,7 +59,7 @@ const TeachingPlanSchema = CollectionSchema(
   getId: _teachingPlanGetId,
   getLinks: _teachingPlanGetLinks,
   attach: _teachingPlanAttach,
-  version: '3.3.0-dev.3',
+  version: '3.3.2',
 );
 
 int _teachingPlanEstimateSize(

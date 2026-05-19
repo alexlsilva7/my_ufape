@@ -10,7 +10,7 @@ dependencies:
   flutter:
     sdk: flutter
   webview_flutter: ^4.13.0
-  flutter_secure_storage: ^9.2.4
+  flutter_secure_storage: ^10.2.0
   html: ^0.15.6
   fl_chart: ^1.1.1
   auto_injector: ^2.1.1
@@ -19,38 +19,39 @@ dependencies:
   shared_preferences: ^2.5.3
   result_command: ^2.1.0
   brasil_fields: ^1.18.0
-  permission_handler: ^11.3.1
+  permission_handler: ^12.0.1
   # isar
   isar_community: ^3.3.0-dev.3
   isar_community_flutter_libs: ^3.3.0-dev.3
   path_provider: ^2.1.5
   shorebird_code_push: ^2.0.5
   terminate_restart: ^1.0.11
-  package_info_plus: ^9.0.0
-  clipboard: ^2.0.2
+  package_info_plus: ^10.1.0
+  pasteboard: ^0.5.0
   logarte: ^1.4.0
-  share_plus: ^12.0.0
+  share_plus: ^13.1.0
   url_launcher: ^6.3.2
-  local_auth: ^2.3.0
+  local_auth: ^3.0.1
   gpt_markdown: ^1.1.4
   animated_tree_view: ^2.3.0
   validatorless: ^1.2.5
-  flutter_local_notifications: ^19.5.0
+  flutter_local_notifications: ^21.0.0
   connectivity_plus: ^7.0.0
   internet_connection_checker: ^1.0.0+1
   home_widget: ^0.9.0
   google_generative_ai: ^0.4.0
-  file_picker: ^8.0.0
+  file_picker: ^12.0.0-beta.3
   intl: ^0.20.0
   http: ^1.6.0
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^5.0.0
+  flutter_lints: ^6.0.0
+  mocktail: ^1.0.4
   # isar
   isar_community_generator: ^3.3.0-dev.3
-  build_runner: any
+  build_runner:  ^2.15.0
   flutter_launcher_icons: ^0.14.4
   rename_app: ^1.6.5
   flutter_native_splash: ^2.4.6

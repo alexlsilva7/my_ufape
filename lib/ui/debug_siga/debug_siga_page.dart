@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:my_ufape/app_widget.dart';
 import 'package:my_ufape/config/dependencies.dart';
 import 'package:my_ufape/core/debug/logarte.dart';
@@ -16,11 +17,20 @@ class DebugSigaPage extends StatefulWidget {
 class _DebugSigaPageState extends State<DebugSigaPage> {
   final _sigaService = injector.get<SigaBackgroundService>();
   bool isLogarteOpen = false;
+  bool _isLandscape = false;
 
   @override
   void initState() {
     isLogarteOpen = logarte.isOverlayAttached;
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+    ]);
+    super.dispose();
   }
 
   @override
@@ -39,9 +49,29 @@ class _DebugSigaPageState extends State<DebugSigaPage> {
         centerTitle: false,
         actions: [
           IconButton(
+            icon: Icon(_isLandscape ? Icons.screen_lock_portrait : Icons.screen_lock_landscape),
+            tooltip: _isLandscape ? 'Retrato' : 'Paisagem',
+            onPressed: () {
+              setState(() {
+                _isLandscape = !_isLandscape;
+              });
+              if (_isLandscape) {
+                SystemChrome.setPreferredOrientations([
+                  DeviceOrientation.landscapeLeft,
+                  DeviceOrientation.landscapeRight,
+                ]);
+              } else {
+                SystemChrome.setPreferredOrientations([
+                  DeviceOrientation.portraitUp,
+                ]);
+              }
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () {
               _sigaService.controller?.reload();
+              setState(() {});
             },
           ),
         ],

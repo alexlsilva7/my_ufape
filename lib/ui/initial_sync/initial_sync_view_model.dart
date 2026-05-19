@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:my_ufape/app_widget.dart';
 import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
@@ -40,6 +41,9 @@ class InitialSyncViewModel extends ChangeNotifier {
 
   bool _isSyncing = false;
   bool get isSyncing => _isSyncing;
+
+  bool _isWaitingForLogin = false;
+  bool get isWaitingForLogin => _isWaitingForLogin;
 
   bool get isSyncComplete =>
       _status.values.every((s) => s == StepStatus.success);
@@ -111,6 +115,38 @@ class InitialSyncViewModel extends ChangeNotifier {
     _isSyncing = true;
     _errorMessage = null;
     navigateToHome.value = false;
+
+    // Aguarda o login no SIGA antes de iniciar a sincronização
+    if (!_sigaService.isLoggedIn) {
+      _isWaitingForLogin = true;
+      _errorMessage = null; // Removendo mensagem de erro
+      notifyListeners();
+
+      final completer = Completer<void>();
+
+      void onLoginChanged() {
+        if (_sigaService.loginNotifier.value && !completer.isCompleted) {
+          completer.complete();
+        }
+      }
+
+      _sigaService.loginNotifier.addListener(onLoginChanged);
+
+      try {
+        await completer.future.timeout(const Duration(seconds: 60));
+        _errorMessage = null;
+      } catch (_) {
+        _errorMessage = 'Tempo esgotado aguardando login. Tente novamente.';
+        _isSyncing = false;
+        _isWaitingForLogin = false;
+        notifyListeners();
+        return;
+      } finally {
+        _sigaService.loginNotifier.removeListener(onLoginChanged);
+        _isWaitingForLogin = false;
+        notifyListeners();
+      }
+    }
 
     // Carrega o estado salvo
     _status.addAll(_settingsRepository.getSyncStatus());

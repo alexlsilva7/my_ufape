@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:my_ufape/domain/entities/user.dart';
-import 'package:clipboard/clipboard.dart';
+import 'package:flutter/services.dart';
 
 class UserInfoDialog extends StatelessWidget {
   final User user;
@@ -10,7 +10,7 @@ class UserInfoDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     void copyToClipboard(String text, String fieldName) async {
-      await FlutterClipboard.copy(text);
+      await Clipboard.setData(ClipboardData(text: text));
       // ignore: use_build_context_synchronously
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

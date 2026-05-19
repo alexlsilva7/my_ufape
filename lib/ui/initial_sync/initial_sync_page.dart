@@ -79,9 +79,11 @@ class _InitialSyncPageState extends State<InitialSyncPage> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      isFinished
-                          ? 'Redirecionando para a tela inicial...'
-                          : 'Estamos preparando tudo para você. Isso pode levar alguns instantes.',
+                      _viewModel.isWaitingForLogin
+                          ? 'Tentando fazer login no SIGA...'
+                          : isFinished
+                              ? 'Redirecionando para a tela inicial...'
+                              : 'Estamos preparando tudo para você. Isso pode levar alguns instantes.',
                       textAlign: TextAlign.center,
                       style: theme.textTheme.bodyMedium,
                     ),
