@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:my_ufape/config/dependencies.dart';
 import 'package:my_ufape/data/services/siga/siga_background_service.dart';
+import 'package:my_ufape/data/repositories/settings/settings_repository.dart';
 import 'package:my_ufape/ui/siga/widgets/siga_page_widget.dart';
 
 class SigaPage extends StatefulWidget {
@@ -12,11 +13,13 @@ class SigaPage extends StatefulWidget {
 
 class _SigaPageState extends State<SigaPage> {
   late SigaBackgroundService _sigaService;
+  late SettingsRepository _settings;
 
   @override
   void initState() {
     super.initState();
     _sigaService = injector.get<SigaBackgroundService>();
+    _settings = injector.get<SettingsRepository>();
 
     // Se estiver sincronizando, cancela imediatamente para permitir uso manual
     // Usa addPostFrameCallback para evitar erro de setState durante build
@@ -47,6 +50,23 @@ class _SigaPageState extends State<SigaPage> {
             ],
           ),
           actions: [
+            ListenableBuilder(
+              listenable: _settings,
+              builder: (context, _) {
+                return IconButton(
+                  icon: Icon(_settings.isApplyLoginVisualEffectEnabled 
+                    ? Icons.style 
+                    : Icons.style_outlined),
+                  tooltip: _settings.isApplyLoginVisualEffectEnabled ? 'Remover Efeito Visual' : 'Aplicar Efeito Visual',
+                  onPressed: () {
+                    _settings.toggleApplyLoginVisualEffect();
+                    // Recarrega o webview atual para refletir a mudança
+                    final service = injector.get<SigaBackgroundService>(key: 'siga_background');
+                    service.controller?.reload();
+                  },
+                );
+              }
+            ),
             IconButton(
               icon: const Icon(Icons.refresh),
               onPressed: () {

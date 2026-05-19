@@ -108,16 +108,28 @@ class SigaScripts {
     setTimeout(function() {
       var u = document.getElementById('cpf') ||
               document.getElementsByName('cpf')[0] ||
-              document.querySelector('input[name="cpf"]');
+              document.querySelector('input[name*="cpf"]') ||
+              document.querySelector('input[type="text"]');
       var p = document.getElementById('txtPassword') ||
               document.getElementsByName('txtPassword')[0] ||
               document.querySelector('input[type="password"]');
       
-      if (u) u.value = '$user';
-      if (p) p.value = '$pass';
+      if (u) {
+        u.value = '$user';
+        u.dispatchEvent(new Event('input', { bubbles: true }));
+        u.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+      if (p) {
+        p.value = '$pass';
+        p.dispatchEvent(new Event('input', { bubbles: true }));
+        p.dispatchEvent(new Event('change', { bubbles: true }));
+      }
       
       // Tenta múltiplos métodos de submit
-      var btn = document.getElementById('btnEntrar');
+      var btn = document.getElementById('btnEntrar') ||
+                document.querySelector('input[value="Entrar"]') ||
+                document.querySelector('input[type="submit"]') ||
+                document.querySelector('button[type="submit"]');
       if (btn) {
         btn.click();
         return;
@@ -129,9 +141,40 @@ class SigaScripts {
       if (form) {
         form.submit();
       }
-    }, 100);
+    }, 200);
   } catch(e) {
     console.log('Login script error:', e);
+  }
+})();
+""";
+  }
+
+  /// Retorna script para preencher credenciais sem tentar fazer submit.
+  static String fillCredentialsScript(String user, String pass) {
+    return """
+(function(){
+  try {
+    var u = document.getElementById('cpf') ||
+            document.getElementsByName('cpf')[0] ||
+            document.querySelector('input[name*="cpf"]') ||
+            document.querySelector('input[type="text"]');
+    var p = document.getElementById('txtPassword') ||
+            document.getElementsByName('txtPassword')[0] ||
+            document.querySelector('input[type="password"]');
+    
+    // Só preenche se o campo estiver vazio para não sobrescrever o que o usuário puder estar alterando
+    if (u && (!u.value || u.value === '')) {
+      u.value = '$user';
+      u.dispatchEvent(new Event('input', { bubbles: true }));
+      u.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+    if (p && (!p.value || p.value === '')) {
+      p.value = '$pass';
+      p.dispatchEvent(new Event('input', { bubbles: true }));
+      p.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  } catch(e) {
+    console.log('Fill credentials script error:', e);
   }
 })();
 """;

@@ -1,12 +1,13 @@
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class NotificationService {
-  final FlutterLocalNotificationsPlugin _notifications = FlutterLocalNotificationsPlugin();
+  final FlutterLocalNotificationsPlugin _notifications =
+      FlutterLocalNotificationsPlugin();
 
   Future<void> init() async {
     const android = AndroidInitializationSettings('@mipmap/ic_launcher');
     const settings = InitializationSettings(android: android);
-    await _notifications.initialize(settings);
+    await _notifications.initialize(settings: settings);
   }
 
   Future<void> showDebugNotification(String title, String body) async {
@@ -18,6 +19,11 @@ class NotificationService {
       priority: Priority.low,
     );
     const details = NotificationDetails(android: androidDetails);
-    await _notifications.show(0, title, body, details);
+    await _notifications.show(
+      id: 0,
+      title: title,
+      body: body,
+      notificationDetails: details,
+    );
   }
 }

@@ -74,7 +74,7 @@ class _SubjectDetailsPageState extends State<SubjectDetailsPage> {
       return;
     }
 
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
+    FilePickerResult? result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf'],
       withData: true,

@@ -23,7 +23,7 @@ class NotificationService {
       iOS: initializationSettingsDarwin,
     );
 
-    await _notificationsPlugin.initialize(initializationSettings);
+    await _notificationsPlugin.initialize(settings: initializationSettings);
 
     // Cria o canal de notificação para Android
     await _createNotificationChannel();
@@ -75,10 +75,10 @@ class NotificationService {
         NotificationDetails(android: androidPlatformChannelSpecifics);
 
     await _notificationsPlugin.show(
-      notificationId,
-      'Nova nota em $subjectName',
-      '$gradeKey: $gradeValue',
-      platformChannelSpecifics,
+      id: notificationId,
+      title: 'Nova nota em $subjectName',
+      body: '$gradeKey: $gradeValue',
+      notificationDetails: platformChannelSpecifics,
     );
   }
 }

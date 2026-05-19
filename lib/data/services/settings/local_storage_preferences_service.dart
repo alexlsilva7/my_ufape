@@ -15,6 +15,7 @@ class LocalStoragePreferencesService {
   static const String _themeModeKey = 'theme_mode';
   static const String _syncStatusKey = 'initial_sync_status';
   static const String _sigaUrlKey = 'siga_institution_url';
+  static const String _applyLoginVisualEffectKey = 'apply_login_visual_effect';
 
   static const String urlUfape = 'https://siga.ufape.edu.br/ufape/index.jsp';
   static const String urlUpe = 'https://siga.upe.br/upe/index.jsp';
@@ -73,6 +74,8 @@ class LocalStoragePreferencesService {
 
   bool get isBiometricAuthEnabled => prefs.getBool(_biometricAuthKey) ?? false;
 
+  bool get applyLoginVisualEffect => prefs.getBool(_applyLoginVisualEffectKey) ?? true;
+
   AsyncResult<Unit> toggleDebugOverlay() async {
     try {
       await prefs.setBool(_debugOverlayKey, !isDebugOverlayEnabled);
@@ -85,6 +88,15 @@ class LocalStoragePreferencesService {
   AsyncResult<Unit> toggleSyncOnOpen() async {
     try {
       await prefs.setBool(_syncOnOpenKey, !isSyncOnOpenEnabled);
+      return Success(unit);
+    } catch (e, s) {
+      return Failure(AppException(e.toString(), s));
+    }
+  }
+
+  AsyncResult<Unit> toggleApplyLoginVisualEffect() async {
+    try {
+      await prefs.setBool(_applyLoginVisualEffectKey, !applyLoginVisualEffect);
       return Success(unit);
     } catch (e, s) {
       return Failure(AppException(e.toString(), s));

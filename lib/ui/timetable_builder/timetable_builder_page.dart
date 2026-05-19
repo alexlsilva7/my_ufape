@@ -31,7 +31,7 @@ class _TimetableBuilderPageState extends State<TimetableBuilderPage> {
   }
 
   Future<void> _pickPdf() async {
-    FilePickerResult? result = await FilePicker.platform.pickFiles(
+    FilePickerResult? result = await FilePicker.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['pdf'],
       withData: true,
